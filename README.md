@@ -15,6 +15,7 @@
 - 数据接入界面
 - WPS/Kdocs 运营填报模板（`data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`）
 - CSV 数据仅在当前浏览器处理，不会自动上传服务器
+- 数据接入页提供 WPS/Kdocs 模板下载和字段说明入口
 
 ## 部署到 GitHub Pages
 
@@ -32,6 +33,6 @@
 
 ## WPS/Kdocs 填报
 
-运营人员优先使用 `data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`，上传到 WPS/Kdocs 后填写黄色区域。模板包含店铺日汇总、商品数据、运营动作已执行清单、发布趋势、BD 达人、广告计划和短视频数据等工作表。
+运营人员优先使用 `data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`，上传到 WPS/Kdocs 后填写黄色区域。模板包含店铺字典、店铺日汇总、商品数据、五组链接对比排行、预警规则、运营动作已执行清单、发布趋势、BD 达人、广告计划、短视频数据、运营知识库、Agent 调度和字段字典等工作表。
 
 `data/operations-data.json` 和 WPS/Kdocs 模板作为后续数据接入资产保留；当前 v3 页面不会自动读取私有 WPS/Kdocs 文档或 JSON。要让真实数据驱动页面，需要增加后端同步/API，并把页面内置演示数据替换为接口数据。
