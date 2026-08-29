@@ -12,6 +12,10 @@
     "liveExposure", "liveClicks", "liveAddToCart", "liveUniqueExposure", "liveUniqueClicks", "liveAtcUsers",
     "videoExposure", "videoClicks", "videoAddToCart", "videoUniqueExposure", "videoUniqueClicks", "videoAtcUsers",
   ];
+  const SUMMED_FIELDS = [
+    "gmv", "orders", "skuOrders", "units", "customers", "exposure", "clicks", "addToCart",
+    ...SUMMARIZED_SOURCE_FIELDS,
+  ];
 
   let currentData = normalizeData(sourceData);
   let selectedStore = "all";
@@ -127,11 +131,18 @@
   }
 
   function summarizeProducts(products) {
-    const totals = products.reduce((accumulator, product) => {
-      for (const key of ["gmv", "orders", "skuOrders", "units", "customers", "exposure", "clicks", "addToCart"]) accumulator[key] += product[key] ?? 0;
-      for (const key of SUMMARIZED_SOURCE_FIELDS) accumulator[key] += product[key] ?? 0;
-      return accumulator;
-    }, Object.fromEntries(["gmv", "orders", "skuOrders", "units", "customers", "exposure", "clicks", "addToCart", ...SUMMARIZED_SOURCE_FIELDS].map((key) => [key, 0])));
+    const totals = Object.fromEntries(SUMMED_FIELDS.map((key) => [key, 0]));
+    const availableCounts = Object.fromEntries(SUMMED_FIELDS.map((key) => [key, 0]));
+    products.forEach((product) => {
+      SUMMED_FIELDS.forEach((key) => {
+        if (product[key] == null || !Number.isFinite(Number(product[key]))) return;
+        totals[key] += Number(product[key]);
+        availableCounts[key] += 1;
+      });
+    });
+    SUMMED_FIELDS.forEach((key) => {
+      if (!availableCounts[key]) totals[key] = null;
+    });
     totals.ctr = totals.exposure ? totals.clicks / totals.exposure * 100 : null;
     totals.cvr = totals.clicks ? totals.orders / totals.clicks * 100 : null;
     totals.avgOrderValue = totals.skuOrders ? totals.gmv / totals.skuOrders : null;
@@ -139,6 +150,7 @@
     totals.ctor = totals.clicks ? totals.skuOrders / totals.clicks * 100 : null;
     totals.uniqueCtr = totals.uniqueExposure ? totals.uniqueClicks / totals.uniqueExposure * 100 : null;
     totals.uniqueAtcRate = totals.uniqueClicks ? totals.uniqueAtcUsers / totals.uniqueClicks * 100 : null;
+    totals.uniqueClickCvr = totals.uniqueClicks ? totals.skuOrders / totals.uniqueClicks * 100 : null;
     totals.attributedAov = totals.attributedSkuOrders ? totals.attributedGmv / totals.attributedSkuOrders : null;
     totals.liveCtr = totals.liveExposure ? totals.liveClicks / totals.liveExposure * 100 : null;
     totals.liveAddToCartRate = totals.liveClicks ? totals.liveAddToCart / totals.liveClicks * 100 : null;
@@ -160,7 +172,7 @@
       reportDate: snapshot.reportDate || fallbackDate || "待确认",
       sourceFile: snapshot.sourceFile || fallbackFile || "",
       productCount: snapshot.productCount ?? hydratedProducts.length,
-      totals: snapshot.totals || summarizeProducts(hydratedProducts),
+      totals: hydratedProducts.length ? summarizeProducts(hydratedProducts) : (snapshot.totals || summarizeProducts([])),
       products: hydratedProducts,
     };
   }
@@ -299,12 +311,19 @@
   }
 
   function isDateKey(value) {
-    return /^\d{4}-\d{2}-\d{2}$/.test(String(value));
+    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return false;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
   }
 
   function addDays(dateKey, days) {
-    const date = new Date(`${dateKey}T00:00:00`);
-    date.setDate(date.getDate() + days);
+    const [year, month, day] = dateKey.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    date.setUTCDate(date.getUTCDate() + days);
     return date.toISOString().slice(0, 10);
   }
 
@@ -381,7 +400,7 @@
   }
 
   function statusTag(status) {
-    const className = status === "已导入" ? "tag-blue" : status === "可售" ? "tag-green" : "tag-yellow";
+    const className = status === "已导入" ? "tag-blue" : (status === "可售" || status === "真实数据") ? "tag-green" : "tag-yellow";
     return `<span class="tag ${className}">${escapeHtml(status)}</span>`;
   }
 
@@ -606,13 +625,14 @@
       const storeTotals = snapshot.totals;
       return `<tr><td><strong>${escapeHtml(store.name)}</strong></td><td>${snapshot.reportDate}</td><td>${formatNumber(snapshot.productCount, 0)}</td><td>${formatMoney(storeTotals.gmv)}</td><td>${formatNumber(storeTotals.orders, 0)}</td><td>${formatCompact(storeTotals.exposure)}</td><td>${formatPercent(storeTotals.cvr)}</td><td><span class="real-data-status">已导入</span></td></tr>`;
     }).join("") || `<tr><td colspan="8" class="real-ranking-empty">当前日期范围暂无匹配的真实快照。</td></tr>`;
-    const topProducts = productsInScope().sort((left, right) => (right.gmv ?? 0) - (left.gmv ?? 0)).slice(0, 12);
+    const scopedProducts = productsInScope().sort((left, right) => (right.gmv ?? 0) - (left.gmv ?? 0));
+    const topProducts = scopedProducts.slice(0, 12);
     const productRows = topProducts.map((product) => `<tr>
       <td>${escapeHtml(product.store)}</td><td>${escapeHtml(product.id)}</td><td><span class="long-text" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</span></td>
       <td>${formatNumber(product.units, 0)}</td><td>${formatMoney(product.gmv)}</td><td>${formatNumber(product.orders, 0)}</td><td>${formatNumber(product.skuOrders, 0)}</td><td>${formatNumber(product.customers, 0)}</td><td>${formatMoney(product.avgOrderValue)}</td><td>${formatCompact(product.exposure)}</td><td>${formatNumber(product.clicks, 0)}</td><td>${formatPercent(product.ctr)}</td><td>${formatNumber(product.addToCart, 0)}</td><td>${formatPercent(product.addToCartRate)}</td><td>${formatPercent(product.ctor)}</td><td>${formatPercent(product.uniqueClickCvr)}</td><td>${statusTag("已导入")}</td>
     </tr>`).join("") || `<tr><td colspan="17" class="real-ranking-empty">当前日期范围暂无商品明细。</td></tr>`;
-    const sourceFieldCount = productsInScope().find((product) => Array.isArray(product.sourceHeaders) && product.sourceHeaders.length)?.sourceHeaders.length || 0;
-    const inspectorOptions = topProducts.map((product, index) => `<option value="${index}">${escapeHtml(product.store)} · ${escapeHtml(product.id)} · ${escapeHtml(product.name)}</option>`).join("");
+    const sourceFieldCount = scopedProducts.find((product) => Array.isArray(product.sourceHeaders) && product.sourceHeaders.length)?.sourceHeaders.length || 0;
+    const inspectorOptions = scopedProducts.map((product, index) => `<option value="${index}">${escapeHtml(product.store)} · ${escapeHtml(product.id)} · ${escapeHtml(product.name)}</option>`).join("");
     container.innerHTML = `<div class="card real-data-card">
       <div class="card-title">✅ 已导入真实店铺数据 <span>${escapeHtml(scopeLabel())} · ${escapeHtml(dateRangeLabel())}</span></div>
       <div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>店铺</th><th>最新快照</th><th>商品数</th><th>GMV</th><th>订单数</th><th>曝光</th><th>成交转化率</th><th>状态</th></tr></thead><tbody>${storeRows}</tbody></table></div>
@@ -629,19 +649,20 @@
     </div>
     <div class="card real-data-card">
       <div class="card-title">🔎 商品 product_list 完整字段 <span>逐项核对原始 Excel · 不压缩、不丢重复渠道字段</span></div>
-      ${topProducts.length ? `<label class="source-product-label" for="source-field-product">选择商品查看全部来源字段</label><select id="source-field-product" class="source-product-select">${inspectorOptions}</select><div id="source-field-inspector" class="source-field-inspector">${sourceFieldInspectorHtml(topProducts[0])}</div>` : `<div class="real-ranking-empty">当前日期范围暂无商品明细。</div>`}
+      ${scopedProducts.length ? `<label class="source-product-label" for="source-field-product">选择商品查看全部来源字段（当前范围 ${formatNumber(scopedProducts.length, 0)} 条）</label><select id="source-field-product" class="source-product-select">${inspectorOptions}</select><div id="source-field-inspector" class="source-field-inspector">${sourceFieldInspectorHtml(scopedProducts[0])}</div>` : `<div class="real-ranking-empty">当前日期范围暂无商品明细。</div>`}
     </div>`;
     const inspectorSelect = container.querySelector("#source-field-product");
     const inspector = container.querySelector("#source-field-inspector");
     if (inspectorSelect && inspector) inspectorSelect.addEventListener("change", () => {
-      inspector.innerHTML = sourceFieldInspectorHtml(topProducts[Number(inspectorSelect.value)]);
+      inspector.innerHTML = sourceFieldInspectorHtml(scopedProducts[Number(inspectorSelect.value)]);
     });
   }
 
   function updateDataSourceStatus() {
     const page = document.getElementById("page-data");
     if (!page) return;
-    const sourceRow = page.querySelector(".desktop-table tbody tr");
+    const sourceCard = [...page.querySelectorAll(".card")].find((card) => card.querySelector(".card-title")?.textContent.includes("字段与来源登记"));
+    const sourceRow = sourceCard && sourceCard.querySelector(".desktop-table tbody tr");
     if (sourceRow) {
       const statusCell = sourceRow.lastElementChild;
       if (statusCell) statusCell.innerHTML = '<span class="tag tag-green">已导入真实数据</span>';

@@ -17,7 +17,7 @@ body {
 .sidebar { 
   position: fixed; left: 0; top: 0; bottom: 0; width: 230px; 
   background: #0f172a; color: #94a3b8; padding: 16px 0; 
-  overflow-y: auto; z-index: 100; transition: transform 0.3s ease;
+  overflow-y: auto; z-index: 300; transition: transform 0.3s ease;
 }
 .sidebar-brand { 
   padding: 0 18px 16px; font-size: 14px; font-weight: 700; color: #fff; 
@@ -90,6 +90,13 @@ body {
   border: 1px solid #dbeafe; border-left: 4px solid #38bdf8; border-radius: 10px;
   box-shadow: 0 1px 3px rgba(15,23,42,0.04); flex-wrap: wrap;
 }
+.data-context-bar[hidden] { display: none !important; }
+.data-boundary-notice {
+  display: flex; align-items: flex-start; gap: 9px; margin: -6px 0 18px; padding: 11px 13px;
+  border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 9px;
+  background: #fffbeb; color: #92400e; font-size: 12px; line-height: 1.6;
+}
+.data-boundary-notice strong { color: #78350f; }
 .data-context-heading { display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 14px; font-weight: 700; }
 .data-context-heading small { color: #16a34a; font-size: 11px; font-weight: 600; background: #f0fdf4; padding: 4px 8px; border-radius: 999px; }
 .data-context-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -683,7 +690,7 @@ body {
 <div id="page-alert" class="page">
   <div class="page-header">
     <div class="page-title">🚨 商品数据预警</div>
-    <div class="page-subtitle">基于 T+1 / T+3 / T+7 节点自动检测商品异常 · Agent 实时扫描</div>
+    <div class="page-subtitle">T+1 / T+3 / T+7 预警流程样例 · 真实预警需导入同店铺多日期快照</div>
   </div>
 
   <!-- Agent 快捷入口 -->
@@ -848,7 +855,7 @@ body {
       <p><strong>T+7 检测：</strong>对比 7 天前基线，检测中长期趋势。适合评估运营动作后的整体效果（如价格调整、主图优化后的 GMV 变化）。</p>
     </div>
     <div style="margin-top:10px;padding:10px;background:#f8fafc;border-radius:6px;font-size:12px;color:#64748b;">
-      ⚠️ 预警只基于已导入的真实数据生成；缺少昨日基线或对应字段时，该商品不参与检测，状态显示为"数据缺失"。
+      ⚠️ 当前卡片是主管版流程演示数据，不是由上方真实店铺快照自动生成。正式预警只基于同店铺、同商品 ID 的多日期真实数据；缺少基线时保持“待导入”。
     </div>
   </div>
 </div>
@@ -857,7 +864,7 @@ body {
 <div id="page-bd" class="page">
   <div class="page-header">
     <div class="page-title">🤝 BD / 达人</div>
-    <div class="page-subtitle">围绕合作进展、内容交付和跟进动作 · Agent 自动跟进与提醒</div>
+    <div class="page-subtitle">达人合作流程样例 · 尚未接入真实达人表与交付记录</div>
   </div>
 
   <div class="agent-grid" style="margin-bottom: 16px;">
@@ -957,7 +964,7 @@ body {
 <div id="page-ads" class="page">
   <div class="page-header">
     <div class="page-title">🎯 广告投放</div>
-    <div class="page-subtitle">广告消耗、流量和商品产出放在同一张表中核对 · Agent 智能调价与素材测试</div>
+    <div class="page-subtitle">广告投放流程样例 · 尚未接入真实广告计划和归因数据</div>
   </div>
 
   <div class="agent-grid" style="margin-bottom: 16px;">
@@ -1035,7 +1042,7 @@ body {
 <div id="page-videos" class="page">
   <div class="page-header">
     <div class="page-title">🎬 自营短视频 + 商品发布</div>
-    <div class="page-subtitle">发布数量、商品数据、内容指标统一查看 · Agent 内容生成与排期</div>
+    <div class="page-subtitle">内容发布流程样例 · 尚未接入真实发布记录与视频归因数据</div>
   </div>
 
   <div class="agent-grid" style="margin-bottom: 16px;">
@@ -1140,7 +1147,7 @@ body {
 <div id="page-validation" class="page">
   <div class="page-header">
     <div class="page-title">✅ 运营动作有效性验证</div>
-    <div class="page-subtitle">按 T+1 / T+3 / T+7 追踪真实数据变化 · Agent 自动追踪与判定</div>
+    <div class="page-subtitle">动作验证流程样例 · 尚未接入真实动作表和 T+1 / T+3 / T+7 证据</div>
   </div>
 
   <div class="agent-grid" style="margin-bottom: 16px;">
@@ -1271,7 +1278,7 @@ body {
 <div id="page-knowledge" class="page">
   <div class="page-header">
     <div class="page-title">📚 运营知识库</div>
-    <div class="page-subtitle">对内方法论沉淀 + 对外已审知识入库 · 搜索复用 · Agent 自动沉淀</div>
+    <div class="page-subtitle">知识沉淀交互样例 · 当前卡片尚未连接真实运营知识库</div>
   </div>
 
   <div class="stats-row">
@@ -1620,7 +1627,7 @@ body {
 <div id="page-agents" class="page">
   <div class="page-header">
     <div class="page-title">🤖 Agent 调度中心</div>
-    <div class="page-subtitle">Control Plane · 调度、分工、多智能体协同运维 · 管理一批 AI 数字员工</div>
+    <div class="page-subtitle">Agent 调度交互样例 · 当前按钮只演示流程，不会执行外部任务</div>
   </div>
 
   <div class="stats-row">
@@ -1858,8 +1865,36 @@ body {
 </div>
 
 <script src="./data/real-store-data.js"></script>
-<script src="./data/real-store-dashboard.js?v=layout-fix-1"></script>
+<script src="./data/real-store-dashboard.js?v=bug-audit-1"></script>
 <script>
+const FILTERED_DATA_PAGES = new Set(['overview', 'data']);
+const DEMO_PAGE_NOTICES = {
+  alert: '预警卡片、风险数量和商品案例仍是流程演示；只有导入同店铺多日期快照后，才能生成真实上涨、下降与预警结论。',
+  bd: '达人数量、待办与履约趋势为界面样例，尚未接入真实达人合作表。',
+  ads: '广告消耗、计划与 Agent 建议为界面样例，尚未接入真实广告后台及归因字段。',
+  videos: '发布数量、视频表现与商品案例为界面样例，尚未接入真实发布记录和视频归因表。',
+  validation: '动作、负责人和验证结论为界面样例，尚未接入真实运营已执行清单及验证证据。',
+  knowledge: '知识卡片、复用次数和审核状态为界面样例，尚未连接团队真实知识库。',
+  agents: 'Agent 数量、任务队列和执行历史为交互样例；页面按钮只展示流程，不会实际执行外部任务。'
+};
+
+function updateDataContextVisibility(pageId) {
+  const contextBar = document.querySelector('.data-context-bar');
+  if (contextBar) contextBar.hidden = !FILTERED_DATA_PAGES.has(pageId);
+}
+
+function addDataBoundaryNotices() {
+  Object.entries(DEMO_PAGE_NOTICES).forEach(([pageId, message]) => {
+    const page = document.getElementById('page-' + pageId);
+    const header = page && page.querySelector('.page-header');
+    if (!header || page.querySelector('.data-boundary-notice')) return;
+    const notice = document.createElement('div');
+    notice.className = 'data-boundary-notice';
+    notice.innerHTML = '<span>⚠️</span><span><strong>数据边界：</strong>' + message + ' 顶部真实店铺与日期筛选不作用于本页。</span>';
+    header.insertAdjacentElement('afterend', notice);
+  });
+}
+
 // 页面切换
 function showPage(pageId, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1872,8 +1907,13 @@ function showPage(pageId, el) {
     const sidebarItems = document.querySelectorAll('.sidebar .nav-item');
     if (sidebarItems[navMap[pageId]]) sidebarItems[navMap[pageId]].classList.add('active');
   }
+  const mobileItems = document.querySelectorAll('.mobile-bottom-item');
+  const mobileMap = { 'overview': 0, 'alert': 1, 'agents': 2, 'knowledge': 3, 'videos': 4 };
+  mobileItems.forEach(item => item.classList.remove('active'));
+  if (mobileItems[mobileMap[pageId]]) mobileItems[mobileMap[pageId]].classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('mobileOverlay').classList.remove('open');
+  updateDataContextVisibility(pageId);
   window.scrollTo(0, 0);
 }
 
@@ -1897,6 +1937,59 @@ function switchKbTab(tabId, btn) {
   btn.classList.add('active');
 }
 
+function bindAlertFilters() {
+  const page = document.getElementById('page-alert');
+  if (!page) return;
+  const input = page.querySelector('.search-box input');
+  const buttons = [...page.querySelectorAll('.filter-btn')];
+  const cards = [...page.querySelectorAll('.alert-card')];
+  let selectedRisk = 'all';
+  const riskMap = new Map(buttons.map((button) => {
+    const text = button.textContent;
+    return [button, text.includes('高风险') ? 'high' : text.includes('中风险') ? 'medium' : text.includes('低风险') ? 'low' : 'all'];
+  }));
+  const apply = () => {
+    const query = (input?.value || '').trim().toLowerCase();
+    cards.forEach((card) => {
+      const matchesRisk = selectedRisk === 'all' || card.classList.contains(selectedRisk);
+      const matchesQuery = !query || card.textContent.toLowerCase().includes(query);
+      card.hidden = !(matchesRisk && matchesQuery);
+    });
+  };
+  buttons.forEach((button) => button.addEventListener('click', () => {
+    buttons.forEach((item) => item.classList.remove('active'));
+    button.classList.add('active');
+    selectedRisk = riskMap.get(button);
+    apply();
+  }));
+  if (input) input.addEventListener('input', apply);
+}
+
+function bindKnowledgeFilters() {
+  document.querySelectorAll('#page-knowledge .kb-tab-content').forEach((panel) => {
+    const cards = [...panel.querySelectorAll('.kb-card')];
+    const buttons = [...panel.querySelectorAll('.filter-btn')];
+    const input = panel.querySelector('.search-box input');
+    if (!cards.length || (!buttons.length && !input)) return;
+    let selectedCategory = '全部';
+    const apply = () => {
+      const query = (input?.value || '').trim().toLowerCase();
+      cards.forEach((card) => {
+        const matchesCategory = selectedCategory === '全部' || card.textContent.includes(selectedCategory);
+        const matchesQuery = !query || card.textContent.toLowerCase().includes(query);
+        card.hidden = !(matchesCategory && matchesQuery);
+      });
+    };
+    buttons.forEach((button) => button.addEventListener('click', () => {
+      buttons.forEach((item) => item.classList.remove('active'));
+      button.classList.add('active');
+      selectedCategory = button.textContent.trim();
+      apply();
+    }));
+    if (input) input.addEventListener('input', apply);
+  });
+}
+
 // 响应式检测
 function checkResponsive() {
   if (window.innerWidth > 768) {
@@ -1905,6 +1998,10 @@ function checkResponsive() {
   }
 }
 window.addEventListener('resize', checkResponsive);
+addDataBoundaryNotices();
+bindAlertFilters();
+bindKnowledgeFilters();
+updateDataContextVisibility('overview');
 </script>
 
 </body>
