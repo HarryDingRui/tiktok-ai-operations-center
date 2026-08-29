@@ -29,10 +29,10 @@
 
 ## 数据与登录说明
 
-当前 v3 主页面使用 HTML 内置演示数据，页面内的 Agent 调度、预警和数据接入按钮是演示交互；GitHub Pages 本身不提供安全的账号密码验证。后续接入真实云文档、店铺筛选和登录权限，需要把数据层和认证层接到后端，不能把密码直接写入 HTML。
+当前 v3 主页面已接入 5 份真实店铺 `product_list` 快照，顶部可切换全部店铺、yaya112、yaya thailand tth、PETTOS、Miniyaya 和 INSPIRE PURIFY；Agent 调度、运营动作验证和部分预警仍是演示交互。GitHub Pages 本身不提供安全的账号密码验证。后续接入实时云文档、自动同步和登录权限，需要把数据层和认证层接到后端，不能把密码直接写入 HTML。
 
 ## WPS/Kdocs 填报
 
 运营人员优先使用 `data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`，上传到 WPS/Kdocs 后填写黄色区域。模板包含填报首页、云文档说明、店铺字典、店铺日汇总、商品数据、五组链接对比排行、预警规则、运营动作已执行清单、发布趋势、BD 达人、广告计划、短视频数据、运营知识库、Agent 调度和字段字典等工作表。
 
-`data/operations-data.json` 和 WPS/Kdocs 模板作为后续数据接入资产保留；当前 v3 页面不会自动读取私有 WPS/Kdocs 文档或 JSON。要让真实数据驱动页面，需要增加后端同步/API，并把页面内置演示数据替换为接口数据。
+`data/operations-data.json`、`data/real-store-data.js` 和 WPS/Kdocs 模板作为数据接入资产保留；当前 v3 页面不会直接读取私有 WPS/Kdocs 文档。要实现实时刷新，需要增加后端同步/API，并将静态快照替换为接口数据。

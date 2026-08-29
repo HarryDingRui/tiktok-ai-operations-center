@@ -82,6 +82,45 @@ body {
 .page-title { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
 .page-subtitle { font-size: 13px; color: #64748b; line-height: 1.5; }
 
+/* ========== 真实店铺数据上下文 ========== */
+.data-context-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 12px 16px; margin-bottom: 18px; background: #fff;
+  border: 1px solid #dbeafe; border-left: 4px solid #38bdf8; border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.04); flex-wrap: wrap;
+}
+.data-context-heading { display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 14px; font-weight: 700; }
+.data-context-heading small { color: #16a34a; font-size: 11px; font-weight: 600; background: #f0fdf4; padding: 4px 8px; border-radius: 999px; }
+.data-context-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.data-context-label { color: #64748b; font-size: 12px; }
+.data-context-select { min-height: 38px; min-width: 210px; padding: 7px 32px 7px 10px; border: 1px solid #cbd5e1; border-radius: 8px; color: #0f172a; background: #fff; font: inherit; outline: none; }
+.data-context-select:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.12); }
+.data-context-meta { color: #64748b; font-size: 12px; }
+.real-data-card { border-left: 4px solid #10b981; }
+.real-data-card .desktop-table th { background: #f0fdf4; }
+.real-data-status { display: inline-flex; align-items: center; gap: 5px; color: #15803d; font-weight: 600; }
+.real-data-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
+.real-data-note { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 12px; line-height: 1.6; }
+.real-product-table .long-text { max-width: 340px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; }
+.real-product-table .metric-positive { color: #16a34a; font-weight: 700; }
+.real-product-table .metric-muted { color: #94a3b8; }
+.real-ranking-grid { display: grid; grid-template-columns: repeat(5, minmax(180px, 1fr)); gap: 10px; }
+.real-ranking-card { padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; min-width: 0; }
+.real-ranking-card.gmv { background: #eff6ff; border-color: #bfdbfe; }
+.real-ranking-card.up { background: #f0fdf4; border-color: #bbf7d0; }
+.real-ranking-card.down { background: #fef2f2; border-color: #fecaca; }
+.real-ranking-card.cvr { background: #fffbeb; border-color: #fde68a; }
+.real-ranking-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+.real-ranking-subtitle { font-size: 11px; color: #64748b; margin-bottom: 10px; }
+.real-ranking-item { display: flex; align-items: center; gap: 7px; padding: 7px 0; border-top: 1px solid rgba(148,163,184,0.22); min-width: 0; }
+.real-ranking-item:first-of-type { border-top: 0; }
+.real-ranking-rank { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: #1e3a8a; color: #fff; font-size: 11px; font-weight: 700; }
+.real-ranking-name { flex: 1; min-width: 0; color: #334155; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.real-ranking-value { color: #0f172a; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.real-ranking-empty { padding: 14px 4px; color: #92400e; font-size: 12px; line-height: 1.6; }
+@media (max-width: 1100px) { .real-ranking-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); } }
+@media (max-width: 768px) { .data-context-bar { align-items: flex-start; } .data-context-controls { width: 100%; } .data-context-select { flex: 1; min-width: 180px; } .real-ranking-grid { grid-template-columns: 1fr; } }
+
 /* ========== 统计卡片 ========== */
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
 .stat-card { 
@@ -441,6 +480,23 @@ body {
 <!-- 主内容 -->
 <div class="main">
 
+<!-- ========== 真实店铺数据范围 ========== -->
+<div class="data-context-bar" id="data-context-bar">
+  <div class="data-context-heading">📥 真实店铺数据 <small>已导入</small></div>
+  <div class="data-context-controls">
+    <span class="data-context-label">当前店铺</span>
+    <select class="data-context-select" id="store-filter" aria-label="选择店铺">
+      <option value="all">全部店铺</option>
+      <option value="yaya112">yaya112</option>
+      <option value="yaya thailand tth">yaya thailand tth</option>
+      <option value="PETTOS">PETTOS</option>
+      <option value="Miniyaya">Miniyaya</option>
+      <option value="INSPIRE PURIFY">INSPIRE PURIFY</option>
+    </select>
+    <span class="data-context-meta" id="data-context-summary">正在读取真实数据…</span>
+  </div>
+</div>
+
 <!-- ========== 1. 经营总览 ========== -->
 <div id="page-overview" class="page active">
   <div class="page-header">
@@ -513,7 +569,7 @@ body {
 
   <div class="card">
     <div class="card-title">🏆 五组链接对比排行 <span>商品 ID 为链接主键 · 点击调用分析Agent</span></div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
+    <div id="overview-ranking-grid" class="real-ranking-grid">
       <div style="padding:12px;background:#f8fafc;border-radius:8px;text-align:center;cursor:pointer;" onclick="alert('🤖 调用 排行榜分析Agent\n\n维度：销量 Top5\n任务：自动分析销量领先商品特征 → 提取可复用策略')">
         <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:6px;">📊 销量 Top5</div>
         <div style="font-size:12px;color:#64748b;">按成交销量降序</div>
@@ -1682,6 +1738,7 @@ body {
     <div class="page-subtitle">Control Plane 数据源 · Agent 执行需要真实数据支撑 · 不以推算替代缺失</div>
   </div>
   <div class="alert alert-info" style="margin-bottom:18px;"><span>ℹ️</span><span>文件只在本机浏览器内解析和保存，不会自动上传。正式网站部署前，需要主管确认数据源、账号权限、同步频率和敏感字段处理方式。</span></div>
+  <div id="real-data-summary"></div>
   <div class="card" style="margin-bottom:18px;border-left:4px solid #38bdf8;">
     <div class="card-title">☁️ WPS / Kdocs 云文档 <span>统一填报源 · 适配当前 v3 模块</span></div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
@@ -1761,6 +1818,8 @@ body {
 
 </div>
 
+<script src="./data/real-store-data.js"></script>
+<script src="./data/real-store-dashboard.js"></script>
 <script>
 // 页面切换
 function showPage(pageId, el) {
