@@ -14,9 +14,11 @@
 - Agent 调度中心
 - 数据接入界面
 - 数据接入页支持直接选择多个同格式 `product_list` Excel，浏览器内解析后自动刷新店铺汇总、商品明细和排行
+- 支持“全部日期 / 近7天 / 近14天 / 自定义起止日期”，按店铺和日期快照查看历史数据
+- 同一店铺的新日期快照会追加保存；同一店铺同一天再次导入会替换当天快照，不覆盖其他日期
 - WPS/Kdocs 运营填报模板（`data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`）
 - CSV 数据仅在当前浏览器处理，不会自动上传服务器
-- product_list Excel 导入结果保存在当前浏览器；静态 GitHub Pages 不会把一次导入自动同步给其他访问者
+- product_list Excel 导入结果按店铺和日期保存在当前浏览器；静态 GitHub Pages 不会把一次导入自动同步给其他访问者
 - 数据接入页提供 WPS/Kdocs 模板下载和字段说明入口
 
 ## 部署到 GitHub Pages

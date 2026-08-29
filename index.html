@@ -98,6 +98,11 @@ body {
 .data-context-label { color: #64748b; font-size: 12px; }
 .data-context-select { min-height: 38px; min-width: 210px; padding: 7px 32px 7px 10px; border: 1px solid #cbd5e1; border-radius: 8px; color: #0f172a; background: #fff; font: inherit; outline: none; }
 .data-context-select:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.12); }
+.data-context-date-select { min-width: 150px; }
+.data-context-date-input { min-height: 38px; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 8px; color: #0f172a; background: #fff; font: inherit; outline: none; }
+.data-context-date-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.12); }
+.data-context-date-custom { display: none; align-items: center; gap: 6px; color: #64748b; font-size: 12px; }
+.data-context-date-custom.is-visible { display: inline-flex; }
 .data-context-meta { color: #64748b; font-size: 12px; }
 .real-data-card { border-left: 4px solid #10b981; }
 .real-data-card .desktop-table th { background: #f0fdf4; }
@@ -122,7 +127,7 @@ body {
 .real-ranking-value { color: #0f172a; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .real-ranking-empty { padding: 14px 4px; color: #92400e; font-size: 12px; line-height: 1.6; }
 @media (max-width: 1100px) { .real-ranking-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); } }
-@media (max-width: 768px) { .data-context-bar { align-items: flex-start; } .data-context-controls { width: 100%; } .data-context-select { flex: 1; min-width: 180px; } .real-ranking-grid { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .data-context-bar { align-items: flex-start; } .data-context-controls { width: 100%; } .data-context-select, .data-context-date-select, .data-context-date-input { flex: 1; min-width: 180px; } .data-context-date-custom { width: 100%; } .real-ranking-grid { grid-template-columns: 1fr; } }
 
 /* ========== 统计卡片 ========== */
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
@@ -498,6 +503,18 @@ body {
       <option value="Miniyaya">Miniyaya</option>
       <option value="INSPIRE PURIFY">INSPIRE PURIFY</option>
     </select>
+    <span class="data-context-label">时间范围</span>
+    <select class="data-context-select data-context-date-select" id="date-range-preset" aria-label="选择时间范围">
+      <option value="all">全部日期</option>
+      <option value="7">近7天</option>
+      <option value="14">近14天</option>
+      <option value="custom">自定义日期</option>
+    </select>
+    <span class="data-context-date-custom" id="custom-date-range">
+      <input class="data-context-date-input" id="date-range-start" type="date" aria-label="开始日期">
+      <span>至</span>
+      <input class="data-context-date-input" id="date-range-end" type="date" aria-label="结束日期">
+    </span>
     <span class="data-context-meta" id="data-context-summary">正在读取真实数据…</span>
   </div>
 </div>
