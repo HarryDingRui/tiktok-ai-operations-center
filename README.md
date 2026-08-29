@@ -13,8 +13,10 @@
 - 运营知识库与有效动作沉淀
 - Agent 调度中心
 - 数据接入界面
+- 数据接入页支持直接选择多个同格式 `product_list` Excel，浏览器内解析后自动刷新店铺汇总、商品明细和排行
 - WPS/Kdocs 运营填报模板（`data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`）
 - CSV 数据仅在当前浏览器处理，不会自动上传服务器
+- product_list Excel 导入结果保存在当前浏览器；静态 GitHub Pages 不会把一次导入自动同步给其他访问者
 - 数据接入页提供 WPS/Kdocs 模板下载和字段说明入口
 
 ## 部署到 GitHub Pages

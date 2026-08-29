@@ -442,6 +442,7 @@ body {
   .stats-row { grid-template-columns: 1fr 1fr; }
 }
 </style>
+<script src="./vendor/xlsx.mini.min.js"></script>
 </head>
 <body>
 
@@ -1754,12 +1755,13 @@ body {
   <div class="two-col">
     <div class="card">
       <div class="card-title">📤 商品 / 店铺经营数据</div>
-      <div class="upload-zone" onclick="alert('📁 请选择商品数据 CSV\n\n建议字段：日期、商品ID、商品名称、店铺、曝光、点击、成交、GMV、新增视频数')">
+      <div class="upload-zone" id="real-store-upload-zone" onclick="document.getElementById('real-store-file-input').click()">
         <div class="upload-zone-icon">📁</div>
-        <div class="upload-zone-title">选择商品数据 CSV</div>
-        <div class="upload-zone-desc">建议字段：日期、商品ID、商品名称、店铺、曝光、点击、成交、GMV</div>
+        <div class="upload-zone-title">选择 product_list Excel 文件</div>
+        <div class="upload-zone-desc">支持多选 .xlsx / .xls；文件名格式：店铺名：xxx-product_list_YYYYMMDD.xlsx</div>
       </div>
-      <div style="text-align:center;margin-top:10px;"><span class="tag tag-gray">尚未导入</span></div>
+      <input id="real-store-file-input" type="file" accept=".xlsx,.xls" multiple style="display:none;">
+      <div style="text-align:center;margin-top:10px;"><span id="real-data-upload-status" class="tag tag-green">已加载公开快照</span></div>
     </div>
     <div class="card">
       <div class="card-title">📤 运营调整记录</div>

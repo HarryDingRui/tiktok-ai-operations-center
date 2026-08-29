@@ -1,10 +1,120 @@
 (function () {
   "use strict";
 
-  const data = window.REAL_STORE_DATA;
-  if (!data || !Array.isArray(data.stores)) return;
+  let currentData = window.REAL_STORE_DATA;
+  if (!currentData || !Array.isArray(currentData.stores)) return;
 
   let selectedStore = "all";
+  let xlsxLibraryPromise = null;
+
+  const STORAGE_KEY = "tiktok-real-store-data-v1";
+
+  function loadSavedData() {
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      if (parsed && Array.isArray(parsed.stores)) currentData = parsed;
+    } catch (error) {
+      console.warn("Unable to restore local store data", error);
+    }
+  }
+
+  function parseNumber(value) {
+    if (value == null || value === "") return null;
+    const normalized = String(value).replace(/[฿$¥,%\s,]/g, "");
+    const number = Number(normalized);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function parseDateFromFilename(fileName) {
+    const match = String(fileName).match(/product_list_(\d{8})/i);
+    if (!match) return "待确认";
+    return `${match[1].slice(0, 4)}-${match[1].slice(4, 6)}-${match[1].slice(6, 8)}`;
+  }
+
+  function parseStoreFromFilename(fileName) {
+    const match = String(fileName).match(/^店铺名[:：](.+?)-product_list_\d{8}\.(?:xlsx|xls)$/i);
+    if (match) return match[1].trim();
+    return String(fileName).replace(/\.(?:xlsx|xls)$/i, "").trim();
+  }
+
+  function headerIndex(headers, names) {
+    const candidates = Array.isArray(names) ? names : [names];
+    return candidates.map((name) => headers.indexOf(name)).find((index) => index >= 0);
+  }
+
+  function summarizeProducts(products) {
+    const totals = products.reduce((accumulator, product) => {
+      for (const key of ["gmv", "orders", "units", "exposure", "clicks", "addToCart"]) accumulator[key] += product[key] ?? 0;
+      return accumulator;
+    }, { gmv: 0, orders: 0, units: 0, exposure: 0, clicks: 0, addToCart: 0 });
+    totals.ctr = totals.exposure ? totals.clicks / totals.exposure * 100 : null;
+    totals.cvr = totals.clicks ? totals.orders / totals.clicks * 100 : null;
+    totals.productCount = products.length;
+    return totals;
+  }
+
+  function parseProductListFile(file) {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = () => {
+        try {
+          const workbook = window.XLSX.read(reader.result, { type: "array", cellText: true, cellDates: true });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = window.XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: null, raw: false });
+          const headerRowIndex = rows.findIndex((row) => row.some((cell) => cell === "商品 ID") && row.some((cell) => cell === "商品名"));
+          if (headerRowIndex < 0) throw new Error("未找到“商品名 / 商品 ID”表头");
+          const headers = rows[headerRowIndex].map((cell) => String(cell ?? "").trim());
+          const columns = {
+            name: headerIndex(headers, "商品名"), id: headerIndex(headers, "商品 ID"), status: headerIndex(headers, "发品状态"),
+            gmv: headerIndex(headers, "GMV"), orders: headerIndex(headers, "订单数"), skuOrders: headerIndex(headers, "SKU 订单数"),
+            units: headerIndex(headers, "商品成交件数"), customers: headerIndex(headers, "预计客户数"), avgOrderValue: headerIndex(headers, "平均订单金额（SKU 订单）"),
+            exposure: headerIndex(headers, "商品曝光次数"), clicks: headerIndex(headers, "商品点击量"), ctr: headerIndex(headers, "商品点击率"),
+            addToCart: headerIndex(headers, "加购次数"), addToCartRate: headerIndex(headers, "加购率"), ctor: headerIndex(headers, "CTOR（SKU 订单）"),
+            uniqueClickCvr: headerIndex(headers, "去重点击成交转化率（SKU 订单）"),
+          };
+          const products = rows.slice(headerRowIndex + 1).map((row) => ({
+            id: row[columns.id] == null ? "" : String(row[columns.id]).trim(),
+            name: row[columns.name] == null ? "" : String(row[columns.name]).trim(),
+            status: row[columns.status] == null ? "" : String(row[columns.status]),
+            gmv: parseNumber(row[columns.gmv]), orders: parseNumber(row[columns.orders]), skuOrders: parseNumber(row[columns.skuOrders]),
+            units: parseNumber(row[columns.units]), customers: parseNumber(row[columns.customers]), avgOrderValue: parseNumber(row[columns.avgOrderValue]),
+            exposure: parseNumber(row[columns.exposure]), clicks: parseNumber(row[columns.clicks]), ctr: parseNumber(row[columns.ctr]),
+            addToCart: parseNumber(row[columns.addToCart]), addToCartRate: parseNumber(row[columns.addToCartRate]), ctor: parseNumber(row[columns.ctor]),
+            uniqueClickCvr: parseNumber(row[columns.uniqueClickCvr]),
+          })).filter((product) => product.id && product.name);
+          if (!products.length) throw new Error("文件中没有可识别的商品记录");
+          resolve({ name: parseStoreFromFilename(file.name), reportDate: parseDateFromFilename(file.name), sourceFile: file.name, productCount: products.length, totals: summarizeProducts(products), products });
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error("文件读取失败"));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  function saveCurrentData() {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+    } catch (error) {
+      console.warn("Unable to save local store data", error);
+    }
+  }
+
+  function ensureXlsxLibrary() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (xlsxLibraryPromise) return xlsxLibraryPromise;
+    xlsxLibraryPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "./vendor/xlsx.mini.min.js?loader=1";
+      script.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error("Excel 解析组件未加载"));
+      script.onerror = () => reject(new Error("Excel 解析组件加载失败"));
+      document.head.appendChild(script);
+    });
+    return xlsxLibraryPromise;
+  }
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -39,7 +149,7 @@
   }
 
   function storesInScope() {
-    return selectedStore === "all" ? data.stores : data.stores.filter((store) => store.name === selectedStore);
+    return selectedStore === "all" ? currentData.stores : currentData.stores.filter((store) => store.name === selectedStore);
   }
 
   function productsInScope() {
@@ -221,12 +331,52 @@
   }
 
   function renderAll() {
+    renderStoreOptions();
     updateContextBar();
     updateOverviewStats();
     renderPriorityPanel();
     renderOverviewRankings();
     renderDataSummary();
     updateDataSourceStatus();
+  }
+
+  function renderStoreOptions() {
+    const select = document.getElementById("store-filter");
+    if (!select) return;
+    const availableNames = new Set(currentData.stores.map((store) => store.name));
+    if (selectedStore !== "all" && !availableNames.has(selectedStore)) selectedStore = "all";
+    select.innerHTML = ['<option value="all">全部店铺</option>', ...currentData.stores.map((store) => `<option value="${escapeHtml(store.name)}">${escapeHtml(store.name)}</option>`)].join("");
+    select.value = selectedStore;
+  }
+
+  function updateUploadStatus(message, kind = "success") {
+    const status = document.getElementById("real-data-upload-status");
+    if (!status) return;
+    status.className = `tag ${kind === "error" ? "tag-red" : "tag-green"}`;
+    status.textContent = message;
+  }
+
+  async function handleFileImport(event) {
+    const files = [...(event.target.files || [])];
+    if (!files.length) return;
+    updateUploadStatus(`正在解析 ${files.length} 个文件…`);
+    try {
+      await ensureXlsxLibrary();
+      const importedStores = await Promise.all(files.map(parseProductListFile));
+      const storeMap = new Map(currentData.stores.map((store) => [store.name, store]));
+      importedStores.forEach((store) => storeMap.set(store.name, store));
+      currentData = { ...currentData, importedAt: new Date().toISOString().slice(0, 10), stores: [...storeMap.values()] };
+      saveCurrentData();
+      selectedStore = "all";
+      renderAll();
+      updateUploadStatus(`已导入 ${importedStores.length} 个文件 · ${importedStores.reduce((sum, store) => sum + store.productCount, 0)} 条商品`);
+      window.alert(`✅ 数据导入完成\n\n${importedStores.map((store) => `${store.name}：${store.productCount} 条商品`).join("\n")}\n\n数据已保存在当前浏览器。`);
+    } catch (error) {
+      updateUploadStatus("导入失败，请检查文件格式", "error");
+      window.alert(`❌ 导入失败\n\n${error.message || "无法识别该文件"}`);
+    } finally {
+      event.target.value = "";
+    }
   }
 
   function bindStoreFilter() {
@@ -239,6 +389,10 @@
     });
   }
 
+  loadSavedData();
+  renderStoreOptions();
   bindStoreFilter();
+  const fileInput = document.getElementById("real-store-file-input");
+  if (fileInput) fileInput.addEventListener("change", handleFileImport);
   renderAll();
 })();
