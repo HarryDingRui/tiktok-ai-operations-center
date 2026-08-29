@@ -64,6 +64,12 @@
       }
     }
   },
+  "alertSummary": {
+    "high": 3,
+    "medium": 5,
+    "low": 2,
+    "checked": 11
+  },
   "products": [
     {
       "id": "100176",
