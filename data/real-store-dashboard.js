@@ -6,6 +6,7 @@
 
   let selectedStore = "all";
   let xlsxLibraryPromise = null;
+  let xlsxApi = null;
 
   const STORAGE_KEY = "tiktok-real-store-data-v1";
 
@@ -60,9 +61,9 @@
     return new Promise((resolve, reject) => {
       reader.onload = () => {
         try {
-          const workbook = window.XLSX.read(reader.result, { type: "array", cellText: true, cellDates: true });
+          const workbook = xlsxApi.read(reader.result, { type: "array", cellText: true, cellDates: true });
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows = window.XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: null, raw: false });
+          const rows = xlsxApi.utils.sheet_to_json(firstSheet, { header: 1, defval: null, raw: false });
           const headerRowIndex = rows.findIndex((row) => row.some((cell) => cell === "商品 ID") && row.some((cell) => cell === "商品名"));
           if (headerRowIndex < 0) throw new Error("未找到“商品名 / 商品 ID”表头");
           const headers = rows[headerRowIndex].map((cell) => String(cell ?? "").trim());
@@ -104,14 +105,24 @@
   }
 
   function ensureXlsxLibrary() {
-    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (xlsxApi) return Promise.resolve(xlsxApi);
+    if (window.XLSX) {
+      xlsxApi = window.XLSX;
+      return Promise.resolve(xlsxApi);
+    }
     if (xlsxLibraryPromise) return xlsxLibraryPromise;
     xlsxLibraryPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "./vendor/xlsx.mini.min.js?loader=1";
-      script.onload = () => window.XLSX ? resolve(window.XLSX) : reject(new Error("Excel 解析组件未加载"));
-      script.onerror = () => reject(new Error("Excel 解析组件加载失败"));
-      document.head.appendChild(script);
+      const frame = document.createElement("iframe");
+      frame.title = "Excel parser";
+      frame.style.display = "none";
+      frame.src = "./data/xlsx-loader.html?loader=1";
+      frame.onload = () => {
+        xlsxApi = frame.contentWindow && frame.contentWindow.XLSX;
+        if (xlsxApi) resolve(xlsxApi);
+        else reject(new Error("Excel 解析组件未加载"));
+      };
+      frame.onerror = () => reject(new Error("Excel 解析组件加载失败"));
+      document.body.appendChild(frame);
     });
     return xlsxLibraryPromise;
   }
