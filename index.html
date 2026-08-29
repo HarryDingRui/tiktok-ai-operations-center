@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 36459)
+Total output lines: 1876
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -467,6 +470,7 @@ body {
   <div class="nav-item" onclick="showPage('knowledge', this)"><span class="nav-icon">📚</span> <span>运营知识库</span></div>
   <div class="nav-item" onclick="showPage('agents', this)"><span class="nav-icon">🤖</span> <span>Agent 调度中心</span><span class="nav-badge">2</span></div>
   <div class="nav-item" onclick="showPage('data', this)"><span class="nav-icon">⚙️</span> <span>数据接入</span></div>
+  <a class="nav-item" href="./account-board/"><span class="nav-icon">📈</span> <span>账号数据看板</span></a>
 </div>
 
 <!-- 移动端底部导航 -->
@@ -904,253 +908,7 @@ body {
         </div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-title">🎯 履约率趋势</div>
-      <div style="display:flex;align-items:flex-end;gap:8px;height:140px;padding:10px 0;">
-        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;">72%</div><div style="height:90px;background:#e2e8f0;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">W1</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;">75%</div><div style="height:100px;background:#e2e8f0;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">W2</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;">74%</div><div style="height:96px;background:#e2e8f0;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">W3</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;color:#0f172a;">78%</div><div style="height:115px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600;">本周</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== 4. 广告投放 ========== -->
-<div id="page-ads" class="page">
-  <div class="page-header">
-    <div class="page-title">🎯 广告投放</div>
-    <div class="page-subtitle">广告消耗、流量和商品产出放在同一张表中核对 · Agent 智能调价与素材测试</div>
-  </div>
-
-  <div class="agent-grid" style="margin-bottom: 16px;">
-    <div class="agent-card" onclick="alert('🤖 智能调价Agent 启动中...\n\n分析 3 个广告计划表现...\n识别 AD-24076 ROAS 偏低...\n输出调价建议：缩减预算 50% + 复制新建测试组...\n✅ 建议已生成，请审核后执行')">
-      <div class="agent-card-status idle"></div>
-      <div class="agent-card-icon">💰</div>
-      <div class="agent-card-body">
-        <div class="agent-card-title">智能调价 Agent</div>
-        <div class="agent-card-desc">分析计划表现 → 识别低效计划 → 输出调价/关停建议</div>
-      </div>
-    </div>
-    <div class="agent-card" onclick="alert('🤖 素材测试Agent 启动中...\n\n分析当前素材 CTR/CVR...\n生成新素材方向建议...\n✅ 已生成 2 组新素材方案')">
-      <div class="agent-card-status idle"></div>
-      <div class="agent-card-icon">🎨</div>
-      <div class="agent-card-body">
-        <div class="agent-card-title">素材测试 Agent</div>
-        <div class="agent-card-desc">分析素材表现 → 生成测试方案 → 追踪测试结果</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-label">广告消耗</div><div class="stat-value">¥18,640</div><div class="stat-trend trend-up">↑ 6.2%</div></div>
-    <div class="stat-card"><div class="stat-label">广告曝光</div><div class="stat-value">486,200</div><div class="stat-trend trend-up">↑ 14.7%</div></div>
-    <div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">需 GMV 归因</div></div>
-    <div class="stat-card"><div class="stat-label">运行中计划</div><div class="stat-value">3</div><div class="stat-trend">1 个需观察</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📋 广告计划 <span>计划 → 商品 ID → 产出 · 点击调用Agent优化</span></div>
-    <div class="desktop-table-wrap">
-      <table class="desktop-table">
-        <thead><tr><th>计划 ID</th><th>广告组</th><th>商品 ID</th><th>花费</th><th>曝光</th><th>CTR</th><th>CVR</th><th>状态</th><th>Agent</th></tr></thead>
-        <tbody>
-          <tr><td><strong>AD-24081</strong></td><td>US_Top_Summer</td><td>100176</td><td style="font-weight:600;">¥8,420</td><td>221,400</td><td>2.8%</td><td><span style="color:#94a3b8;">待导入</span></td><td><span class="tag tag-green">运行中</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n\n计划：AD-24081\n结论：表现正常，建议保持当前预算')">分析</span></td></tr>
-          <tr><td><strong>AD-24076</strong></td><td>US_Test_A</td><td>100238</td><td style="font-weight:600;">¥5,180</td><td>140,600</td><td>1.6%</td><td><span style="color:#94a3b8;">待导入</span></td><td><span class="tag tag-yellow">需观察</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n\n计划：AD-24076\n结论：CTR 1.6% 偏低，建议：\n1. 缩减预算 50%\n2. 复制新建 2 组测试不同素材\n3. 原素材更换首图')">优化</span></td></tr>
-          <tr><td><strong>AD-24069</strong></td><td>TH_Retarget</td><td>100091</td><td style="font-weight:600;">¥5,040</td><td>124,200</td><td>3.1%</td><td><span style="color:#94a3b8;">待导入</span></td><td><span class="tag tag-blue">待归因</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 归因分析Agent 分析中...\n\n计划：AD-24069\n任务：建立商品级 GMV 归因...\n状态：需要导入归因字段')">归因</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="mobile-card-list">
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">AD-24081</span><span class="tag tag-green">运行中</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">广告组</span><span class="mobile-data-card-value">US_Top_Summer</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品 ID</span><span class="mobile-data-card-value">100176</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">花费</span><span class="mobile-data-card-value" style="font-weight:600;">¥8,420</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">221,400</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">CTR</span><span class="mobile-data-card-value">2.8%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n计划：AD-24081\n结论：表现正常，建议保持当前预算')">分析</span></div>
-      </div>
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">AD-24076</span><span class="tag tag-yellow">需观察</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">广告组</span><span class="mobile-data-card-value">US_Test_A</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品 ID</span><span class="mobile-data-card-value">100238</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">花费</span><span class="mobile-data-card-value" style="font-weight:600;">¥5,180</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">140,600</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">CTR</span><span class="mobile-data-card-value">1.6%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n计划：AD-24076\n结论：CTR 偏低，建议缩减预算+复制测试')">优化</span></div>
-      </div>
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">AD-24069</span><span class="tag tag-blue">待归因</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">广告组</span><span class="mobile-data-card-value">TH_Retarget</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品 ID</span><span class="mobile-data-card-value">100091</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">花费</span><span class="mobile-data-card-value" style="font-weight:600;">¥5,040</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">124,200</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">CTR</span><span class="mobile-data-card-value">3.1%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 归因分析Agent 分析中...\n计划：AD-24069\n状态：需要导入归因字段')">归因</span></div>
-      </div>
-    </div>
-    <div style="margin-top:10px;font-size:12px;color:#64748b;">CVR 与 ROAS 需要商品级 GMV 归因字段支持；缺少字段时显示"待导入"，不以 0 代替未知。</div>
-  </div>
-</div>
-
-<!-- ========== 5. 自营短视频（合并商品与发布） ========== -->
-<div id="page-videos" class="page">
-  <div class="page-header">
-    <div class="page-title">🎬 自营短视频 + 商品发布</div>
-    <div class="page-subtitle">发布数量、商品数据、内容指标统一查看 · Agent 内容生成与排期</div>
-  </div>
-
-  <div class="agent-grid" style="margin-bottom: 16px;">
-    <div class="agent-card" onclick="alert('🤖 内容生成Agent 启动中...\n\n分析高转化商品特征...\n生成 3 条视频脚本...\n推荐最佳发布时间...\n✅ 脚本已生成，请审核后发布')">
-      <div class="agent-card-status idle"></div>
-      <div class="agent-card-icon">✍️</div>
-      <div class="agent-card-body">
-        <div class="agent-card-title">内容生成 Agent</div>
-        <div class="agent-card-desc">分析爆款特征 → 生成脚本/文案 → 推荐发布时间</div>
-      </div>
-    </div>
-    <div class="agent-card" onclick="alert('🤖 发布排期Agent 启动中...\n\n分析 US 市场最佳时段...\n结合商品库存与活动节奏...\n生成 7 天发布排期表...\n✅ 排期已生成')">
-      <div class="agent-card-status idle"></div>
-      <div class="agent-card-icon">📅</div>
-      <div class="agent-card-body">
-        <div class="agent-card-title">发布排期 Agent</div>
-        <div class="agent-card-desc">分析最佳时段 → 结合商品节奏 → 生成发布日历</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-label">今日自营发布</div><div class="stat-value">32</div><div class="stat-trend">全部店铺</div></div>
-    <div class="stat-card"><div class="stat-label">有发布记录商品</div><div class="stat-value">11</div><div class="stat-trend">当前窗口</div></div>
-    <div class="stat-card"><div class="stat-label">近7天播放</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">后台历史字段缺失</div></div>
-    <div class="stat-card"><div class="stat-label">近7天内容GMV</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">需商品归因</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📋 商品发布数据明细 <span>商品 ID 是分析与动作跟踪主键</span></div>
-    <div class="desktop-table-wrap">
-      <table class="desktop-table">
-        <thead><tr><th>商品 ID</th><th>商品 / 店铺</th><th>发布数量</th><th>曝光</th><th>点击率</th><th>成交转化</th><th>GMV</th><th>状态</th></tr></thead>
-        <tbody>
-          <tr><td><strong>100176</strong></td><td>3D磁吸积木套装<br><span style="font-size:11px;color:#64748b;">US-旗舰店</span></td><td>26</td><td>486,200</td><td>4.82%</td><td>4.80%</td><td style="font-weight:600;">¥42,680</td><td><span class="tag tag-green">表现良好</span></td></tr>
-          <tr><td><strong>100238</strong></td><td>儿童户外泡泡机<br><span style="font-size:11px;color:#64748b;">US-日用店</span></td><td>18</td><td>312,600</td><td>3.91%</td><td>1.72%</td><td style="font-weight:600;">¥18,420</td><td><span class="tag tag-red">需处理</span></td></tr>
-          <tr><td><strong>100091</strong></td><td>益智拼图礼盒<br><span style="font-size:11px;color:#64748b;">TH-主店</span></td><td>15</td><td>284,100</td><td>2.84%</td><td>2.20%</td><td style="font-weight:600;">¥15,760</td><td><span class="tag tag-yellow">需观察</span></td></tr>
-          <tr><td><strong>100314</strong></td><td>儿童绘画水彩笔<br><span style="font-size:11px;color:#64748b;">US-旗舰店</span></td><td>13</td><td>198,400</td><td>3.48%</td><td>3.90%</td><td style="font-weight:600;">¥12,360</td><td><span class="tag tag-green">表现良好</span></td></tr>
-          <tr><td><strong>100407</strong></td><td>磁力迷宫玩具<br><span style="font-size:11px;color:#64748b;">TH-主店</span></td><td>9</td><td>166,800</td><td>2.19%</td><td>1.48%</td><td style="font-weight:600;">¥8,120</td><td><span class="tag tag-red">需处理</span></td></tr>
-          <tr><td><strong>100512</strong></td><td>折叠儿童画板<br><span style="font-size:11px;color:#64748b;">US-日用店</span></td><td>11</td><td>143,200</td><td>3.02%</td><td>2.64%</td><td style="font-weight:600;">¥7,680</td><td><span class="tag tag-yellow">需观察</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="mobile-card-list">
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">100176 · 3D磁吸积木套装</span><span class="tag tag-green">表现良好</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">US-旗舰店</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">发布数量</span><span class="mobile-data-card-value">26</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">486,200</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">点击率</span><span class="mobile-data-card-value">4.82%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">成交转化</span><span class="mobile-data-card-value">4.80%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">GMV</span><span class="mobile-data-card-value" style="font-weight:600;">¥42,680</span></div>
-      </div>
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">100238 · 儿童户外泡泡机</span><span class="tag tag-red">需处理</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">US-日用店</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">发布数量</span><span class="mobile-data-card-value">18</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">312,600</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">点击率</span><span class="mobile-data-card-value">3.91%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">成交转化</span><span class="mobile-data-card-value">1.72%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">GMV</span><span class="mobile-data-card-value" style="font-weight:600;">¥18,420</span></div>
-      </div>
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">100091 · 益智拼图礼盒</span><span class="tag tag-yellow">需观察</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">TH-主店</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">发布数量</span><span class="mobile-data-card-value">15</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">284,100</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">点击率</span><span class="mobile-data-card-value">2.84%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">成交转化</span><span class="mobile-data-card-value">2.20%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">GMV</span><span class="mobile-data-card-value" style="font-weight:600;">¥15,760</span></div>
-      </div>
-    </div>
-    <div style="margin-top:10px;font-size:12px;color:#64748b;">发布数量按日期、商品 ID 汇总。公开主页播放量只能标记为"当前快照"，不能反推近 7 天后台播放。</div>
-  </div>
-
-  <div class="two-col">
-    <div class="card">
-      <div class="card-title">📈 每日发布趋势 <span>近 7 天</span></div>
-      <div style="display:flex;align-items:flex-end;gap:8px;height:140px;padding:14px 0;">
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">18</div><div style="height:70px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-22</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">25</div><div style="height:100px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-23</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">22</div><div style="height:85px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-24</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">31</div><div style="height:125px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-25</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">27</div><div style="height:108px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-26</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">20</div><div style="height:76px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-27</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#0f172a;">32</div><div style="height:130px;background:linear-gradient(to top,#0f172a,#334155);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600;">08-28</div></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">⚠️ 内容数据边界</div>
-      <div class="alert alert-info" style="margin-bottom:10px;"><span>ℹ️</span><span>一次公开主页读取到的播放量，只能显示为"公开当前快照合计"。没有重复快照，不能画播放增长曲线。</span></div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <div style="padding:10px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;"><div style="font-weight:600;color:#166534;font-size:13px;">1. 后台播放历史</div><div style="font-size:12px;color:#15803d;margin-top:2px;">导入 TikTok Studio / Seller Center CSV 后显示。</div></div>
-        <div style="padding:10px;background:#fefce8;border-radius:8px;border:1px solid #fde68a;"><div style="font-weight:600;color:#854d0e;font-size:13px;">2. 发布数量</div><div style="font-size:12px;color:#a16207;margin-top:2px;">按日期与账号的发布记录汇总。</div></div>
-        <div style="padding:10px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;"><div style="font-weight:600;color:#1e40af;font-size:13px;">3. GMV 归因</div><div style="font-size:12px;color:#1e3a8a;margin-top:2px;">必须有视频或商品归因字段，否则保持待导入。</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== 6. 动作验证 ========== -->
-<div id="page-validation" class="page">
-  <div class="page-header">
-    <div class="page-title">✅ 运营动作有效性验证</div>
-    <div class="page-subtitle">按 T+1 / T+3 / T+7 追踪真实数据变化 · Agent 自动追踪与判定</div>
-  </div>
-
-  <div class="agent-grid" style="margin-bottom: 16px;">
-    <div class="agent-card" onclick="alert('🤖 效果追踪Agent 启动中...\n\n扫描全部验证队列...\n对比 T+1/T+3/T+7 基线数据...\n自动判定有效/无效...\n✅ 追踪完成：2 条有效、1 条待验证、2 条无效')">
-      <div class="agent-card-status running"></div>
-      <div class="agent-card-icon">📊</div>
-      <div class="agent-card-body">
-        <div class="agent-card-title">效果追踪 Agent</div>
-        <div class="agent-card-desc">自动对比基线 → 追踪指标变化 → 判定有效/无效</div>
-      </div>
-    </div>
-    <div class="agent-card" onclick="alert('🤖 知识沉淀Agent 启动中...\n\n扫描验证有效的动作...\n提取关键要素（商品ID、动作、效果、周期）...\n生成知识库卡片...\n✅ 2 条有效动作已生成知识卡片，等待审核入库')">
-      <div class="agent-card-status idle"></div>
-      <div class="agent-card-icon">📚</div>
-      <div class="agent-card-body">
-        <div class="agent-card-title">知识沉淀 Agent</div>
-        <div class="agent-card-desc">提取有效动作要素 → 生成知识卡片 → 推送审核</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-label">验证有效</div><div class="stat-value" style="color:#10b981;">2</div><div class="stat-trend">已达到验证节点</div></div>
-    <div class="stat-card"><div class="stat-label">待验证</div><div class="stat-value" style="color:#f59e0b;">1</div><div class="stat-trend">暂不下结论</div></div>
-    <div class="stat-card"><div class="stat-label">验证无效</div><div class="stat-value" style="color:#ef4444;">2</div><div class="stat-trend">需复盘或停止</div></div>
-    <div class="stat-card"><div class="stat-label">验证队列总计</div><div class="stat-value">5</div><div class="stat-trend">条记录</div></div>
-  </div>
-
-  <div class="card" style="margin-bottom:14px;">
-    <div class="card-title">✅ 验证有效 <span>已达到验证节点 · Agent 已判定</span></div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <div style="padding:14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
-          <div><div style="font-weight:600;color:#166534;">2026-08-25 · 商品 ID-100176 · T+3 验证</div><div style="font-size:13px;color:#15803d;margin-top:2px;">优化主图与详情页</div></div>
-          <span class="tag tag-green">验证有效</span>
-        </div>
-        <div style="font-size:13px;color:#334155;background:#fff;padding:10px 12px;border-radius:6px;">T+1 CVR 提升 0.8%，T+3 CVR 提升 1.7%，判定有效</div>
-        <div style="margin-top:8px;display:flex;gap:6px;">
-          <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 知识沉淀Agent 已接单\n\n动作：优化主图与详情页\n商品：100176\n效果：CVR +1.7%\n周期：T+3\n✅ 已生成知识卡片，推送至"运营知识库-待审核"')">📚 沉淀到知识库</span>
-        </div>
-      </div>
-      <div style="padding:14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
-          <div><div style="font-weight:600;color:#166534;">2026-08-23 · 商品 ID-100314 · T+7 验证</div><div style="font-size:13px;color:#15803d;margin-top:2px;">调整价格</div></div>
-          <span class="tag tag-green">验证有效</span>
-        </div>
-        <div style="font-size:13px;color:#334155;background:#fff;padding:10px 12px;border-radius:6px;">T+3 销量提升 18%，T+7 GMV 提升 26%，判定有效</div>
+    <di…6459 tokens truncated…升 26%，判定有效</div>
         <div style="margin-top:8px;display:flex;gap:6px;">
           <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 知识沉淀Agent 已接单\n\n动作：调整价格（组合装）\n商品：100314\n效果：GMV +26%\n周期：T+7\n✅ 已生成知识卡片，推送至"运营知识库-待审核"')">📚 沉淀到知识库</span>
         </div>
@@ -1872,3 +1630,4 @@ window.addEventListener('resize', checkResponsive);
 
 </body>
 </html>
+
