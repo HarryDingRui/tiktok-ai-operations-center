@@ -2,12 +2,16 @@
 
 这是网站自动读取的主数据文件：`data/operations-data.json`。
 
+运营填报请使用同目录的 `tiktok-ai-operations-center-wps-kdocs-template.xlsx`，不要直接让运营编辑 JSON。该模板适合上传到 WPS/Kdocs，黄色区域是填报区，蓝色区域是公式或网站使用字段。
+
 ## 更新方式
 
 1. 在 GitHub 网页打开本文件，点击编辑。
 2. 按现有字段结构替换真实数据；不要删除字段名。
 3. 提交到 `main` 分支。
 4. 等 GitHub Pages 发布完成后，刷新网站并点击“同步云端数据”。
+
+如果使用 WPS/Kdocs：先填写模板，再导出对应 CSV，使用网站“数据接入”页导入；若要让所有访问者看到同一份数据，仍需由有权限的人更新本文件并等待 Pages 发布。
 
 ## 数据分区
 

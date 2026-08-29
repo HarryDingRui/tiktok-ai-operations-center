@@ -9,6 +9,7 @@
 - 运营动作有效性验证
 - 运营已执行清单
 - 日报闭环、商品排行、数据导入
+- WPS/Kdocs 运营填报模板（`data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`）
 - CSV 数据仅在当前浏览器处理，不会自动上传服务器
 
 ## 部署到 GitHub Pages
@@ -24,3 +25,9 @@
 ## 数据与登录说明
 
 当前版本是纯静态 GitHub Pages 网站，默认使用演示数据，也支持在浏览器内导入真实 CSV。GitHub Pages 本身不提供安全的账号密码验证；如果后续需要真实登录，需要再接入带后端认证的部署方式，不能把密码直接写入 HTML。
+
+## WPS/Kdocs 填报
+
+运营人员优先使用 `data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`，上传到 WPS/Kdocs 后填写黄色区域。模板包含店铺日汇总、商品数据、运营动作已执行清单、发布趋势、BD 达人、广告计划和短视频数据等工作表。
+
+当前 GitHub Pages 仍读取 `data/operations-data.json` 作为网站发布数据。WPS/Kdocs 填写完成后，需要导出对应 CSV 或将整理后的数据更新到发布数据源，再点击网站“同步网站数据”；静态网页不会直接读取私有 WPS/Kdocs 文档。
