@@ -365,5 +365,380 @@
     "sevenDayGmv": null,
     "viewSource": "后台历史字段缺失",
     "gmvSource": "需商品归因"
-  }
+  },
+  "knowledgePending": 5,
+  "knowledge": [
+    {
+      "id": "K-100176",
+      "title": "替换首图并增加使用场景后，CVR 提升 1.7%",
+      "category": "主图优化",
+      "scene": "玩具类目",
+      "node": "T+3 验证",
+      "date": "2026-08-25",
+      "summary": "针对磁吸积木套装，核首图从纯白底图替换为儿童实际玩耍场景图，并在第 2-3 张图增加收纳场景和亲子互动场景。T+1 CVR 提升 0.8%，T+3 稳定提升 1.7%。",
+      "evidence": "T+1 CVR 提升 0.8% · T+3 CVR 提升 1.7%",
+      "metrics": [
+        {
+          "value": "+1.7%",
+          "label": "CVR 提升"
+        },
+        {
+          "value": "¥42,680",
+          "label": "验证期 GMV"
+        },
+        {
+          "value": "3 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100176",
+      "shop": "US-旗舰店",
+      "owner": "运营A",
+      "initials": "A",
+      "avatar": "cyan",
+      "reuseCount": 5,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100314",
+      "title": "组合装定价策略：单件→三件套，GMV 提升 26%",
+      "category": "价格策略",
+      "scene": "文具/绘画",
+      "node": "T+7 验证",
+      "date": "2026-08-23",
+      "summary": "儿童绘画水彩笔将单件 $4.99 调整为三件套 $11.99（单件折合 $3.99）。T+3 销量提升 18%，T+7 GMV 累计提升 26%，客单价提升同时 CVR 保持稳定。",
+      "evidence": "T+3 销量提升 18% · T+7 GMV 累计提升 26%",
+      "metrics": [
+        {
+          "value": "+26%",
+          "label": "GMV 提升"
+        },
+        {
+          "value": "+18%",
+          "label": "销量提升"
+        },
+        {
+          "value": "7 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100314",
+      "shop": "US-旗舰店",
+      "owner": "运营A",
+      "initials": "A",
+      "avatar": "yellow",
+      "reuseCount": 3,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100238",
+      "title": "标题前置核心卖点 + 年龄标签，CTR 提升 0.9%",
+      "category": "标题优化",
+      "scene": "户外玩具",
+      "node": "T+7 验证",
+      "date": "2026-08-20",
+      "summary": "泡泡机标题从 “Bubble Machine for Kids” 调整为 “[3-8岁] 全自动泡泡机｜户外派对必备｜无需大泡泡”。核心卖点前置，增加年龄标签和使用场景，CTR 从 3.1% 提升至 4.0%。",
+      "evidence": "CTR 提升 0.9% · 曝光转化提升 12%",
+      "metrics": [
+        {
+          "value": "+0.9%",
+          "label": "CTR 提升"
+        },
+        {
+          "value": "+12%",
+          "label": "曝光转化"
+        },
+        {
+          "value": "7 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100238",
+      "shop": "US-日用店",
+      "owner": "运营B",
+      "initials": "B",
+      "avatar": "purple",
+      "reuseCount": 8,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100407",
+      "title": "寄样后 5 天内未回传视频，主动跟进可提升 40% 交付率",
+      "category": "达人合作",
+      "scene": "家居/收纳",
+      "node": "T+7 验证",
+      "date": "2026-08-15",
+      "summary": "建立“寄样后 D+3 提醒、D+5 确认排期、D+7 最后跟进”的三段式跟进节奏。对比无跟进组，达人视频交付率从 58% 提升至 82%，平均合作周期缩短 2.3 天。",
+      "evidence": "交付率提升 40% · 周期缩短 2.3 天",
+      "metrics": [
+        {
+          "value": "+40%",
+          "label": "交付率提升"
+        },
+        {
+          "value": "-2.3 天",
+          "label": "周期缩短"
+        },
+        {
+          "value": "7 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100407",
+      "shop": "TH-主店",
+      "owner": "运营C",
+      "initials": "C",
+      "avatar": "purple",
+      "reuseCount": 12,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100512",
+      "title": "广告素材 2 条并行测试，CTR 提升 0.8%",
+      "category": "广告投放",
+      "scene": "玩具类目",
+      "node": "T+3 验证",
+      "date": "2026-08-12",
+      "summary": "同一商品同步测试“使用结果展示”和“亲子互动场景”两条素材，保持预算与受众一致，优胜素材继续放量，避免单条素材误判。",
+      "evidence": "CTR 提升 0.8% · 点击量提升 15%",
+      "metrics": [
+        {
+          "value": "+0.8%",
+          "label": "CTR 提升"
+        },
+        {
+          "value": "+15%",
+          "label": "点击提升"
+        },
+        {
+          "value": "3 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100512",
+      "shop": "US-日用店",
+      "owner": "运营A",
+      "initials": "A",
+      "avatar": "cyan",
+      "reuseCount": 6,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100523",
+      "title": "直播切片挂车，提升商品卡承接",
+      "category": "内容发布",
+      "scene": "亲子玩具",
+      "node": "T+3 验证",
+      "date": "2026-08-10",
+      "summary": "将直播中高互动片段剪成 15-25 秒短视频，首屏保留商品使用结果，并在前 3 秒完成挂车提示。",
+      "evidence": "GMV 提升 22% · 订单提升 11%",
+      "metrics": [
+        {
+          "value": "+22%",
+          "label": "GMV 提升"
+        },
+        {
+          "value": "+11%",
+          "label": "订单提升"
+        },
+        {
+          "value": "3 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100523",
+      "shop": "US-旗舰店",
+      "owner": "运营B",
+      "initials": "B",
+      "avatar": "purple",
+      "reuseCount": 4,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100531",
+      "title": "低价 SKU 引流后用组合装承接",
+      "category": "价格策略",
+      "scene": "商品卡",
+      "node": "T+7 验证",
+      "date": "2026-08-08",
+      "summary": "保留一个低价 SKU 获取点击，再在详情页和加购环节突出组合装，观察销量与利润的平衡变化。",
+      "evidence": "销量提升 14% · GMV 提升 9%",
+      "metrics": [
+        {
+          "value": "+14%",
+          "label": "销量提升"
+        },
+        {
+          "value": "+9%",
+          "label": "GMV 提升"
+        },
+        {
+          "value": "7 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100531",
+      "shop": "TH-主店",
+      "owner": "运营C",
+      "initials": "C",
+      "avatar": "yellow",
+      "reuseCount": 2,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100544",
+      "title": "商品详情页首屏增加 FAQ，减少承接疑虑",
+      "category": "主图优化",
+      "scene": "商品承接",
+      "node": "T+3 验证",
+      "date": "2026-08-05",
+      "summary": "把尺寸、适用年龄和使用方式放到详情页首屏，减少用户在评论区反复询问造成的流失。",
+      "evidence": "CVR 提升 1.1% · 成交提升 8%",
+      "metrics": [
+        {
+          "value": "+1.1%",
+          "label": "CVR 提升"
+        },
+        {
+          "value": "+8%",
+          "label": "成交提升"
+        },
+        {
+          "value": "3 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100544",
+      "shop": "US-旗舰店",
+      "owner": "运营A",
+      "initials": "A",
+      "avatar": "cyan",
+      "reuseCount": 3,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100552",
+      "title": "达人佣金分层与优质达人复投",
+      "category": "达人合作",
+      "scene": "户外玩具",
+      "node": "T+7 验证",
+      "date": "2026-08-02",
+      "summary": "按照履约率、内容质量和成交结果分层佣金，对高质量达人提供二次合作优先权。",
+      "evidence": "履约率提升 18% · 视频回传提升 26%",
+      "metrics": [
+        {
+          "value": "+18%",
+          "label": "履约率提升"
+        },
+        {
+          "value": "+26%",
+          "label": "回传提升"
+        },
+        {
+          "value": "7 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100552",
+      "shop": "US-日用店",
+      "owner": "运营B",
+      "initials": "B",
+      "avatar": "purple",
+      "reuseCount": 1,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100568",
+      "title": "短视频前 3 秒直接展示使用结果",
+      "category": "内容发布",
+      "scene": "玩具类目",
+      "node": "T+3 验证",
+      "date": "2026-07-29",
+      "summary": "删除冗长开场，将产品实际使用效果放到前 3 秒，再补充玩法和购买理由。",
+      "evidence": "CTR 提升 0.6% · 完播率提升 19%",
+      "metrics": [
+        {
+          "value": "+0.6%",
+          "label": "CTR 提升"
+        },
+        {
+          "value": "+19%",
+          "label": "完播提升"
+        },
+        {
+          "value": "3 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100568",
+      "shop": "TH-主店",
+      "owner": "运营C",
+      "initials": "C",
+      "avatar": "yellow",
+      "reuseCount": 2,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100577",
+      "title": "广告落地页按 SKU 拆分，减少跳失",
+      "category": "广告投放",
+      "scene": "文具类目",
+      "node": "T+7 验证",
+      "date": "2026-07-26",
+      "summary": "广告素材、落地页和商品变体保持一致，避免用户点击后还要重新寻找对应 SKU。",
+      "evidence": "ROAS 提升 21% · CVR 提升 13%",
+      "metrics": [
+        {
+          "value": "+21%",
+          "label": "ROAS 提升"
+        },
+        {
+          "value": "+13%",
+          "label": "CVR 提升"
+        },
+        {
+          "value": "7 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100577",
+      "shop": "US-旗舰店",
+      "owner": "运营A",
+      "initials": "A",
+      "avatar": "cyan",
+      "reuseCount": 1,
+      "status": "已验证"
+    },
+    {
+      "id": "K-100590",
+      "title": "周末晚间发布窗口，提升自然流量",
+      "category": "内容发布",
+      "scene": "全店",
+      "node": "T+7 验证",
+      "date": "2026-07-22",
+      "summary": "将重点视频从工作日上午调整到周末晚间发布，连续观察播放、点击和商品成交的变化。",
+      "evidence": "播放提升 12% · GMV 提升 16%",
+      "metrics": [
+        {
+          "value": "+12%",
+          "label": "播放提升"
+        },
+        {
+          "value": "+16%",
+          "label": "GMV 提升"
+        },
+        {
+          "value": "7 天",
+          "label": "验证周期"
+        }
+      ],
+      "sourceProductId": "100590",
+      "shop": "全部店铺",
+      "owner": "运营B",
+      "initials": "B",
+      "avatar": "purple",
+      "reuseCount": 0,
+      "status": "已验证"
+    }
+  ]
 }
