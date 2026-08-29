@@ -38,3 +38,11 @@
 运营人员优先使用 `data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`，上传到 WPS/Kdocs 后填写黄色区域。模板包含填报首页、云文档说明、店铺字典、店铺日汇总、商品数据、五组链接对比排行、预警规则、运营动作已执行清单、发布趋势、BD 达人、广告计划、短视频数据、运营知识库、Agent 调度和字段字典等工作表。
 
 `data/operations-data.json`、`data/real-store-data.js` 和 WPS/Kdocs 模板作为数据接入资产保留；当前 v3 页面不会直接读取私有 WPS/Kdocs 文档。要实现实时刷新，需要增加后端同步/API，并将静态快照替换为接口数据。
+
+## 账号数据看板
+
+账号播放、粉丝、视频发布与公开内容监测页：`account-board/`。GitHub Pages 地址：
+`https://harrydingrui.github.io/tiktok-ai-operations-center/account-board/`
+
+该页面只展示已验证的 TikTok 公开主页快照；公开当前播放量不冒充后台近 14 天指标，缺失字段保持“待导入”。
+
