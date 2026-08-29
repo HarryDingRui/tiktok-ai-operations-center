@@ -27,6 +27,11 @@
 
   const STORAGE_KEY = "tiktok-real-store-data-v2";
   const LEGACY_STORAGE_KEY = "tiktok-real-store-data-v1";
+  const DATABASE_NAME = "tiktok-ai-operations-center";
+  const DATABASE_VERSION = 1;
+  const DATABASE_STORE = "datasets";
+  const DATABASE_KEY = "real-store-data-v2";
+  let databasePromise = null;
 
   function parseNumber(value) {
     if (value == null || value === "") return null;
@@ -188,22 +193,104 @@
     return { ...data, version: 2, stores: data.stores.map(normalizeStore) };
   }
 
-  function loadSavedData() {
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (!saved) return;
-      const parsed = JSON.parse(saved);
-      if (parsed && Array.isArray(parsed.stores)) currentData = normalizeData(parsed);
-    } catch (error) {
-      console.warn("Unable to restore local store data", error);
-    }
+  function openDatabase() {
+    if (!window.indexedDB) return Promise.reject(new Error("当前浏览器不支持大容量本地数据存储"));
+    if (databasePromise) return databasePromise;
+    databasePromise = new Promise((resolve, reject) => {
+      const request = window.indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains(DATABASE_STORE)) database.createObjectStore(DATABASE_STORE);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("无法打开本地数据存储"));
+      request.onblocked = () => reject(new Error("本地数据存储正在被其他页面占用，请关闭旧页面后重试"));
+    }).catch((error) => {
+      databasePromise = null;
+      throw error;
+    });
+    return databasePromise;
   }
 
-  function saveCurrentData() {
+  async function readIndexedData() {
+    const database = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction(DATABASE_STORE, "readonly");
+      const request = transaction.objectStore(DATABASE_STORE).get(DATABASE_KEY);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error("无法读取本地历史快照"));
+      transaction.onabort = () => reject(transaction.error || new Error("读取本地历史快照已中止"));
+    });
+  }
+
+  async function writeIndexedData(data) {
+    const database = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction(DATABASE_STORE, "readwrite");
+      transaction.objectStore(DATABASE_STORE).put(data, DATABASE_KEY);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error("无法保存本地历史快照"));
+      transaction.onabort = () => reject(transaction.error || new Error("保存本地历史快照已中止"));
+    });
+  }
+
+  async function clearIndexedData() {
+    if (!window.indexedDB) return;
+    const database = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction(DATABASE_STORE, "readwrite");
+      transaction.objectStore(DATABASE_STORE).delete(DATABASE_KEY);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error || new Error("无法清除本地历史快照"));
+      transaction.onabort = () => reject(transaction.error || new Error("清除本地历史快照已中止"));
+    });
+  }
+
+  function readLegacySavedData() {
+    const saved = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+    return parsed && Array.isArray(parsed.stores) ? parsed : null;
+  }
+
+  async function loadSavedData() {
+    let savedData = null;
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+      savedData = await readIndexedData();
     } catch (error) {
-      console.warn("Unable to save local store data", error);
+      console.warn("Unable to read IndexedDB store data", error);
+    }
+    if (!savedData) {
+      try {
+        savedData = readLegacySavedData();
+        if (savedData) {
+          await writeIndexedData(savedData);
+          window.localStorage.removeItem(STORAGE_KEY);
+          window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+        }
+      } catch (error) {
+        console.warn("Unable to migrate legacy store data", error);
+      }
+    }
+    if (!savedData || !Array.isArray(savedData.stores)) return false;
+    currentData = normalizeData(savedData);
+    return true;
+  }
+
+  async function saveCurrentData() {
+    try {
+      await writeIndexedData(currentData);
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    } catch (indexedError) {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+      } catch (localStorageError) {
+        const error = new Error("数据已解析，但浏览器存储空间不足，未能保存；请释放浏览器空间后重试");
+        error.cause = localStorageError;
+        throw error;
+      }
+      console.warn("IndexedDB unavailable; saved with localStorage fallback", indexedError);
     }
   }
 
@@ -215,7 +302,10 @@
           const workbook = xlsxApi.read(reader.result, { type: "array", cellText: true, cellDates: true });
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
           const rows = xlsxApi.utils.sheet_to_json(firstSheet, { header: 1, defval: null, raw: false });
-          const headerRowIndex = rows.findIndex((row) => row.some((cell) => cell === "商品 ID") && row.some((cell) => cell === "商品名"));
+          const headerRowIndex = rows.findIndex((row) => {
+            const normalizedCells = row.map((cell) => String(cell ?? "").trim());
+            return normalizedCells.includes("商品 ID") && normalizedCells.includes("商品名");
+          });
           if (headerRowIndex < 0) throw new Error("未找到“商品名 / 商品 ID”表头");
           const headers = rows[headerRowIndex].map((cell) => String(cell ?? "").trim());
           const columns = {
@@ -270,10 +360,19 @@
       frame.onload = () => {
         xlsxApi = frame.contentWindow && frame.contentWindow.XLSX;
         if (xlsxApi) resolve(xlsxApi);
-        else reject(new Error("Excel 解析组件未加载"));
+        else {
+          frame.remove();
+          reject(new Error("Excel 解析组件未加载"));
+        }
       };
-      frame.onerror = () => reject(new Error("Excel 解析组件加载失败"));
+      frame.onerror = () => {
+        frame.remove();
+        reject(new Error("Excel 解析组件加载失败"));
+      };
       document.body.appendChild(frame);
+    }).catch((error) => {
+      xlsxLibraryPromise = null;
+      throw error;
     });
     return xlsxLibraryPromise;
   }
@@ -702,7 +801,10 @@
     const files = [...(event.target.files || [])];
     if (!files.length) return;
     updateUploadStatus(`正在解析 ${files.length} 个文件…`);
+    let previousData = currentData;
     try {
+      await dataReadyPromise;
+      previousData = currentData;
       await ensureXlsxLibrary();
       const importedSnapshots = await Promise.all(files.map(parseProductListFile));
       const invalidDate = importedSnapshots.find((snapshot) => !isDateKey(snapshot.reportDate));
@@ -716,7 +818,7 @@
         storeMap.set(storeName, store);
       });
       currentData = { ...currentData, version: 2, importedAt: new Date().toISOString().slice(0, 10), stores: [...storeMap.values()] };
-      saveCurrentData();
+      await saveCurrentData();
       selectedStore = "all";
       selectedDatePreset = "all";
       customStartDate = "";
@@ -725,10 +827,34 @@
       updateUploadStatus(`已导入 ${importedSnapshots.length} 个文件 · ${importedSnapshots.reduce((sum, snapshot) => sum + snapshot.productCount, 0)} 条商品`);
       window.alert(`✅ 数据导入完成\n\n${importedSnapshots.map((snapshot) => `${parseStoreFromFilename(snapshot.sourceFile)} · ${snapshot.reportDate}：${snapshot.productCount} 条商品`).join("\n")}\n\n历史快照已按店铺和日期保存。`);
     } catch (error) {
+      currentData = previousData;
+      renderAll();
       updateUploadStatus("导入失败，请检查文件格式", "error");
       window.alert(`❌ 导入失败\n\n${error.message || "无法识别该文件"}`);
     } finally {
       event.target.value = "";
+    }
+  }
+
+  async function resetLocalStoreData() {
+    const confirmed = window.confirm("确认清除当前浏览器导入的历史快照，并恢复网站公开快照吗？\n\n此操作不会删除你的原始 Excel 文件。");
+    if (!confirmed) return;
+    updateUploadStatus("正在恢复公开快照…");
+    try {
+      await dataReadyPromise;
+      await clearIndexedData();
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+      currentData = normalizeData(sourceData);
+      selectedStore = "all";
+      selectedDatePreset = "all";
+      customStartDate = "";
+      customEndDate = "";
+      renderAll();
+      updateUploadStatus("已恢复公开快照");
+    } catch (error) {
+      updateUploadStatus("恢复失败，请刷新后重试", "error");
+      window.alert(`❌ 恢复失败\n\n${error.message || "无法清除本地历史快照"}`);
     }
   }
 
@@ -769,9 +895,21 @@
     updateDataSourceStatus();
   }
 
-  loadSavedData();
   bindFilters();
   const fileInput = document.getElementById("real-store-file-input");
   if (fileInput) fileInput.addEventListener("change", handleFileImport);
+  const resetButton = document.getElementById("reset-real-store-data");
+  if (resetButton) resetButton.addEventListener("click", resetLocalStoreData);
   renderAll();
+  const dataReadyPromise = loadSavedData()
+    .then((restored) => {
+      if (restored) {
+        renderAll();
+        updateUploadStatus("已恢复当前浏览器历史快照");
+      }
+    })
+    .catch((error) => {
+      console.warn("Unable to restore local store data", error);
+      updateUploadStatus("公开快照已加载；本地历史读取失败", "error");
+    });
 })();

@@ -420,7 +420,8 @@ tbody tr:hover { background: oklch(0.24 0.03 240); }
   .sidebar { width: 100%; min-height: auto; padding: 14px 16px; border-right: 0; border-bottom: 1px solid oklch(0.22 0.025 240); }
   .brand-lockup { padding: 0 0 13px; }
   .account-switcher { display: none; }
-  .nav-list { display: flex; overflow-x: auto; padding: 0; gap: 5px; }
+  .nav-list { display: flex; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 0; gap: 5px; }
+  .nav-list::-webkit-scrollbar { display: none; }
   .nav-item { white-space: nowrap; padding: 8px 10px; }
   .sidebar-bottom { display: none; }
   .main-content { padding: 24px 15px; }
