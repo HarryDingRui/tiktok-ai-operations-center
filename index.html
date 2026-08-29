@@ -109,6 +109,7 @@ body {
 .real-data-status { display: inline-flex; align-items: center; gap: 5px; color: #15803d; font-weight: 600; }
 .real-data-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
 .real-data-note { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 12px; line-height: 1.6; }
+.real-field-grid { display: grid; grid-template-columns: repeat(5, minmax(130px, 1fr)); gap: 10px; }
 .real-product-table .long-text { max-width: 340px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; }
 .real-product-table .metric-positive { color: #16a34a; font-weight: 700; }
 .real-product-table .metric-muted { color: #94a3b8; }
@@ -126,8 +127,8 @@ body {
 .real-ranking-name { flex: 1; min-width: 0; color: #334155; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .real-ranking-value { color: #0f172a; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .real-ranking-empty { padding: 14px 4px; color: #92400e; font-size: 12px; line-height: 1.6; }
-@media (max-width: 1100px) { .real-ranking-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); } }
-@media (max-width: 768px) { .data-context-bar { align-items: flex-start; } .data-context-controls { width: 100%; } .data-context-select, .data-context-date-select, .data-context-date-input { flex: 1; min-width: 180px; } .data-context-date-custom { width: 100%; } .real-ranking-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .real-ranking-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); } .real-field-grid { grid-template-columns: repeat(3, minmax(130px, 1fr)); } }
+@media (max-width: 768px) { .data-context-bar { align-items: flex-start; } .data-context-controls { width: 100%; } .data-context-select, .data-context-date-select, .data-context-date-input { flex: 1; min-width: 180px; } .data-context-date-custom { width: 100%; } .real-ranking-grid { grid-template-columns: 1fr; } .real-field-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); } }
 
 /* ========== 统计卡片 ========== */
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }

@@ -41,11 +41,14 @@
 
   function summarizeProducts(products) {
     const totals = products.reduce((accumulator, product) => {
-      for (const key of ["gmv", "orders", "units", "exposure", "clicks", "addToCart"]) accumulator[key] += product[key] ?? 0;
+      for (const key of ["gmv", "orders", "skuOrders", "units", "customers", "exposure", "clicks", "addToCart"]) accumulator[key] += product[key] ?? 0;
       return accumulator;
-    }, { gmv: 0, orders: 0, units: 0, exposure: 0, clicks: 0, addToCart: 0 });
+    }, { gmv: 0, orders: 0, skuOrders: 0, units: 0, customers: 0, exposure: 0, clicks: 0, addToCart: 0 });
     totals.ctr = totals.exposure ? totals.clicks / totals.exposure * 100 : null;
     totals.cvr = totals.clicks ? totals.orders / totals.clicks * 100 : null;
+    totals.avgOrderValue = totals.skuOrders ? totals.gmv / totals.skuOrders : null;
+    totals.addToCartRate = totals.clicks ? totals.addToCart / totals.clicks * 100 : null;
+    totals.ctor = totals.clicks ? totals.skuOrders / totals.clicks * 100 : null;
     totals.productCount = products.length;
     return totals;
   }
@@ -203,8 +206,12 @@
     return date.toISOString().slice(0, 10);
   }
 
+  function storesForDateAnchor() {
+    return selectedStore === "all" ? currentData.stores : currentData.stores.filter((store) => store.name === selectedStore);
+  }
+
   function availableDateKeys() {
-    return [...new Set(currentData.stores.flatMap((store) => store.snapshots.map((snapshot) => snapshot.reportDate)).filter(isDateKey))].sort();
+    return [...new Set(storesForDateAnchor().flatMap((store) => store.snapshots.map((snapshot) => snapshot.reportDate)).filter(isDateKey))].sort();
   }
 
   function dateBounds() {
@@ -261,12 +268,15 @@
   function totalsInScope() {
     const products = productsInScope();
     const totals = products.reduce((accumulator, product) => {
-      for (const key of ["gmv", "orders", "units", "exposure", "clicks", "addToCart"]) accumulator[key] += product[key] ?? 0;
+      for (const key of ["gmv", "orders", "skuOrders", "units", "customers", "exposure", "clicks", "addToCart"]) accumulator[key] += product[key] ?? 0;
       return accumulator;
-    }, { gmv: 0, orders: 0, units: 0, exposure: 0, clicks: 0, addToCart: 0 });
+    }, { gmv: 0, orders: 0, skuOrders: 0, units: 0, customers: 0, exposure: 0, clicks: 0, addToCart: 0 });
     totals.productCount = products.length;
     totals.ctr = totals.exposure ? totals.clicks / totals.exposure * 100 : null;
     totals.cvr = totals.clicks ? totals.orders / totals.clicks * 100 : null;
+    totals.avgOrderValue = totals.skuOrders ? totals.gmv / totals.skuOrders : null;
+    totals.addToCartRate = totals.clicks ? totals.addToCart / totals.clicks * 100 : null;
+    totals.ctor = totals.clicks ? totals.skuOrders / totals.clicks * 100 : null;
     return totals;
   }
 
@@ -423,16 +433,27 @@
     const topProducts = productsInScope().sort((left, right) => (right.gmv ?? 0) - (left.gmv ?? 0)).slice(0, 12);
     const productRows = topProducts.map((product) => `<tr>
       <td>${escapeHtml(product.store)}</td><td>${escapeHtml(product.id)}</td><td><span class="long-text" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</span></td>
-      <td>${formatNumber(product.units, 0)}</td><td>${formatMoney(product.gmv)}</td><td>${formatNumber(product.orders, 0)}</td><td>${formatCompact(product.exposure)}</td><td>${formatPercent(product.ctor)}</td><td>${statusTag("已导入")}</td>
-    </tr>`).join("") || `<tr><td colspan="9" class="real-ranking-empty">当前日期范围暂无商品明细。</td></tr>`;
+      <td>${formatNumber(product.units, 0)}</td><td>${formatMoney(product.gmv)}</td><td>${formatNumber(product.orders, 0)}</td><td>${formatNumber(product.skuOrders, 0)}</td><td>${formatNumber(product.customers, 0)}</td><td>${formatMoney(product.avgOrderValue)}</td><td>${formatCompact(product.exposure)}</td><td>${formatNumber(product.clicks, 0)}</td><td>${formatPercent(product.ctr)}</td><td>${formatNumber(product.addToCart, 0)}</td><td>${formatPercent(product.addToCartRate)}</td><td>${formatPercent(product.ctor)}</td><td>${formatPercent(product.uniqueClickCvr)}</td><td>${statusTag("已导入")}</td>
+    </tr>`).join("") || `<tr><td colspan="17" class="real-ranking-empty">当前日期范围暂无商品明细。</td></tr>`;
+    const fieldCards = [
+      ["SKU订单数", formatNumber(totals.skuOrders, 0)], ["商品成交件数", formatNumber(totals.units, 0)],
+      ["预计客户数", formatNumber(totals.customers, 0)], ["平均订单金额", formatMoney(totals.avgOrderValue)],
+      ["商品点击量", formatNumber(totals.clicks, 0)], ["商品点击率", formatPercent(totals.ctr)],
+      ["加购次数", formatNumber(totals.addToCart, 0)], ["加购率", formatPercent(totals.addToCartRate)],
+      ["CTOR", formatPercent(totals.ctor)],
+    ].map(([label, value]) => `<div style="padding:12px 14px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;"><div style="font-size:12px;color:#64748b;">${label}</div><div style="margin-top:5px;font-size:18px;font-weight:700;color:#0f172a;">${value}</div></div>`).join("");
     container.innerHTML = `<div class="card real-data-card">
       <div class="card-title">✅ 已导入真实店铺数据 <span>${escapeHtml(scopeLabel())} · ${escapeHtml(dateRangeLabel())}</span></div>
       <div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>店铺</th><th>最新快照</th><th>商品数</th><th>GMV</th><th>订单数</th><th>曝光</th><th>成交转化率</th><th>状态</th></tr></thead><tbody>${storeRows}</tbody></table></div>
       <div class="real-data-note">当前页面按每个店铺在所选日期范围内的最新可用快照汇总，避免把快照重复相加；GMV 上涨/下降和 CVR 下降按范围内首个与最新快照、同一店铺同一商品 ID 匹配计算。范围内只有一个日期时，不生成趋势结论。</div>
     </div>
     <div class="card real-data-card">
+      <div class="card-title">📌 product_list 字段速览 <span>${escapeHtml(scopeLabel())} · 当前范围最新可用快照</span></div>
+      <div class="real-field-grid">${fieldCards}</div>
+    </div>
+    <div class="card real-data-card">
       <div class="card-title">📦 商品经营明细 Top12 <span>${formatNumber(totals.productCount, 0)} 个最新商品记录中按 GMV 排序</span></div>
-      <div class="desktop-table-wrap"><table class="desktop-table real-product-table"><thead><tr><th>店铺</th><th>商品 ID</th><th>商品名称</th><th>成交件数</th><th>GMV</th><th>订单数</th><th>曝光</th><th>CVR</th><th>状态</th></tr></thead><tbody>${productRows}</tbody></table></div>
+      <div class="desktop-table-wrap"><table class="desktop-table real-product-table"><thead><tr><th>店铺</th><th>商品 ID</th><th>商品名称</th><th>成交件数</th><th>GMV</th><th>订单数</th><th>SKU订单数</th><th>预计客户</th><th>均单金额</th><th>曝光</th><th>点击量</th><th>CTR</th><th>加购次数</th><th>加购率</th><th>CTOR</th><th>去重点击CVR</th><th>状态</th></tr></thead><tbody>${productRows}</tbody></table></div>
     </div>`;
   }
 
