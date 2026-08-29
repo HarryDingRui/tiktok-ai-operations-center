@@ -1,6 +1,6 @@
 # TikTok AI智能运营中控台
 
-这是一个可直接放入 GitHub 仓库并部署到 GitHub Pages 的静态网站。
+这是主管提供的 `tiktok_dashboard.html` v3（Agent Native）版本，已封装为可直接放入 GitHub 仓库并部署到 GitHub Pages 的静态网站。
 
 ## 当前功能
 
@@ -11,7 +11,8 @@
 - 商品数据预警（T+1/T+3/T+7）
 - 自营短视频与商品数据合并查看
 - 运营知识库与有效动作沉淀
-- 数据导入
+- Agent 调度中心
+- 数据接入界面
 - WPS/Kdocs 运营填报模板（`data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`）
 - CSV 数据仅在当前浏览器处理，不会自动上传服务器
 
@@ -27,10 +28,10 @@
 
 ## 数据与登录说明
 
-当前版本是纯静态 GitHub Pages 网站，默认使用演示数据，也支持在浏览器内导入真实 CSV。GitHub Pages 本身不提供安全的账号密码验证；如果后续需要真实登录，需要再接入带后端认证的部署方式，不能把密码直接写入 HTML。
+当前 v3 主页面使用 HTML 内置演示数据，页面内的 Agent 调度、预警和数据接入按钮是演示交互；GitHub Pages 本身不提供安全的账号密码验证。后续接入真实云文档、店铺筛选和登录权限，需要把数据层和认证层接到后端，不能把密码直接写入 HTML。
 
 ## WPS/Kdocs 填报
 
 运营人员优先使用 `data/tiktok-ai-operations-center-wps-kdocs-template.xlsx`，上传到 WPS/Kdocs 后填写黄色区域。模板包含店铺日汇总、商品数据、运营动作已执行清单、发布趋势、BD 达人、广告计划和短视频数据等工作表。
 
-当前 GitHub Pages 仍读取 `data/operations-data.json` 作为网站发布数据。WPS/Kdocs 填写完成后，需要导出对应 CSV 或将整理后的数据更新到发布数据源，再点击网站“同步网站数据”；静态网页不会直接读取私有 WPS/Kdocs 文档。商品数据表已包含曝光、CTR、CVR变化、预警节点和建议动作字段，便于运营按同一口径填报。
+`data/operations-data.json` 和 WPS/Kdocs 模板作为后续数据接入资产保留；当前 v3 页面不会自动读取私有 WPS/Kdocs 文档或 JSON。要让真实数据驱动页面，需要增加后端同步/API，并把页面内置演示数据替换为接口数据。
