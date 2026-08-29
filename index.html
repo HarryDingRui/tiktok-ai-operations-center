@@ -113,6 +113,23 @@ body {
 .real-product-table .long-text { max-width: 340px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; }
 .real-product-table .metric-positive { color: #16a34a; font-weight: 700; }
 .real-product-table .metric-muted { color: #94a3b8; }
+.source-metric-groups { display: grid; gap: 18px; }
+.source-metric-section { padding: 14px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; }
+.source-metric-section-title, .source-field-section-title { margin-bottom: 10px; color: #1e3a8a; font-size: 14px; font-weight: 700; }
+.source-metric-section .real-field-grid { grid-template-columns: repeat(6, minmax(120px, 1fr)); }
+.source-metric-card { min-width: 0; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #fff; }
+.source-metric-label { color: #64748b; font-size: 12px; line-height: 1.4; }
+.source-metric-value { margin-top: 5px; overflow: hidden; color: #0f172a; font-size: 17px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.source-product-label { display: block; margin-bottom: 7px; color: #475569; font-size: 13px; font-weight: 600; }
+.source-product-select { width: min(100%, 720px); min-height: 38px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; color: #0f172a; background: #fff; font-size: 13px; }
+.source-field-inspector { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.source-field-section { min-width: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
+.source-field-section-title { margin: 0; padding: 10px 12px; border-bottom: 1px solid #dbeafe; background: #eff6ff; }
+.source-field-rows { padding: 4px 12px 8px; }
+.source-field-row { display: grid; grid-template-columns: minmax(150px, 0.9fr) minmax(0, 1.1fr); gap: 12px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; line-height: 1.45; }
+.source-field-row:last-child { border-bottom: 0; }
+.source-field-row > span { color: #64748b; }
+.source-field-row > strong { overflow: hidden; color: #0f172a; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .real-ranking-grid { display: grid; grid-template-columns: repeat(5, minmax(180px, 1fr)); gap: 10px; }
 .real-ranking-card { padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; min-width: 0; }
 .real-ranking-card.gmv { background: #eff6ff; border-color: #bfdbfe; }
@@ -127,8 +144,8 @@ body {
 .real-ranking-name { flex: 1; min-width: 0; color: #334155; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .real-ranking-value { color: #0f172a; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .real-ranking-empty { padding: 14px 4px; color: #92400e; font-size: 12px; line-height: 1.6; }
-@media (max-width: 1100px) { .real-ranking-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); } .real-field-grid { grid-template-columns: repeat(3, minmax(130px, 1fr)); } }
-@media (max-width: 768px) { .data-context-bar { align-items: flex-start; } .data-context-controls { width: 100%; } .data-context-select, .data-context-date-select, .data-context-date-input { flex: 1; min-width: 180px; } .data-context-date-custom { width: 100%; } .real-ranking-grid { grid-template-columns: 1fr; } .real-field-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); } }
+@media (max-width: 1100px) { .real-ranking-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); } .real-field-grid, .source-metric-section .real-field-grid { grid-template-columns: repeat(3, minmax(130px, 1fr)); } }
+@media (max-width: 768px) { .data-context-bar { align-items: flex-start; } .data-context-controls { width: 100%; } .data-context-select, .data-context-date-select, .data-context-date-input { flex: 1; min-width: 180px; } .data-context-date-custom { width: 100%; } .real-ranking-grid { grid-template-columns: 1fr; } .real-field-grid, .source-metric-section .real-field-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); } .source-field-inspector { grid-template-columns: 1fr; } }
 
 /* ========== 统计卡片 ========== */
 .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
@@ -1597,7 +1614,7 @@ body {
 </div>
 
 <script src="./data/real-store-data.js"></script>
-<script src="./data/real-store-dashboard.js?v=470135d"></script>
+<script src="./data/real-store-dashboard.js?v=field-audit-2"></script>
 <script>
 // 页面切换
 function showPage(pageId, el) {
@@ -1648,4 +1665,3 @@ window.addEventListener('resize', checkResponsive);
 
 </body>
 </html>
-

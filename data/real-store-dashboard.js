@@ -4,6 +4,15 @@
   const sourceData = window.REAL_STORE_DATA;
   if (!sourceData || !Array.isArray(sourceData.stores)) return;
 
+  const SUMMARIZED_SOURCE_FIELDS = [
+    "uniqueExposure", "uniqueClicks", "uniqueAtcUsers", "taxIncludedGmv", "tax", "tiktokJointGmv", "shipping",
+    "refundAmount", "refundedUnits", "refundCustomers", "mallExposure", "mallClicks", "mallUniqueClicks", "mallCustomers",
+    "mallGmv", "mallUnits", "attributedGmv", "indirectGmv", "attributedOrders", "attributedSkuOrders", "indirectSkuOrders",
+    "attributedUnits", "indirectUnits", "attributedCustomers", "newLiveSessions", "newVideos", "avgDailyReach",
+    "liveExposure", "liveClicks", "liveAddToCart", "liveUniqueExposure", "liveUniqueClicks", "liveAtcUsers",
+    "videoExposure", "videoClicks", "videoAddToCart", "videoUniqueExposure", "videoUniqueClicks", "videoAtcUsers",
+  ];
+
   let currentData = normalizeData(sourceData);
   let selectedStore = "all";
   let selectedDatePreset = "all";
@@ -39,29 +48,120 @@
     return candidates.map((name) => headers.indexOf(name)).find((index) => index >= 0);
   }
 
+  function headerOccurrenceIndex(headers, name, occurrence = 0) {
+    let matchCount = 0;
+    for (let index = 0; index < headers.length; index += 1) {
+      if (headers[index] !== name) continue;
+      if (matchCount === occurrence) return index;
+      matchCount += 1;
+    }
+    return -1;
+  }
+
+  function sourceValue(headers, values, name, occurrence = 0) {
+    const index = headerOccurrenceIndex(headers, name, occurrence);
+    return index >= 0 ? values[index] : null;
+  }
+
+  function sourceNumber(headers, values, name, occurrence = 0) {
+    return parseNumber(sourceValue(headers, values, name, occurrence));
+  }
+
+  function hydrateProductFromSource(product, sourceHeaders) {
+    if (!Array.isArray(sourceHeaders) || !Array.isArray(product.sourceValues)) return product;
+    const values = product.sourceValues;
+    const readNumber = (name, occurrence = 0) => sourceNumber(sourceHeaders, values, name, occurrence);
+    const readText = (name, occurrence = 0) => {
+      const value = sourceValue(sourceHeaders, values, name, occurrence);
+      return value == null ? "" : String(value).trim();
+    };
+    return {
+      ...product,
+      status: readText("发品状态"),
+      gmvRange: readText("GMV 区间"),
+      gmv: readNumber("GMV", 0),
+      orders: readNumber("订单数", 0),
+      skuOrders: readNumber("SKU 订单数", 0),
+      units: readNumber("商品成交件数", 0),
+      customers: readNumber("预计客户数", 0),
+      avgOrderValue: readNumber("平均订单金额（SKU 订单）", 0),
+      exposure: readNumber("商品曝光次数", 0),
+      clicks: readNumber("商品点击量", 0),
+      ctr: readNumber("商品点击率", 0),
+      addToCart: readNumber("加购次数", 0),
+      addToCartRate: readNumber("加购率", 0),
+      ctor: readNumber("CTOR（SKU 订单）", 0),
+      uniqueExposure: readNumber("去重商品曝光次数", 0),
+      uniqueClicks: readNumber("去重点击次数", 0),
+      uniqueCtr: readNumber("去重点击率", 0),
+      uniqueAtcUsers: readNumber("已加购的用户数", 0),
+      uniqueAtcRate: readNumber("去重加购率", 0),
+      uniqueClickCvr: readNumber("去重点击成交转化率（SKU 订单）", 0),
+      taxIncludedGmv: readNumber("含税 GMV"), tax: readNumber("税费"),
+      tiktokJointGmv: readNumber("GMV（TikTok 合资）"), shipping: readNumber("运费"),
+      refundAmount: readNumber("退款金额"), refundedUnits: readNumber("已退款的商品件数"),
+      refundCustomers: readNumber("退款客户数"),
+      mallExposure: readNumber("商城页商品曝光次数"), mallClicks: readNumber("商城页商品点击量"),
+      mallUniqueClicks: readNumber("商城页去重商品点击量"), mallCustomers: readNumber("预计商城页客户数"),
+      mallCtr: readNumber("商城页点击率"), mallCvr: readNumber("商城页点击成交转化率（SKU 订单）"),
+      mallGmv: readNumber("商城页 GMV"), mallUnits: readNumber("商城页商品成交件数"),
+      attributedGmv: readNumber("归因 GMV", 0), indirectGmv: readNumber("间接 GMV", 0),
+      attributedOrders: readNumber("归因订单数", 0), attributedSkuOrders: readNumber("归因 SKU 订单数", 0),
+      indirectSkuOrders: readNumber("间接 SKU 订单数", 0), attributedUnits: readNumber("归因成交件数", 0),
+      indirectUnits: readNumber("间接成交件数", 0), attributedCustomers: readNumber("预计客户数", 1),
+      attributedAov: readNumber("AOV（归因 SKU 订单）", 0), newLiveSessions: readNumber("新直播场次", 0),
+      newVideos: readNumber("新视频数", 0), avgDailyReach: readNumber("已发布内容的日均达人数"),
+      liveExposure: readNumber("商品曝光次数（直播）"), liveClicks: readNumber("商品点击量（直播）"),
+      liveCtr: readNumber("CTR（直播）"), liveAddToCart: readNumber("加购次数（直播）"),
+      liveAddToCartRate: readNumber("加购率（直播）"), liveCtor: readNumber("CTOR（SKU 订单）（直播）"),
+      liveUniqueExposure: readNumber("去重商品曝光次数（直播）"), liveUniqueClicks: readNumber("去重点击次数（直播）"),
+      liveUniqueCtr: readNumber("去重点击率（直播）"), liveAtcUsers: readNumber("ATC 用户数（直播）"),
+      liveUniqueAtcRate: readNumber("去重加购率（直播）"), liveUniqueClickCvr: readNumber("去重点击成交转化率（SKU 订单）（直播）"),
+      videoExposure: readNumber("商品曝光次数（视频）"), videoClicks: readNumber("商品点击量（视频）"),
+      videoCtr: readNumber("CTR（视频）"), videoAddToCart: readNumber("加购次数（视频）"),
+      videoAddToCartRate: readNumber("加购率（视频）"), videoCtor: readNumber("CTOR（SKU 订单）（视频）"),
+      videoUniqueExposure: readNumber("去重商品曝光次数（视频）"), videoUniqueClicks: readNumber("去重点击次数（视频）"),
+      videoUniqueCtr: readNumber("去重点击率（视频）"), videoAtcUsers: readNumber("ATC 用户数（视频）"),
+      videoUniqueAtcRate: readNumber("去重加购率（视频）"), videoUniqueClickCvr: readNumber("去重点击成交转化率（SKU 订单）（视频）"),
+    };
+  }
+
   function summarizeProducts(products) {
     const totals = products.reduce((accumulator, product) => {
       for (const key of ["gmv", "orders", "skuOrders", "units", "customers", "exposure", "clicks", "addToCart"]) accumulator[key] += product[key] ?? 0;
+      for (const key of SUMMARIZED_SOURCE_FIELDS) accumulator[key] += product[key] ?? 0;
       return accumulator;
-    }, { gmv: 0, orders: 0, skuOrders: 0, units: 0, customers: 0, exposure: 0, clicks: 0, addToCart: 0 });
+    }, Object.fromEntries(["gmv", "orders", "skuOrders", "units", "customers", "exposure", "clicks", "addToCart", ...SUMMARIZED_SOURCE_FIELDS].map((key) => [key, 0])));
     totals.ctr = totals.exposure ? totals.clicks / totals.exposure * 100 : null;
     totals.cvr = totals.clicks ? totals.orders / totals.clicks * 100 : null;
     totals.avgOrderValue = totals.skuOrders ? totals.gmv / totals.skuOrders : null;
     totals.addToCartRate = totals.clicks ? totals.addToCart / totals.clicks * 100 : null;
     totals.ctor = totals.clicks ? totals.skuOrders / totals.clicks * 100 : null;
+    totals.uniqueCtr = totals.uniqueExposure ? totals.uniqueClicks / totals.uniqueExposure * 100 : null;
+    totals.uniqueAtcRate = totals.uniqueClicks ? totals.uniqueAtcUsers / totals.uniqueClicks * 100 : null;
+    totals.attributedAov = totals.attributedSkuOrders ? totals.attributedGmv / totals.attributedSkuOrders : null;
+    totals.liveCtr = totals.liveExposure ? totals.liveClicks / totals.liveExposure * 100 : null;
+    totals.liveAddToCartRate = totals.liveClicks ? totals.liveAddToCart / totals.liveClicks * 100 : null;
+    totals.liveUniqueCtr = totals.liveUniqueExposure ? totals.liveUniqueClicks / totals.liveUniqueExposure * 100 : null;
+    totals.liveUniqueAtcRate = totals.liveUniqueClicks ? totals.liveAtcUsers / totals.liveUniqueClicks * 100 : null;
+    totals.videoCtr = totals.videoExposure ? totals.videoClicks / totals.videoExposure * 100 : null;
+    totals.videoAddToCartRate = totals.videoClicks ? totals.videoAddToCart / totals.videoClicks * 100 : null;
+    totals.videoUniqueCtr = totals.videoUniqueExposure ? totals.videoUniqueClicks / totals.videoUniqueExposure * 100 : null;
+    totals.videoUniqueAtcRate = totals.videoUniqueClicks ? totals.videoAtcUsers / totals.videoUniqueClicks * 100 : null;
     totals.productCount = products.length;
     return totals;
   }
 
   function normalizeSnapshot(snapshot, fallbackDate, fallbackFile) {
     const products = Array.isArray(snapshot.products) ? snapshot.products : [];
+    const hydratedProducts = products.map((product) => hydrateProductFromSource(product, snapshot.sourceHeaders));
     return {
       ...snapshot,
       reportDate: snapshot.reportDate || fallbackDate || "待确认",
       sourceFile: snapshot.sourceFile || fallbackFile || "",
-      productCount: snapshot.productCount ?? products.length,
-      totals: snapshot.totals || summarizeProducts(products),
-      products,
+      productCount: snapshot.productCount ?? hydratedProducts.length,
+      totals: snapshot.totals || summarizeProducts(hydratedProducts),
+      products: hydratedProducts,
     };
   }
 
@@ -114,7 +214,7 @@
             addToCart: headerIndex(headers, "加购次数"), addToCartRate: headerIndex(headers, "加购率"), ctor: headerIndex(headers, "CTOR（SKU 订单）"),
             uniqueClickCvr: headerIndex(headers, "去重点击成交转化率（SKU 订单）"),
           };
-          const products = rows.slice(headerRowIndex + 1).map((row) => ({
+          const products = rows.slice(headerRowIndex + 1).map((row) => hydrateProductFromSource({
             id: row[columns.id] == null ? "" : String(row[columns.id]).trim(),
             name: row[columns.name] == null ? "" : String(row[columns.name]).trim(),
             status: row[columns.status] == null ? "" : String(row[columns.status]),
@@ -123,13 +223,15 @@
             exposure: parseNumber(row[columns.exposure]), clicks: parseNumber(row[columns.clicks]), ctr: parseNumber(row[columns.ctr]),
             addToCart: parseNumber(row[columns.addToCart]), addToCartRate: parseNumber(row[columns.addToCartRate]), ctor: parseNumber(row[columns.ctor]),
             uniqueClickCvr: parseNumber(row[columns.uniqueClickCvr]),
-          })).filter((product) => product.id && product.name);
+            sourceValues: row.slice(0, headers.length),
+          }, headers)).filter((product) => product.id && product.name);
           if (!products.length) throw new Error("文件中没有可识别的商品记录");
           resolve({
             reportDate: parseDateFromFilename(file.name),
             sourceFile: file.name,
             productCount: products.length,
             totals: summarizeProducts(products),
+            sourceHeaders: headers,
             products,
           });
         } catch (error) {
@@ -261,23 +363,12 @@
   function productsInScope() {
     return storesInScope().flatMap((store) => {
       const snapshot = latestSnapshot(store);
-      return snapshot.products.map((product) => ({ ...product, store: store.name, reportDate: snapshot.reportDate }));
+      return snapshot.products.map((product) => ({ ...product, store: store.name, reportDate: snapshot.reportDate, sourceHeaders: snapshot.sourceHeaders || [] }));
     });
   }
 
   function totalsInScope() {
-    const products = productsInScope();
-    const totals = products.reduce((accumulator, product) => {
-      for (const key of ["gmv", "orders", "skuOrders", "units", "customers", "exposure", "clicks", "addToCart"]) accumulator[key] += product[key] ?? 0;
-      return accumulator;
-    }, { gmv: 0, orders: 0, skuOrders: 0, units: 0, customers: 0, exposure: 0, clicks: 0, addToCart: 0 });
-    totals.productCount = products.length;
-    totals.ctr = totals.exposure ? totals.clicks / totals.exposure * 100 : null;
-    totals.cvr = totals.clicks ? totals.orders / totals.clicks * 100 : null;
-    totals.avgOrderValue = totals.skuOrders ? totals.gmv / totals.skuOrders : null;
-    totals.addToCartRate = totals.clicks ? totals.addToCart / totals.clicks * 100 : null;
-    totals.ctor = totals.clicks ? totals.skuOrders / totals.clicks * 100 : null;
-    return totals;
+    return summarizeProducts(productsInScope());
   }
 
   function scopeLabel() {
@@ -292,6 +383,91 @@
   function statusTag(status) {
     const className = status === "已导入" ? "tag-blue" : status === "可售" ? "tag-green" : "tag-yellow";
     return `<span class="tag ${className}">${escapeHtml(status)}</span>`;
+  }
+
+  const SOURCE_FIELD_GROUPS = [
+    ["商品基础", 0, 3], ["交易与订单", 4, 23], ["商品经营漏斗", 24, 35], ["结算与退款", 36, 42],
+    ["商城页", 43, 50], ["商家直播", 51, 75], ["商家视频", 76, 100], ["达人与内容", 101, 127],
+    ["直播拆分", 128, 139], ["视频拆分", 140, 151], ["商品卡拆分", 152, 175],
+  ];
+
+  const SOURCE_METRIC_GROUPS = [
+    ["核心经营漏斗", [
+      ["SKU订单数", "skuOrders", "number"], ["商品成交件数", "units", "number"], ["预计客户数", "customers", "number"],
+      ["平均订单金额", "avgOrderValue", "money"], ["商品曝光次数", "exposure", "number"], ["去重商品曝光次数", "uniqueExposure", "number"],
+      ["商品点击量", "clicks", "number"], ["去重点击次数", "uniqueClicks", "number"], ["商品点击率", "ctr", "percent"],
+      ["去重点击率", "uniqueCtr", "percent"], ["加购次数", "addToCart", "number"], ["已加购的用户数", "uniqueAtcUsers", "number"],
+      ["加购率", "addToCartRate", "percent"], ["去重加购率", "uniqueAtcRate", "percent"], ["CTOR（SKU订单）", "ctor", "percent"],
+      ["去重点击成交转化率", "uniqueClickCvr", "percent"],
+    ]],
+    ["结算与退款", [
+      ["GMV", "gmv", "money"], ["含税 GMV", "taxIncludedGmv", "money"], ["税费", "tax", "money"],
+      ["GMV（TikTok 合资）", "tiktokJointGmv", "money"], ["运费", "shipping", "money"], ["退款金额", "refundAmount", "money"],
+      ["已退款的商品件数", "refundedUnits", "number"], ["退款客户数", "refundCustomers", "number"],
+    ]],
+    ["商城页经营", [
+      ["商城页商品曝光次数", "mallExposure", "number"], ["商城页商品点击量", "mallClicks", "number"],
+      ["商城页去重商品点击量", "mallUniqueClicks", "number"], ["预计商城页客户数", "mallCustomers", "number"],
+      ["商城页点击率", "mallCtr", "percent"], ["商城页点击成交转化率", "mallCvr", "percent"],
+      ["商城页 GMV", "mallGmv", "money"], ["商城页商品成交件数", "mallUnits", "number"],
+    ]],
+    ["归因与内容", [
+      ["归因 GMV（商家直播）", "attributedGmv", "money"], ["间接 GMV（商家直播）", "indirectGmv", "money"],
+      ["归因订单数", "attributedOrders", "number"], ["归因 SKU 订单数", "attributedSkuOrders", "number"],
+      ["间接 SKU 订单数", "indirectSkuOrders", "number"], ["归因成交件数", "attributedUnits", "number"],
+      ["间接成交件数", "indirectUnits", "number"], ["归因客户数", "attributedCustomers", "number"],
+      ["AOV（归因 SKU 订单）", "attributedAov", "money"], ["已发布内容的日均达人数", "avgDailyReach", "number"],
+      ["新直播场次", "newLiveSessions", "number"], ["新视频数", "newVideos", "number"],
+    ]],
+    ["直播拆分", [
+      ["直播曝光", "liveExposure", "number"], ["直播点击", "liveClicks", "number"], ["直播 CTR", "liveCtr", "percent"],
+      ["直播加购", "liveAddToCart", "number"], ["直播加购率", "liveAddToCartRate", "percent"], ["直播 CTOR", "liveCtor", "percent"],
+      ["直播去重曝光", "liveUniqueExposure", "number"], ["直播去重点击", "liveUniqueClicks", "number"],
+      ["直播去重 CTR", "liveUniqueCtr", "percent"], ["直播 ATC 用户", "liveAtcUsers", "number"],
+      ["直播去重加购率", "liveUniqueAtcRate", "percent"], ["直播去重点击 CVR", "liveUniqueClickCvr", "percent"],
+    ]],
+    ["视频拆分", [
+      ["视频曝光", "videoExposure", "number"], ["视频点击", "videoClicks", "number"], ["视频 CTR", "videoCtr", "percent"],
+      ["视频加购", "videoAddToCart", "number"], ["视频加购率", "videoAddToCartRate", "percent"], ["视频 CTOR", "videoCtor", "percent"],
+      ["视频去重曝光", "videoUniqueExposure", "number"], ["视频去重点击", "videoUniqueClicks", "number"],
+      ["视频去重 CTR", "videoUniqueCtr", "percent"], ["视频 ATC 用户", "videoAtcUsers", "number"],
+      ["视频去重加购率", "videoUniqueAtcRate", "percent"], ["视频去重点击 CVR", "videoUniqueClickCvr", "percent"],
+    ]],
+  ];
+
+  function formatMetricValue(value, format) {
+    if (format === "money") return formatMoney(value);
+    if (format === "percent") return formatPercent(value);
+    return formatNumber(value, 0);
+  }
+
+  function sourceMetricGroupsHtml(totals) {
+    return SOURCE_METRIC_GROUPS.map(([title, fields]) => `<section class="source-metric-section">
+      <div class="source-metric-section-title">${title}</div>
+      <div class="real-field-grid">${fields.map(([label, key, format]) => `<div class="source-metric-card">
+        <div class="source-metric-label">${label}</div><div class="source-metric-value">${formatMetricValue(totals[key], format)}</div>
+      </div>`).join("")}</div>
+    </section>`).join("");
+  }
+
+  function sourceFieldLabel(headers, index) {
+    const header = headers[index] || `字段 ${index + 1}`;
+    const occurrence = headers.slice(0, index + 1).filter((item) => item === header).length;
+    return occurrence > 1 ? `${header} · 第${occurrence}组` : header;
+  }
+
+  function sourceFieldInspectorHtml(product) {
+    const headers = product && Array.isArray(product.sourceHeaders) ? product.sourceHeaders : [];
+    const values = product && Array.isArray(product.sourceValues) ? product.sourceValues : [];
+    if (!headers.length || !values.length) return `<div class="real-ranking-empty">当前记录没有保存完整 product_list 原始字段，请重新导入 Excel。</div>`;
+    return SOURCE_FIELD_GROUPS.map(([title, start, end]) => {
+      const rows = headers.slice(start, end + 1).map((header, offset) => {
+        const index = start + offset;
+        const value = values[index] == null || values[index] === "" ? "待导入" : String(values[index]);
+        return `<div class="source-field-row"><span>${escapeHtml(sourceFieldLabel(headers, index))}</span><strong title="${escapeHtml(value)}">${escapeHtml(value)}</strong></div>`;
+      }).join("");
+      return `<section class="source-field-section"><div class="source-field-section-title">${title}</div><div class="source-field-rows">${rows}</div></section>`;
+    }).join("");
   }
 
   function updateContextBar() {
@@ -435,26 +611,31 @@
       <td>${escapeHtml(product.store)}</td><td>${escapeHtml(product.id)}</td><td><span class="long-text" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</span></td>
       <td>${formatNumber(product.units, 0)}</td><td>${formatMoney(product.gmv)}</td><td>${formatNumber(product.orders, 0)}</td><td>${formatNumber(product.skuOrders, 0)}</td><td>${formatNumber(product.customers, 0)}</td><td>${formatMoney(product.avgOrderValue)}</td><td>${formatCompact(product.exposure)}</td><td>${formatNumber(product.clicks, 0)}</td><td>${formatPercent(product.ctr)}</td><td>${formatNumber(product.addToCart, 0)}</td><td>${formatPercent(product.addToCartRate)}</td><td>${formatPercent(product.ctor)}</td><td>${formatPercent(product.uniqueClickCvr)}</td><td>${statusTag("已导入")}</td>
     </tr>`).join("") || `<tr><td colspan="17" class="real-ranking-empty">当前日期范围暂无商品明细。</td></tr>`;
-    const fieldCards = [
-      ["SKU订单数", formatNumber(totals.skuOrders, 0)], ["商品成交件数", formatNumber(totals.units, 0)],
-      ["预计客户数", formatNumber(totals.customers, 0)], ["平均订单金额", formatMoney(totals.avgOrderValue)],
-      ["商品点击量", formatNumber(totals.clicks, 0)], ["商品点击率", formatPercent(totals.ctr)],
-      ["加购次数", formatNumber(totals.addToCart, 0)], ["加购率", formatPercent(totals.addToCartRate)],
-      ["CTOR", formatPercent(totals.ctor)],
-    ].map(([label, value]) => `<div style="padding:12px 14px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;"><div style="font-size:12px;color:#64748b;">${label}</div><div style="margin-top:5px;font-size:18px;font-weight:700;color:#0f172a;">${value}</div></div>`).join("");
+    const sourceFieldCount = productsInScope().find((product) => Array.isArray(product.sourceHeaders) && product.sourceHeaders.length)?.sourceHeaders.length || 0;
+    const inspectorOptions = topProducts.map((product, index) => `<option value="${index}">${escapeHtml(product.store)} · ${escapeHtml(product.id)} · ${escapeHtml(product.name)}</option>`).join("");
     container.innerHTML = `<div class="card real-data-card">
       <div class="card-title">✅ 已导入真实店铺数据 <span>${escapeHtml(scopeLabel())} · ${escapeHtml(dateRangeLabel())}</span></div>
       <div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>店铺</th><th>最新快照</th><th>商品数</th><th>GMV</th><th>订单数</th><th>曝光</th><th>成交转化率</th><th>状态</th></tr></thead><tbody>${storeRows}</tbody></table></div>
       <div class="real-data-note">当前页面按每个店铺在所选日期范围内的最新可用快照汇总，避免把快照重复相加；GMV 上涨/下降和 CVR 下降按范围内首个与最新快照、同一店铺同一商品 ID 匹配计算。范围内只有一个日期时，不生成趋势结论。</div>
     </div>
     <div class="card real-data-card">
-      <div class="card-title">📌 product_list 字段速览 <span>${escapeHtml(scopeLabel())} · 当前范围最新可用快照</span></div>
-      <div class="real-field-grid">${fieldCards}</div>
+      <div class="card-title">📌 product_list 全字段经营视图 <span>${escapeHtml(scopeLabel())} · ${sourceFieldCount || "待导入"} 个来源字段 · 当前范围最新可用快照</span></div>
+      <div class="real-data-note">已把 Excel 中的核心漏斗、结算退款、商城页、归因内容，以及直播/视频拆分字段全部写入网站。汇总卡只计算可以安全相加或按分子分母重算的指标；重复的来源列按所属业务分组保留，避免把不同渠道误加在一起。</div>
+      <div class="source-metric-groups">${sourceMetricGroupsHtml(totals)}</div>
     </div>
     <div class="card real-data-card">
       <div class="card-title">📦 商品经营明细 Top12 <span>${formatNumber(totals.productCount, 0)} 个最新商品记录中按 GMV 排序</span></div>
       <div class="desktop-table-wrap"><table class="desktop-table real-product-table"><thead><tr><th>店铺</th><th>商品 ID</th><th>商品名称</th><th>成交件数</th><th>GMV</th><th>订单数</th><th>SKU订单数</th><th>预计客户</th><th>均单金额</th><th>曝光</th><th>点击量</th><th>CTR</th><th>加购次数</th><th>加购率</th><th>CTOR</th><th>去重点击CVR</th><th>状态</th></tr></thead><tbody>${productRows}</tbody></table></div>
+    </div>
+    <div class="card real-data-card">
+      <div class="card-title">🔎 商品 product_list 完整字段 <span>逐项核对原始 Excel · 不压缩、不丢重复渠道字段</span></div>
+      ${topProducts.length ? `<label class="source-product-label" for="source-field-product">选择商品查看全部来源字段</label><select id="source-field-product" class="source-product-select">${inspectorOptions}</select><div id="source-field-inspector" class="source-field-inspector">${sourceFieldInspectorHtml(topProducts[0])}</div>` : `<div class="real-ranking-empty">当前日期范围暂无商品明细。</div>`}
     </div>`;
+    const inspectorSelect = container.querySelector("#source-field-product");
+    const inspector = container.querySelector("#source-field-inspector");
+    if (inspectorSelect && inspector) inspectorSelect.addEventListener("change", () => {
+      inspector.innerHTML = sourceFieldInspectorHtml(topProducts[Number(inspectorSelect.value)]);
+    });
   }
 
   function updateDataSourceStatus() {
