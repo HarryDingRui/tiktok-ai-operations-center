@@ -60,11 +60,12 @@ const feishuAccountSnapshot = {
 };
 const publicProfileSnapshots = {
   "nooruz046": {
-    "capturedAt": "2026-08-29T09:19:11.923Z",
+    "capturedAt": "2026-08-30T02:03:16.962Z",
     "followers": 56,
     "likes": 652,
     "topic": "多类产品",
     "videos": [
+      "7679378734356368671",
       "7678992903267454221",
       "7677523916243455263",
       "7676440550232395021",
@@ -84,10 +85,10 @@ const publicProfileSnapshots = {
       "7674939098250972447",
       "7674945822731144478",
       "7673815019947183390",
-      "7673814227299192094",
-      "7673813966358990111"
+      "7673814227299192094"
     ],
     "videoViews": [
+      69,
       0,
       215,
       86,
@@ -107,8 +108,7 @@ const publicProfileSnapshots = {
       154,
       319,
       37,
-      282,
-      306
+      282
     ],
     "videoTopics": [
       "饭盒",
@@ -129,40 +129,18 @@ const publicProfileSnapshots = {
       "饭盒",
       "饭盒",
       "饭盒",
-      "玩具",
+      "饭盒",
       "玩具",
       "玩具"
-    ],
-    "videoUrls": [
-      "https://www.tiktok.com/@nooruz046/video/7678992903267454221",
-      "https://www.tiktok.com/@nooruz046/video/7677523916243455263",
-      "https://www.tiktok.com/@nooruz046/video/7676440550232395021",
-      "https://www.tiktok.com/@nooruz046/video/7676440497023356174",
-      "https://www.tiktok.com/@nooruz046/video/7676440374197374221",
-      "https://www.tiktok.com/@nooruz046/video/7676440106982460686",
-      "https://www.tiktok.com/@nooruz046/video/7676440046030851342",
-      "https://www.tiktok.com/@nooruz046/video/7676047273603779870",
-      "https://www.tiktok.com/@nooruz046/video/7676047362736819486",
-      "https://www.tiktok.com/@nooruz046/video/7676047220998671646",
-      "https://www.tiktok.com/@nooruz046/video/7675662872726310157",
-      "https://www.tiktok.com/@nooruz046/video/7675660311306784014",
-      "https://www.tiktok.com/@nooruz046/video/7675660092494105870",
-      "https://www.tiktok.com/@nooruz046/video/7675201215269063966",
-      "https://www.tiktok.com/@nooruz046/video/7675200994971602207",
-      "https://www.tiktok.com/@nooruz046/video/7674939206979849503",
-      "https://www.tiktok.com/@nooruz046/video/7674939098250972447",
-      "https://www.tiktok.com/@nooruz046/video/7674945822731144478",
-      "https://www.tiktok.com/@nooruz046/video/7673815019947183390",
-      "https://www.tiktok.com/@nooruz046/video/7673814227299192094",
-      "https://www.tiktok.com/@nooruz046/video/7673813966358990111"
     ]
   },
   "nooruz332": {
-    "capturedAt": "2026-08-29T09:19:16.917Z",
+    "capturedAt": "2026-08-30T02:03:24.474Z",
     "followers": 20,
     "likes": 456,
     "topic": "多类产品",
     "videos": [
+      "7679378937776049438",
       "7678992733276572941",
       "7677524127296539935",
       "7676441488540060958",
@@ -187,7 +165,8 @@ const publicProfileSnapshots = {
       "7673821492978715935"
     ],
     "videoViews": [
-      25,
+      0,
+      262,
       284,
       291,
       137,
@@ -196,7 +175,7 @@ const publicProfileSnapshots = {
       280,
       169,
       96,
-      216,
+      226,
       320,
       60,
       98,
@@ -205,8 +184,8 @@ const publicProfileSnapshots = {
       14,
       243,
       149,
-      307,
-      347,
+      309,
+      349,
       341,
       296
     ],
@@ -230,41 +209,19 @@ const publicProfileSnapshots = {
       "饭盒",
       "饭盒",
       "饭盒",
+      "饭盒",
       "玩具",
       "玩具",
       "玩具"
-    ],
-    "videoUrls": [
-      "https://www.tiktok.com/@nooruz332/video/7678992733276572941",
-      "https://www.tiktok.com/@nooruz332/video/7677524127296539935",
-      "https://www.tiktok.com/@nooruz332/video/7676441488540060958",
-      "https://www.tiktok.com/@nooruz332/video/7676441415764725022",
-      "https://www.tiktok.com/@nooruz332/video/7676441379890859294",
-      "https://www.tiktok.com/@nooruz332/video/7676441274026642718",
-      "https://www.tiktok.com/@nooruz332/video/7676441230221364510",
-      "https://www.tiktok.com/@nooruz332/video/7676441061320920351",
-      "https://www.tiktok.com/@nooruz332/video/7676046200767843614",
-      "https://www.tiktok.com/@nooruz332/video/7676046103124495646",
-      "https://www.tiktok.com/@nooruz332/video/7676045991715360030",
-      "https://www.tiktok.com/@nooruz332/video/7675642974256057631",
-      "https://www.tiktok.com/@nooruz332/video/7675642876402863390",
-      "https://www.tiktok.com/@nooruz332/video/7675643086227180830",
-      "https://www.tiktok.com/@nooruz332/video/7675263422208003341",
-      "https://www.tiktok.com/@nooruz332/video/7675263497332100365",
-      "https://www.tiktok.com/@nooruz332/video/7675263238098980109",
-      "https://www.tiktok.com/@nooruz332/video/7674937891444870430",
-      "https://www.tiktok.com/@nooruz332/video/7674937794363460895",
-      "https://www.tiktok.com/@nooruz332/video/7673822890629893407",
-      "https://www.tiktok.com/@nooruz332/video/7673821848039099679",
-      "https://www.tiktok.com/@nooruz332/video/7673821492978715935"
     ]
   },
   "nooruz556": {
-    "capturedAt": "2026-08-29T09:19:21.924Z",
+    "capturedAt": "2026-08-30T02:03:31.459Z",
     "followers": 33,
     "likes": 516,
     "topic": "多类产品",
     "videos": [
+      "7679380422576459039",
       "7678989085469314317",
       "7677528573938306335",
       "7676438523481738510",
@@ -280,12 +237,12 @@ const publicProfileSnapshots = {
       "7674944368540699934",
       "7674944292304981279",
       "7673790665414741279",
-      "7673790127054851358",
-      "7673789949388262686"
+      "7673790127054851358"
     ],
     "videoViews": [
-      20,
-      48,
+      26,
+      111,
+      49,
       262,
       89,
       286,
@@ -296,11 +253,10 @@ const publicProfileSnapshots = {
       129,
       20,
       58,
-      298,
-      400,
+      299,
+      401,
       461,
-      227,
-      602
+      227
     ],
     "videoTopics": [
       "饭盒",
@@ -317,36 +273,18 @@ const publicProfileSnapshots = {
       "饭盒",
       "饭盒",
       "饭盒",
-      "玩具",
+      "饭盒",
       "玩具",
       "玩具"
-    ],
-    "videoUrls": [
-      "https://www.tiktok.com/@nooruz556/video/7678989085469314317",
-      "https://www.tiktok.com/@nooruz556/video/7677528573938306335",
-      "https://www.tiktok.com/@nooruz556/video/7676438523481738510",
-      "https://www.tiktok.com/@nooruz556/video/7676438490703301901",
-      "https://www.tiktok.com/@nooruz556/video/7676438338647231757",
-      "https://www.tiktok.com/@nooruz556/video/7676438312965426445",
-      "https://www.tiktok.com/@nooruz556/video/7676438187828333837",
-      "https://www.tiktok.com/@nooruz556/video/7676049120628411678",
-      "https://www.tiktok.com/@nooruz556/video/7676048890365332767",
-      "https://www.tiktok.com/@nooruz556/video/7675643449483267341",
-      "https://www.tiktok.com/@nooruz556/video/7675263718002822430",
-      "https://www.tiktok.com/@nooruz556/video/7675263516487552287",
-      "https://www.tiktok.com/@nooruz556/video/7674944368540699934",
-      "https://www.tiktok.com/@nooruz556/video/7674944292304981279",
-      "https://www.tiktok.com/@nooruz556/video/7673790665414741279",
-      "https://www.tiktok.com/@nooruz556/video/7673790127054851358",
-      "https://www.tiktok.com/@nooruz556/video/7673789949388262686"
     ]
   },
   "nooruz75": {
-    "capturedAt": "2026-08-29T09:19:26.782Z",
+    "capturedAt": "2026-08-30T02:03:38.278Z",
     "followers": 22,
     "likes": 235,
     "topic": "多类产品",
     "videos": [
+      "7679380925133770014",
       "7678988674243120398",
       "7677528791241051423",
       "7676439533121965326",
@@ -365,12 +303,12 @@ const publicProfileSnapshots = {
       "7674945644879973663",
       "7674945456987802911",
       "7674945420098931999",
-      "7673796573741993229",
-      "7673794846796074254"
+      "7673796573741993229"
     ],
     "videoViews": [
-      2,
-      280,
+      0,
+      285,
+      282,
       282,
       367,
       5,
@@ -387,8 +325,7 @@ const publicProfileSnapshots = {
       42,
       372,
       206,
-      69,
-      270
+      69
     ],
     "videoTopics": [
       "饭盒",
@@ -409,38 +346,17 @@ const publicProfileSnapshots = {
       "饭盒",
       "饭盒",
       "饭盒",
-      "玩具",
+      "饭盒",
       "玩具"
-    ],
-    "videoUrls": [
-      "https://www.tiktok.com/@nooruz75/video/7678988674243120398",
-      "https://www.tiktok.com/@nooruz75/video/7677528791241051423",
-      "https://www.tiktok.com/@nooruz75/video/7676439533121965326",
-      "https://www.tiktok.com/@nooruz75/video/7676439399621496077",
-      "https://www.tiktok.com/@nooruz75/video/7676439288334257421",
-      "https://www.tiktok.com/@nooruz75/video/7676439212266212621",
-      "https://www.tiktok.com/@nooruz75/video/7676439124957564174",
-      "https://www.tiktok.com/@nooruz75/video/7676439068837776654",
-      "https://www.tiktok.com/@nooruz75/video/7676048390773345566",
-      "https://www.tiktok.com/@nooruz75/video/7676048377900977438",
-      "https://www.tiktok.com/@nooruz75/video/7676048265246166302",
-      "https://www.tiktok.com/@nooruz75/video/7675661314349419807",
-      "https://www.tiktok.com/@nooruz75/video/7675659473335225630",
-      "https://www.tiktok.com/@nooruz75/video/7675658446410140958",
-      "https://www.tiktok.com/@nooruz75/video/7675200904177388813",
-      "https://www.tiktok.com/@nooruz75/video/7674945644879973663",
-      "https://www.tiktok.com/@nooruz75/video/7674945456987802911",
-      "https://www.tiktok.com/@nooruz75/video/7674945420098931999",
-      "https://www.tiktok.com/@nooruz75/video/7673796573741993229",
-      "https://www.tiktok.com/@nooruz75/video/7673794846796074254"
     ]
   },
   "tkusebyk74s": {
-    "capturedAt": "2026-08-29T09:19:32.015Z",
+    "capturedAt": "2026-08-30T02:03:46.135Z",
     "followers": 0,
     "likes": 6,
     "topic": "多类产品",
     "videos": [
+      "7679379145352056095",
       "7678995086423690510",
       "7677524249606737182",
       "7676427235552693518",
@@ -450,7 +366,8 @@ const publicProfileSnapshots = {
       "7675663103937269022"
     ],
     "videoViews": [
-      0,
+      4,
+      4,
       34,
       308,
       287,
@@ -461,28 +378,21 @@ const publicProfileSnapshots = {
     "videoTopics": [
       "饭盒",
       "饭盒",
+      "饭盒",
       "玩具",
       "玩具",
       "饭盒",
       "饭盒",
       "饭盒"
-    ],
-    "videoUrls": [
-      "https://www.tiktok.com/@tkusebyk74s/video/7678995086423690510",
-      "https://www.tiktok.com/@tkusebyk74s/video/7677524249606737182",
-      "https://www.tiktok.com/@tkusebyk74s/video/7676427235552693518",
-      "https://www.tiktok.com/@tkusebyk74s/video/7676427188958235918",
-      "https://www.tiktok.com/@tkusebyk74s/video/7675662943563910430",
-      "https://www.tiktok.com/@tkusebyk74s/video/7675661531379453214",
-      "https://www.tiktok.com/@tkusebyk74s/video/7675663103937269022"
     ]
   },
   "risophy_store": {
-    "capturedAt": "2026-08-29T09:19:38.503Z",
+    "capturedAt": "2026-08-30T02:03:53.559Z",
     "followers": 338,
     "likes": 798,
     "topic": "多类产品",
     "videos": [
+      "7679377310696492318",
       "7678989810446470413",
       "7677528959860428062",
       "7676423188791758093",
@@ -492,7 +402,8 @@ const publicProfileSnapshots = {
       "7675668875647798559"
     ],
     "videoViews": [
-      14,
+      12,
+      15,
       20,
       11,
       6,
@@ -503,38 +414,30 @@ const publicProfileSnapshots = {
     "videoTopics": [
       "饭盒",
       "饭盒",
+      "饭盒",
       "玩具",
       "玩具",
       "玩具",
       "饭盒",
       "饭盒"
-    ],
-    "videoUrls": [
-      "https://www.tiktok.com/@risophy_store/video/7678989810446470413",
-      "https://www.tiktok.com/@risophy_store/video/7677528959860428062",
-      "https://www.tiktok.com/@risophy_store/video/7676423188791758093",
-      "https://www.tiktok.com/@risophy_store/video/7676423168411684110",
-      "https://www.tiktok.com/@risophy_store/video/7676423057514302733",
-      "https://www.tiktok.com/@risophy_store/video/7675669504269012254",
-      "https://www.tiktok.com/@risophy_store/video/7675668875647798559"
     ]
   },
   "docusvect": {
-    "capturedAt": "2026-08-29T09:19:43.772Z",
+    "capturedAt": "2026-08-30T02:04:01.533Z",
     "followers": 6,
     "likes": 0,
     "topic": "未标注",
     "videos": [],
     "videoViews": [],
-    "videoTopics": [],
-    "videoUrls": []
+    "videoTopics": []
   },
   "docusvect_03": {
-    "capturedAt": "2026-08-29T09:19:48.781Z",
+    "capturedAt": "2026-08-30T02:04:08.292Z",
     "followers": 6,
-    "likes": 3,
+    "likes": 4,
     "topic": "多类产品",
     "videos": [
+      "7679378061451595022",
       "7678987930949405965",
       "7678987603080695054",
       "7678626562031340813",
@@ -547,8 +450,9 @@ const publicProfileSnapshots = {
       "7677527734398110990"
     ],
     "videoViews": [
-      2,
-      7,
+      6,
+      9,
+      13,
       42,
       81,
       99,
@@ -556,9 +460,10 @@ const publicProfileSnapshots = {
       33,
       55,
       34,
-      94
+      95
     ],
     "videoTopics": [
+      "饭盒",
       "饭盒",
       "饭盒",
       "熨烫机",
@@ -569,26 +474,15 @@ const publicProfileSnapshots = {
       "熨烫机",
       "熨烫机",
       "熨烫机"
-    ],
-    "videoUrls": [
-      "https://www.tiktok.com/@docusvect_03/video/7678987930949405965",
-      "https://www.tiktok.com/@docusvect_03/video/7678987603080695054",
-      "https://www.tiktok.com/@docusvect_03/video/7678626562031340813",
-      "https://www.tiktok.com/@docusvect_03/video/7678626523577896206",
-      "https://www.tiktok.com/@docusvect_03/video/7678266163314445581",
-      "https://www.tiktok.com/@docusvect_03/video/7678266141562686734",
-      "https://www.tiktok.com/@docusvect_03/video/7677890161010560269",
-      "https://www.tiktok.com/@docusvect_03/video/7677889908169608462",
-      "https://www.tiktok.com/@docusvect_03/video/7677527705344019726",
-      "https://www.tiktok.com/@docusvect_03/video/7677527734398110990"
     ]
   },
   "docusvect_04": {
-    "capturedAt": "2026-08-29T09:19:53.872Z",
+    "capturedAt": "2026-08-30T02:04:15.322Z",
     "followers": 6,
     "likes": 5,
     "topic": "多类产品",
     "videos": [
+      "7679378973792455949",
       "7678991283251203341",
       "7678612328924957966",
       "7678612214055488781",
@@ -599,16 +493,18 @@ const publicProfileSnapshots = {
       "7677531677509340429"
     ],
     "videoViews": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
+      12,
+      46,
+      68,
+      93,
+      91,
+      120,
+      20,
+      2,
+      61
     ],
     "videoTopics": [
+      "饭盒",
       "饭盒",
       "熨烫机",
       "熨烫机",
@@ -617,56 +513,45 @@ const publicProfileSnapshots = {
       "熨烫机",
       "熨烫机",
       "熨烫机"
-    ],
-    "videoUrls": [
-      "https://www.tiktok.com/@docusvect_04/video/7678991283251203341",
-      "https://www.tiktok.com/@docusvect_04/video/7678612328924957966",
-      "https://www.tiktok.com/@docusvect_04/video/7678612214055488781",
-      "https://www.tiktok.com/@docusvect_04/video/7678268199934184717",
-      "https://www.tiktok.com/@docusvect_04/video/7678268125544058125",
-      "https://www.tiktok.com/@docusvect_04/video/7677881150278356238",
-      "https://www.tiktok.com/@docusvect_04/video/7677534931995692301",
-      "https://www.tiktok.com/@docusvect_04/video/7677531677509340429"
     ]
   },
   "manystars_shop": {
-    "capturedAt": "2026-08-29T09:19:58.697Z",
+    "capturedAt": "2026-08-30T02:04:23.055Z",
     "followers": 1341,
     "likes": 5702,
     "topic": "饭盒",
     "videos": [
+      "7679379559631834399",
       "7677880022513798414",
       "7677528865924746526"
     ],
     "videoViews": [
-      null,
-      null
+      3,
+      56,
+      128
     ],
     "videoTopics": [
       "饭盒",
+      "饭盒",
       "饭盒"
-    ],
-    "videoUrls": [
-      "https://www.tiktok.com/@manystars_shop/video/7677880022513798414",
-      "https://www.tiktok.com/@manystars_shop/video/7677528865924746526"
     ]
   },
   "docusvect_05": {
-    "capturedAt": "2026-08-29T09:20:05.505Z",
+    "capturedAt": "2026-08-30T02:04:30.235Z",
     "followers": 5,
     "likes": 0,
     "topic": "饭盒",
     "videos": [
+      "7679377805007801630",
       "7677524362685189406"
     ],
     "videoViews": [
+      5,
       124
     ],
     "videoTopics": [
+      "饭盒",
       "饭盒"
-    ],
-    "videoUrls": [
-      "https://www.tiktok.com/@docusvect_05/video/7677524362685189406"
     ]
   }
 };
@@ -793,23 +678,9 @@ let contentFocus = 'all'; let contentRange = 12; let scope = 'all'; let selected
 function normalizeDateKey(value) {
   const raw = String(value || '').trim();
   const iso = raw.match(/^(\d{4}-\d{2}-\d{2})/);
-  if (iso) return isValidDateKey(iso[1]) ? iso[1] : '';
+  if (iso) return iso[1];
   const short = raw.match(/^(\d{2})[/-](\d{2})/);
-  const shortDate = short ? `2026-${short[1]}-${short[2]}` : '';
-  return isValidDateKey(shortDate) ? shortDate : '';
-}
-function isValidDateKey(value) {
-  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return false;
-  const year = Number(match[1]); const month = Number(match[2]); const day = Number(match[3]);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
-}
-function addUtcDays(dateKey, days) {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
+  return short ? `2026-${short[1]}-${short[2]}` : '';
 }
 function ensureTimelineDates(nextDates) {
   const merged = [...new Set([...dates, ...(nextDates || []).map(normalizeDateKey).filter(Boolean)])].sort().slice(-14);
@@ -848,8 +719,8 @@ function saveImportedData() {
 }
 restoreImportedData();
 const $ = (selector) => document.querySelector(selector);
-const formatNumber = (value) => { if (value === null || value === undefined || value === '') return '—'; const amount = Number(value); if (!Number.isFinite(amount)) return '—'; if (amount < 1000) return `${Math.round(amount)}`; return amount >= 1000000 ? `${(amount / 1000000).toFixed(2)}M` : `${Math.round(amount / 1000)}K`; };
-const formatCount = (value) => { if (value === null || value === undefined || value === '' || !Number.isFinite(Number(value))) return '—'; const amount = Number(value); const absolute = Math.abs(amount); const sign = amount < 0 ? '-' : ''; if (absolute >= 1000000) return `${sign}${(absolute / 1000000).toFixed(2)}M`; if (absolute >= 1000) return `${sign}${(absolute / 1000).toFixed(1)}K`; return `${sign}${Math.round(absolute)}`; };
+const formatNumber = (value) => { const amount = Number(value); if (!Number.isFinite(amount)) return '—'; if (amount < 1000) return `${Math.round(amount)}`; return amount >= 1000000 ? `${(amount / 1000000).toFixed(2)}M` : `${Math.round(amount / 1000)}K`; };
+const formatCount = (value) => { const absolute = Math.abs(value); const sign = value < 0 ? '-' : ''; if (absolute >= 1000000) return `${sign}${(absolute / 1000000).toFixed(2)}M`; if (absolute >= 1000) return `${sign}${(absolute / 1000).toFixed(1)}K`; return `${sign}${Math.round(absolute)}`; };
 const formatSignedCount = (value) => `${value > 0 ? '+' : ''}${formatCount(value)}`;
 const formatMoney = (value) => { if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—'; const amount = Number(value); if (amount >= 1000000) return `$${(amount / 1000000).toFixed(2)}M`; if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}K`; return `$${amount.toFixed(2)}`; };
 const parseNullableNumber = (value) => { const raw = String(value ?? '').trim(); if (!raw) return null; const number = Number(raw.replace(/[$,]/g, '')); return Number.isFinite(number) && number >= 0 ? number : null; };
@@ -917,22 +788,11 @@ function renderLinkRegistry() {
       const hasViews = video.views !== undefined && video.views !== null && video.views !== '' && Number.isFinite(Number(video.views));
       const videoId = getVideoId(video.url);
       const title = video.note || `公开视频 ${String(index + 1).padStart(2, '0')}`;
-      const videoControl = video.source === 'TikTok公开主页'
-        ? '<span class="source-badge registered">公开快照</span>'
-        : `<button class="registry-remove" type="button" data-remove-video="${account.id}" data-video-index="${index}" aria-label="删除${escapeHtml(title)}">删除</button>`;
-      return `<article class="registry-video-card"><div class="registry-video-card-top"><span class="registry-video-index">${String(index + 1).padStart(2, '0')}</span><span class="content-tag">${escapeHtml(video.topic || '未标注')}</span>${videoControl}</div><b class="registry-video-card-title">${escapeHtml(title)}</b><div class="registry-video-card-meta"><span>${videoId ? `视频 ID ${escapeHtml(videoId)}` : '视频链接已登记'}</span><span class="registry-video-status ${hasViews ? 'has-data' : 'pending'}">${hasViews ? `播放 ${formatCount(Number(video.views) || 0)}` : '播放待录入'}</span></div><div class="registry-video-card-actions"><a class="registry-open-video" href="${escapeHtml(video.url)}" target="_blank" rel="noreferrer">打开视频 ↗</a><span class="registry-video-source">${escapeHtml(video.source || '账号登记')}</span></div></article>`;
+      return `<article class="registry-video-card"><div class="registry-video-card-top"><span class="registry-video-index">${String(index + 1).padStart(2, '0')}</span><span class="content-tag">${escapeHtml(video.topic || '未标注')}</span><button class="registry-remove" type="button" data-remove-video="${account.id}" data-video-index="${index}" aria-label="删除${escapeHtml(title)}">删除</button></div><b class="registry-video-card-title">${escapeHtml(title)}</b><div class="registry-video-card-meta"><span>${videoId ? `视频 ID ${escapeHtml(videoId)}` : '视频链接已登记'}</span><span class="registry-video-status ${hasViews ? 'has-data' : 'pending'}">${hasViews ? `播放 ${formatCount(Number(video.views) || 0)}` : '播放待录入'}</span></div><div class="registry-video-card-actions"><a class="registry-open-video" href="${escapeHtml(video.url)}" target="_blank" rel="noreferrer">打开视频 ↗</a><span class="registry-video-source">${escapeHtml(video.source || '账号登记')}</span></div></article>`;
     }).join('');
     return `<article class="registry-account${account.isInactive ? ' is-inactive' : ''}"><div class="registry-account-head"><div class="registry-account-identity"><span class="registry-avatar">${escapeHtml(account.avatar || account.handle.replace('@', '').slice(0, 1).toUpperCase())}</span><div><b>${escapeHtml(account.handle)} · ${escapeHtml(account.name)}</b><small><span class="source-badge ${sourceClass}">${escapeHtml(source)}</span>${accountStatus}${record.followersCheckedAt ? ` · ${escapeHtml(record.followersCheckedAt)}` : ''}</small></div></div>${record.homepageUrl ? `<a class="registry-home-link" href="${escapeHtml(record.homepageUrl)}" target="_blank" rel="noreferrer">打开主页 ↗</a>` : '<small class="registry-home-missing">尚未填写主页链接</small>'}</div><div class="registry-account-meta"><span>${escapeHtml(record.note || '无备注')}</span><span>${followerLabel}</span>${record.likesSnapshot !== undefined && record.likesSnapshot !== null && record.likesSnapshot !== '' ? `<span>公开赞 ${formatCount(Number(record.likesSnapshot) || 0)}</span>` : ''}<span>视频链接 ${record.videos.length}</span><span>已录入播放 ${record.videos.filter((video) => video.views !== undefined && video.views !== null && video.views !== '').length}</span></div>${record.videos.length ? `<div class="registry-video-section"><div class="registry-video-section-head"><b>最近公开视频</b><span>${record.videos.length} 条 · 点击卡片内链接查看</span></div><div class="registry-video-grid">${videoCards}</div></div>` : '<div class="registry-video-empty">还没有视频链接，先在上方添加。</div>'}</article>`;
   }).join('') : '<div class="registry-empty">还没有登记账号或视频链接。先在上方添加，链接会保存在本机浏览器。</div>';
-  document.querySelectorAll('[data-remove-video]').forEach((button) => button.addEventListener('click', () => {
-    if (!window.confirm('确认删除这条本地登记的视频记录吗？')) return;
-    const record = linkRegistry[button.dataset.removeVideo];
-    if (!record || !Array.isArray(record.videos)) return;
-    record.videos.splice(Number(button.dataset.videoIndex), 1);
-    saveLinkRegistry();
-    renderLinkRegistry();
-    updateSummary();
-  }));
+  document.querySelectorAll('[data-remove-video]').forEach((button) => button.addEventListener('click', () => { const record = linkRegistry[button.dataset.removeVideo]; record.videos.splice(Number(button.dataset.videoIndex), 1); saveLinkRegistry(); renderLinkRegistry(); }));
 }
 
 function aggregateDaily(accounts) {
@@ -1028,15 +888,8 @@ function getRecentContentItems() {
 }
 function formatContentTime(item) { return item.date ? formatPublishedAt(item.date) : (item.sample ? '截图样例 · 未提供发布时间' : '未提供发布时间'); }
 function getScopedMonetizationVideos() { return getScopeData().videos; }
-function getPublicVisibleVideoSummary() { const allVideos = getScopeData().videos.filter((video) => String(video.source || '').includes('TikTok公开主页')); const videos = allVideos.filter((video) => parseNullableNumber(video.views) !== null); const timestampCount = allVideos.filter((video) => normalizeDateKey(video.date)).length; return { allVideos, videos, count: videos.length, videoCount: allVideos.length, timestampCount, totalViews: videos.reduce((sum, video) => sum + Number(video.views), 0), accountCount: new Set(allVideos.map((video) => video.accountId)).size }; }
-function getPublicPublishedDailySummary() {
-  const counts = new Map();
-  getPublicVisibleVideoSummary().allVideos.forEach((video) => { const date = normalizeDateKey(video.date); if (date) counts.set(date, (counts.get(date) || 0) + 1); });
-  const latestDate = [...counts.keys()].sort().at(-1);
-  if (!latestDate) return [];
-  const firstDate = addUtcDays(latestDate, -(activeRange - 1));
-  return Array.from({ length: activeRange }, (_, index) => { const date = addUtcDays(firstDate, index); return { date, posts: counts.get(date) || 0 }; });
-}
+function getPublicVisibleVideoSummary() { const allVideos = getScopeData().videos.filter((video) => String(video.source || '').includes('TikTok公开主页')); const videos = allVideos.filter((video) => parseNullableNumber(video.views) !== null); const timestampCount = allVideos.filter((video) => normalizeDateKey(video.date)).length; return { videos, count: videos.length, videoCount: allVideos.length, timestampCount, totalViews: videos.reduce((sum, video) => sum + Number(video.views), 0), accountCount: new Set(allVideos.map((video) => video.accountId)).size }; }
+function getPublicPublishedDailySummary() { const counts = new Map(); getPublicVisibleVideoSummary().videos.forEach((video) => { const date = normalizeDateKey(video.date); if (date) counts.set(date, (counts.get(date) || 0) + 1); }); return [...counts.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([date, posts]) => ({ date, posts })); }
 function sumKnownMetric(videos, key) { const values = videos.map((video) => parseNullableNumber(video[key])).filter((value) => value !== null); return values.length ? { value: values.reduce((sum, value) => sum + value, 0), count: values.length } : { value: null, count: 0 }; }
 function getMonetizationSummary() {
   const videos = getScopedMonetizationVideos(); const views = sumKnownMetric(videos, 'views'); const clicks = sumKnownMetric(videos, 'productClicks'); const orders = sumKnownMetric(videos, 'orders'); const gmv = sumKnownMetric(videos, 'gmv'); const commission = sumKnownMetric(videos, 'commission'); const adSpend = sumKnownMetric(videos, 'adSpend'); const clickRate = views.value !== null && clicks.value !== null && views.value > 0 ? clicks.value / views.value : null; const orderRate = clicks.value !== null && orders.value !== null && clicks.value > 0 ? orders.value / clicks.value : null; const gmvPerOrder = gmv.value !== null && orders.value !== null && orders.value > 0 ? gmv.value / orders.value : null; const roas = gmv.value !== null && adSpend.value !== null && adSpend.value > 0 ? gmv.value / adSpend.value : null; return { videos, views, clicks, orders, gmv, commission, adSpend, clickRate, orderRate, gmvPerOrder, roas, hasAny: [clicks, orders, gmv, commission, adSpend].some((metric) => metric.value !== null) };
@@ -1058,7 +911,7 @@ function getPublicFollowerHistory(account) {
   return [...rows, ...fallback].map((row) => ({ at: row.at || '', value: Number(row.value) })).filter((row) => row.at && Number.isFinite(row.value) && row.value >= 0).sort((left, right) => String(left.at).localeCompare(String(right.at))).filter((row, index, all) => index === all.findIndex((candidate) => candidate.at === row.at));
 }
 function calculateAnalysis() {
-  const { accounts, daily: allDaily } = getScopeData(); const daily = allDaily.slice(-activeRange); const recentSize = Math.min(3, daily.length); const baselineSize = Math.max(1, daily.length - recentSize); const baselineWindow = daily.slice(0, baselineSize); const recentWindow = daily.slice(-recentSize); const baselineViews = median(baselineWindow.map((day) => day.views)); const recentViews = average(recentWindow.map((day) => day.views));
+  const { accounts, daily } = getScopeData(); const baselineWindow = daily.slice(0, Math.max(5, Math.floor(daily.length * .65))); const recentWindow = daily.slice(-3); const baselineViews = median(baselineWindow.map((day) => day.views)); const recentViews = average(recentWindow.map((day) => day.views));
   const publicSnapshotAccounts = accounts.filter((account) => hasPublicFollowerSnapshot(account) && !(account.daily.at(-1)?.followers > 0)); const publicFollowerTotals = new Map(); publicSnapshotAccounts.forEach((account) => getPublicFollowerHistory(account).forEach((row) => publicFollowerTotals.set(row.at, (publicFollowerTotals.get(row.at) || 0) + row.value))); const publicFollowerSeries = [...publicFollowerTotals.entries()].sort((left, right) => String(left[0]).localeCompare(String(right[0]))).map(([at, value]) => ({ at, value })); const publicOnlyFollowers = publicSnapshotAccounts.reduce((sum, account) => sum + getPublicFollowerSnapshot(account), 0); const hasDailyFollowers = (daily.at(-1)?.followers || 0) > 0; const hasPublicFollowers = publicSnapshotAccounts.length > 0; const latestFollowers = hasDailyFollowers ? (daily.at(-1)?.followers || 0) + (hasPublicFollowers ? publicOnlyFollowers : 0) : publicFollowerSeries.at(-1)?.value || 0; const yesterdayFollowers = hasDailyFollowers ? (daily.at(-2)?.followers || 0) : publicFollowerSeries.at(-2)?.value || 0; const followerDelta = latestFollowers - yesterdayFollowers; const hasData = daily.some((day) => day.views > 0 || day.posts > 0 || day.followers > 0); const followerSource = hasPublicFollowers && hasDailyFollowers ? '混合来源' : hasDailyFollowers ? '导入 CSV' : hasPublicFollowers ? '公开主页快照' : '无';
   return { daily, baselineViews, recentViews, baselineComplete: average(baselineWindow.map((day) => day.complete)), recentComplete: average(recentWindow.map((day) => day.complete)), baselineFyp: average(baselineWindow.map((day) => day.fyp)), recentFyp: average(recentWindow.map((day) => day.fyp)), baselineEngagement: average(baselineWindow.map((day) => day.engagement)), recentEngagement: average(recentWindow.map((day) => day.engagement)), viewDelta: baselineViews ? (recentViews - baselineViews) / baselineViews : 0, latestFollowers, yesterdayFollowers, followerDelta, followerDeltaRate: yesterdayFollowers ? followerDelta / yesterdayFollowers : 0, followerSource, hasPublicFollowers, hasFollowerHistory: hasDailyFollowers && yesterdayFollowers > 0 || !hasDailyFollowers && publicFollowerSeries.length > 1, publicFollowerSeries, hasData };
 }
@@ -1066,18 +919,18 @@ function calculateAnalysis() {
 function renderViewsChart() {
   const svg = $('#views-chart'); const analysis = calculateAnalysis(); const daily = analysis.daily.slice(-activeRange); const publicSummary = getPublicVisibleVideoSummary(); const hasDailyViews = daily.some((day) => day.views > 0); const width = 760; const height = 280; const pad = { top: 18, right: 14, bottom: 21, left: 12 };
   if (!hasDailyViews && publicSummary.count) {
-    $('#views-chart-title').textContent = '公开视频当前播放'; $('#views-chart-legend').innerHTML = '<span><i class="legend-line actual"></i>公开可见播放</span><span class="legend-note">每柱 = 1 条视频 · 无历史曲线</span>'; $('#views-chart-foot').innerHTML = '<span>公开视频序号</span><span>当前公开快照</span>'; const values = publicSummary.videos.slice(0, 18).map((video) => Number(video.views)); const maxValue = Math.max(...values, 1); const slot = (width - pad.left - pad.right) / values.length; const barWidth = Math.min(30, slot * .58); const bars = values.map((value, index) => { const barHeight = (value / maxValue) * (height - pad.top - pad.bottom - 20); const x = pad.left + index * slot + (slot - barWidth) / 2; const y = height - pad.bottom - barHeight; return `<rect class="posts-bar active" x="${x}" y="${y}" width="${barWidth}" height="${Math.max(barHeight, 2)}" rx="3"><title>${publicSummary.videos[index].title}: ${formatCount(value)}</title></rect><text class="chart-label" x="${x + barWidth / 2}" y="${height - 4}" text-anchor="middle">${String(index + 1).padStart(2, '0')}</text>`; }).join(''); svg.innerHTML = `${bars}<text class="chart-empty" x="380" y="16" text-anchor="middle">${publicSummary.count} 条公开视频 · 合计 ${formatCount(publicSummary.totalViews)} · 非后台区间总播放</text>`; return;
+    $('#views-chart-title').textContent = '公开视频当前播放'; $('#views-chart-legend').innerHTML = '<span><i class="legend-line actual"></i>公开可见播放</span><span class="legend-note">每柱 = 1 条视频 · 无历史曲线</span>'; $('#views-chart-foot').innerHTML = '<span>公开视频序号</span><span>当前公开快照</span>'; const values = publicSummary.videos.slice(0, 18).map((video) => Number(video.views)); const maxValue = Math.max(...values, 1); const slot = (width - pad.left - pad.right) / values.length; const barWidth = Math.min(30, slot * .58); const bars = values.map((value, index) => { const barHeight = (value / maxValue) * (height - pad.top - pad.bottom - 20); const x = pad.left + index * slot + (slot - barWidth) / 2; const y = height - pad.bottom - barHeight; return `<rect class="posts-bar active" x="${x}" y="${y}" width="${barWidth}" height="${Math.max(barHeight, 2)}" rx="3"><title>${publicSummary.videos[index].title}: ${formatCount(value)}</title></rect><text class="chart-label" x="${x + barWidth / 2}" y="${height - 4}" text-anchor="middle">${String(index + 1).padStart(2, '0')}</text>`; }).join(''); svg.innerHTML = `${bars}<text class="chart-empty" x="380" y="16" text-anchor="middle">${publicSummary.count} 条公开视频 · 合计 ${formatCount(publicSummary.totalViews)} · 非 14 天后台总播放</text>`; return;
   }
-  $('#views-chart-title').textContent = '播放量与自身基线'; $('#views-chart-legend').innerHTML = '<span><i class="legend-line actual"></i>实际播放</span><span><i class="legend-line baseline"></i>自身基线</span><span class="legend-note">橙点 = 异常日</span>'; $('#views-chart-foot').innerHTML = renderDateLabels(daily); if (!hasDailyViews) { svg.innerHTML = `<text class="chart-empty" x="380" y="135" text-anchor="middle">近 ${activeRange} 天播放数据待导入</text>`; return; } const maxValue = Math.max(...daily.map((day) => day.views), analysis.baselineViews, 1) * 1.16;
+  $('#views-chart-title').textContent = '播放量与自身基线'; $('#views-chart-legend').innerHTML = '<span><i class="legend-line actual"></i>实际播放</span><span><i class="legend-line baseline"></i>自身基线</span><span class="legend-note">橙点 = 异常日</span>'; $('#views-chart-foot').innerHTML = renderDateLabels(daily); if (!hasDailyViews) { svg.innerHTML = '<text class="chart-empty" x="380" y="135" text-anchor="middle">近 14 天播放数据待导入</text>'; return; } const maxValue = Math.max(...daily.map((day) => day.views), analysis.baselineViews, 1) * 1.16;
   const x = (index) => pad.left + (index / Math.max(daily.length - 1, 1)) * (width - pad.left - pad.right); const y = (value) => height - pad.bottom - (value / maxValue) * (height - pad.top - pad.bottom); const actualPoints = daily.map((day, index) => `${x(index).toFixed(1)},${y(day.views).toFixed(1)}`).join(' '); const areaPoints = `${pad.left},${height - pad.bottom} ${actualPoints} ${x(daily.length - 1)},${height - pad.bottom}`;
   const grid = [.25, .5, .75, 1].map((ratio) => `<line class="chart-grid" x1="${pad.left}" x2="${width - pad.right}" y1="${y(maxValue * ratio)}" y2="${y(maxValue * ratio)}" />`).join(''); const labels = [0, Math.floor(daily.length / 3), Math.floor(daily.length * 2 / 3), daily.length - 1].map((index) => `<text class="chart-label" x="${x(index)}" y="${height - 3}" text-anchor="middle">${daily[index].date.slice(5).replace('-', '.')}</text>`).join(''); const dots = daily.map((day, index) => `<circle class="chart-dot ${index >= daily.length - 3 || day.views < analysis.baselineViews * .8 ? 'alert' : ''}" cx="${x(index)}" cy="${y(day.views)}" r="${index >= daily.length - 3 ? 5 : 3.5}"><title>${day.date}: ${formatNumber(day.views)}</title></circle>`).join('');
   svg.innerHTML = `<defs><linearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="oklch(0.90 0.18 120)" stop-opacity=".18"/><stop offset="1" stop-color="oklch(0.90 0.18 120)" stop-opacity="0"/></linearGradient></defs>${grid}<polygon class="chart-area" points="${areaPoints}"/><line class="chart-baseline" x1="${pad.left}" x2="${width - pad.right}" y1="${y(analysis.baselineViews)}" y2="${y(analysis.baselineViews)}"/><polyline class="chart-actual" points="${actualPoints}"/>${dots}${labels}`;
 }
 
 function renderPostsChart() {
-  const svg = $('#posts-chart'); const daily = calculateAnalysis().daily; const publicSummary = getPublicVisibleVideoSummary(); const publicDaily = getPublicPublishedDailySummary(); const hasDailyPosts = daily.some((day) => day.posts > 0); const usePublicDates = !hasDailyPosts && publicDaily.length > 0; const chartDaily = usePublicDates ? publicDaily : daily;
+  const svg = $('#posts-chart'); const daily = calculateAnalysis().daily.slice(-activeRange); const publicSummary = getPublicVisibleVideoSummary(); const publicDaily = getPublicPublishedDailySummary().slice(-activeRange); const hasDailyPosts = daily.some((day) => day.posts > 0); const usePublicDates = !hasDailyPosts && publicDaily.length > 0; const chartDaily = usePublicDates ? publicDaily : daily;
   $('#posts-chart-title').textContent = hasDailyPosts ? '每天发布了多少条视频' : usePublicDates ? '公开视频发布时间分布' : '公开主页视频数量'; $('#posts-panel-note').textContent = hasDailyPosts ? `${scope === 'all' ? '总面板' : '单账号'} · 近 ${activeRange} 天` : usePublicDates ? `${publicSummary.videoCount} 条公开视频 · 详情页时间（北京时间）` : `${publicSummary.videoCount} 条公开视频 · 发布时间待读取`; $('#posts-chart-foot').innerHTML = hasDailyPosts || usePublicDates ? renderDateLabels(chartDaily) : '<span>公开主页视频列表</span><span>无精确发布时间</span>';
-  if (!hasDailyPosts && !usePublicDates) { svg.innerHTML = publicSummary.videoCount ? `<text class="chart-empty" x="380" y="100" text-anchor="middle">已读取 ${publicSummary.videoCount} 条公开视频</text><text class="chart-empty" x="380" y="125" text-anchor="middle">精确发布时间待读取，暂不伪造每日发布曲线</text>` : `<text class="chart-empty" x="380" y="110" text-anchor="middle">近 ${activeRange} 天发布数量待导入</text>`; return; }
+  if (!hasDailyPosts && !usePublicDates) { svg.innerHTML = publicSummary.videoCount ? `<text class="chart-empty" x="380" y="100" text-anchor="middle">已读取 ${publicSummary.videoCount} 条公开视频</text><text class="chart-empty" x="380" y="125" text-anchor="middle">精确发布时间待读取，暂不伪造每日发布曲线</text>` : '<text class="chart-empty" x="380" y="110" text-anchor="middle">近 14 天发布数量待导入</text>'; return; }
   const width = 760; const height = 220; const pad = { top: 18, right: 14, bottom: 22, left: 12 }; const maxPosts = Math.max(...chartDaily.map((day) => day.posts), 1); const slot = (width - pad.left - pad.right) / chartDaily.length; const barWidth = Math.min(24, slot * .48); const y = (value) => height - pad.bottom - (value / maxPosts) * (height - pad.top - pad.bottom);
   const bars = chartDaily.map((day, index) => { const barHeight = height - pad.bottom - y(day.posts); const left = pad.left + index * slot + (slot - barWidth) / 2; const label = usePublicDates ? `${day.posts} 条公开视频` : `${day.posts} 条`; return `<rect class="posts-bar ${index >= chartDaily.length - 3 ? 'active' : ''}" x="${left}" y="${y(day.posts)}" width="${barWidth}" height="${Math.max(barHeight, 2)}" rx="3"><title>${day.date}: ${label}</title></rect><text class="posts-label" x="${left + barWidth / 2}" y="${y(day.posts) - 7}" text-anchor="middle">${day.posts}</text>`; }).join(''); const labels = [0, Math.floor(chartDaily.length / 3), Math.floor(chartDaily.length * 2 / 3), chartDaily.length - 1].filter((index, position, all) => all.indexOf(index) === position).map((index) => `<text class="chart-label" x="${pad.left + index * slot + slot / 2}" y="${height - 3}" text-anchor="middle">${chartDaily[index].date.slice(5).replace('-', '.')}</text>`).join('');
   svg.innerHTML = `<line class="chart-grid" x1="${pad.left}" x2="${width - pad.right}" y1="${height - pad.bottom}" y2="${height - pad.bottom}"/>${bars}${labels}`;
@@ -1155,7 +1008,7 @@ function renderActions() {
 }
 
 function renderAccountCards() {
-  $('#account-cards').innerHTML = getActiveAccounts().map((account) => { const monitoredVideos = getMonitoredVideosForAccount(account); const publicVideos = monitoredVideos.filter((video) => parseNullableNumber(video.views) !== null); const publicViews = publicVideos.reduce((sum, video) => sum + Number(video.views), 0); const accountDaily = account.daily.slice(-activeRange); const recentSize = Math.min(3, accountDaily.length); const baselineWindow = accountDaily.slice(0, Math.max(1, accountDaily.length - recentSize)); const totalViews = accountDaily.reduce((sum, day) => sum + day.views, 0); const recent = average(accountDaily.slice(-recentSize).map((day) => day.views)); const baseline = median(baselineWindow.map((day) => day.views)); const hasViews = baseline > 0; const hasPublicViews = !hasViews && publicVideos.length > 0; const delta = hasViews ? (recent - baseline) / baseline : 0; const posts = accountDaily.reduce((sum, day) => sum + day.posts, 0); const publicPostCount = monitoredVideos.length; const history = getPublicFollowerHistory(account); const dailyFollowers = account.daily.at(-1)?.followers || 0; const hasFollowers = dailyFollowers > 0 || hasPublicFollowerSnapshot(account); const followers = dailyFollowers || history.at(-1)?.value || 0; const followerDelta = dailyFollowers ? followers - (account.daily.at(-2)?.followers || 0) : history.length > 1 ? followers - history.at(-2).value : null; return `<button class="account-card" type="button" data-account-card="${account.id}"><span class="account-card-head"><span><b>${account.handle}</b><small>${account.region}</small></span><span class="account-card-avatar">${account.avatar}</span></span><span class="account-card-metrics"><span><strong>${hasViews ? formatNumber(totalViews) : hasPublicViews ? formatCount(publicViews) : '—'}</strong>${hasPublicViews ? '公开播放' : '播放'}</span><span><strong>${posts || (publicPostCount ? publicPostCount : '—')}</strong>${posts ? '发布' : publicPostCount ? '产品视频' : '发布'}</span><span><strong>${hasFollowers ? formatCount(followers) : '—'}</strong>粉丝</span><span><strong class="${(followerDelta ?? 0) >= 0 ? 'positive' : 'negative'}">${followerDelta === null ? '—' : formatSignedCount(followerDelta)}</strong>昨增</span></span><span class="account-card-foot"><span>${account.name}</span><span class="${hasViews ? (delta >= 0 ? 'positive' : 'negative') : ''}">${hasViews ? `${delta >= 0 ? '+' : ''}${Math.round(delta * 100)}% vs 基线 →` : hasPublicViews ? '公开当前合计 · 非后台区间 →' : '等待导入数据 →'}</span></span></button>`; }).join('');
+  $('#account-cards').innerHTML = getActiveAccounts().map((account) => { const monitoredVideos = getMonitoredVideosForAccount(account); const publicVideos = monitoredVideos.filter((video) => parseNullableNumber(video.views) !== null); const publicViews = publicVideos.reduce((sum, video) => sum + Number(video.views), 0); const totalViews = account.daily.reduce((sum, day) => sum + day.views, 0); const recent = average(account.daily.slice(-3).map((day) => day.views)); const baseline = median(account.daily.slice(0, 9).map((day) => day.views)); const hasViews = baseline > 0; const hasPublicViews = !hasViews && publicVideos.length > 0; const delta = hasViews ? (recent - baseline) / baseline : 0; const posts = account.daily.reduce((sum, day) => sum + day.posts, 0); const publicPostCount = monitoredVideos.length; const history = getPublicFollowerHistory(account); const dailyFollowers = account.daily.at(-1)?.followers || 0; const hasFollowers = dailyFollowers > 0 || hasPublicFollowerSnapshot(account); const followers = dailyFollowers || history.at(-1)?.value || 0; const followerDelta = dailyFollowers ? followers - (account.daily.at(-2)?.followers || 0) : history.length > 1 ? followers - history.at(-2).value : null; return `<button class="account-card" type="button" data-account-card="${account.id}"><span class="account-card-head"><span><b>${account.handle}</b><small>${account.region}</small></span><span class="account-card-avatar">${account.avatar}</span></span><span class="account-card-metrics"><span><strong>${hasViews ? formatNumber(totalViews) : hasPublicViews ? formatCount(publicViews) : '—'}</strong>${hasPublicViews ? '公开播放' : '播放'}</span><span><strong>${posts || (publicPostCount ? publicPostCount : '—')}</strong>${posts ? '发布' : publicPostCount ? '产品视频' : '发布'}</span><span><strong>${hasFollowers ? formatCount(followers) : '—'}</strong>粉丝</span><span><strong class="${(followerDelta ?? 0) >= 0 ? 'positive' : 'negative'}">${followerDelta === null ? '—' : formatSignedCount(followerDelta)}</strong>昨增</span></span><span class="account-card-foot"><span>${account.name}</span><span class="${hasViews ? (delta >= 0 ? 'positive' : 'negative') : ''}">${hasViews ? `${delta >= 0 ? '+' : ''}${Math.round(delta * 100)}% vs 基线 →` : hasPublicViews ? '公开当前合计 · 非后台14天 →' : '等待导入数据 →'}</span></span></button>`; }).join('');
   document.querySelectorAll('[data-account-card]').forEach((button) => button.addEventListener('click', () => setAccount(button.dataset.accountCard)));
 }
 
@@ -1178,13 +1031,13 @@ function renderVideos() {
 function renderVideoSelect() { const { videos } = getScopeData(); if (!videos.some((video) => video.id === selectedVideoId)) selectedVideoId = videos[0]?.id; $('#video-select').innerHTML = videos.map((video) => `<option value="${video.id}" ${video.id === selectedVideoId ? 'selected' : ''}>${video.handle} · ${video.title}</option>`).join(''); }
 
 function updateSummary() {
-  const analysis = calculateAnalysis(); const daily = analysis.daily; const publicSummary = getPublicVisibleVideoSummary(); const totalViews = daily.reduce((sum, day) => sum + day.views, 0); const totalPosts = daily.reduce((sum, day) => sum + day.posts, 0); const recentPosts = daily.slice(-3).reduce((sum, day) => sum + day.posts, 0); const hasViews = daily.some((day) => day.views > 0); const hasComplete = daily.some((day) => day.complete > 0); const hasFyp = daily.some((day) => day.fyp > 0); const hasPosts = daily.some((day) => day.posts > 0); const hasPublicViews = !hasViews && publicSummary.count > 0; const hasPublicPosts = !hasPosts && publicSummary.videoCount > 0; const fypDrop = (analysis.recentFyp - analysis.baselineFyp) * 100; const retentionDrop = (analysis.recentComplete - analysis.baselineComplete) * 100; const isAll = scope === 'all'; const selectedAccount = dataset.accounts.find((account) => account.id === selectedAccountId); const activeAccountCount = getActiveAccounts().length; const registeredAccountCount = getRegisteredAccounts().length;
+  const analysis = calculateAnalysis(); const { daily } = getScopeData(); const publicSummary = getPublicVisibleVideoSummary(); const totalViews = daily.reduce((sum, day) => sum + day.views, 0); const totalPosts = daily.reduce((sum, day) => sum + day.posts, 0); const recentPosts = daily.slice(-3).reduce((sum, day) => sum + day.posts, 0); const hasViews = daily.some((day) => day.views > 0); const hasComplete = daily.some((day) => day.complete > 0); const hasFyp = daily.some((day) => day.fyp > 0); const hasPosts = daily.some((day) => day.posts > 0); const hasPublicViews = !hasViews && publicSummary.count > 0; const hasPublicPosts = !hasPosts && publicSummary.videoCount > 0; const fypDrop = (analysis.recentFyp - analysis.baselineFyp) * 100; const retentionDrop = (analysis.recentComplete - analysis.baselineComplete) * 100; const isAll = scope === 'all'; const selectedAccount = dataset.accounts.find((account) => account.id === selectedAccountId); const activeAccountCount = getActiveAccounts().length; const registeredAccountCount = getRegisteredAccounts().length;
   const setBadge = (selector, text, state = 'neutral') => { const badge = $(selector); if (!badge) return; badge.className = `trend-badge ${state}`; badge.textContent = text; };
   $('#page-title').textContent = isAll ? '账号总面板' : `${selectedAccount?.name || '单账号'} · 播放监测`; $('#page-subtitle').textContent = isAll ? '全部使用中账号 · 播放、发布节奏与视频表现合并视图' : `${selectedAccount?.handle || ''} · 播放、发布节奏与单视频生命周期`; $('#account-avatar').textContent = isAll ? '总' : selectedAccount?.avatar || '号'; $('#account-name').textContent = isAll ? '全部账号' : selectedAccount?.handle || '选择账号'; $('#account-region').textContent = isAll ? `总面板 · ${activeAccountCount} 个使用中 / ${registeredAccountCount} 个已登记` : selectedAccount?.region || ''; $('.scope-tab[data-scope="all"] small').textContent = `${activeAccountCount} 个使用中`;
-  $('#metric-views').textContent = hasViews ? formatNumber(totalViews) : hasPublicViews ? formatCount(publicSummary.totalViews) : '待导入'; $('#metric-views-kicker').textContent = hasViews ? `近 ${activeRange} 天` : hasPublicViews ? '公开当前合计' : `近 ${activeRange} 天`; $('#metric-views-trend').textContent = hasViews ? `${analysis.viewDelta >= 0 ? '+' : ''}${(analysis.viewDelta * 100).toFixed(1)}%` : hasPublicViews ? '公开快照' : '待比较'; $('#metric-views-trend').className = hasViews && analysis.viewDelta < 0 ? 'down' : hasViews ? 'cell-good' : 'neutral'; $('#metric-views-period').textContent = hasViews ? 'vs 自身历史基线' : hasPublicViews ? `${publicSummary.count} 条视频合计 · 非后台区间播放` : `需要近 ${activeRange} 天后台数据`;
-  $('#metric-posts').textContent = hasPosts ? totalPosts : hasPublicPosts ? publicSummary.videoCount : '待导入'; $('#metric-posts-caption').textContent = hasPosts ? (isAll ? `全部账号近 ${activeRange} 天发布` : `当前账号近 ${activeRange} 天发布`) : hasPublicPosts ? '公开主页已读取视频数' : (isAll ? `全部账号近 ${activeRange} 天发布` : `当前账号近 ${activeRange} 天发布`); $('#metric-posts-average').textContent = hasPosts ? `日均 ${(totalPosts / Math.max(daily.length, 1)).toFixed(1)} 条` : hasPublicPosts ? `${publicSummary.timestampCount}/${publicSummary.videoCount} 条已读取精确发布时间` : '等待数据'; setBadge('#metric-posts-badge', hasPosts ? (recentPosts >= average(daily.slice(0, -3).map((day) => day.posts)) * 3 ? '节奏上升' : '节奏稳定') : hasPublicPosts ? '公开快照' : '待导入', hasPosts ? 'good' : 'neutral'); $('#metric-posts-status').textContent = hasPosts ? (recentPosts >= 3 ? '活跃' : '稳定') : hasPublicPosts ? '已读取' : '待导入';
+  $('#metric-views').textContent = hasViews ? formatNumber(totalViews) : hasPublicViews ? formatCount(publicSummary.totalViews) : '待导入'; $('#metric-views-kicker').textContent = hasViews ? '近 14 天' : hasPublicViews ? '公开当前合计' : '近 14 天'; $('#metric-views-trend').textContent = hasViews ? `${analysis.viewDelta >= 0 ? '+' : ''}${(analysis.viewDelta * 100).toFixed(1)}%` : hasPublicViews ? '公开快照' : '待比较'; $('#metric-views-trend').className = hasViews && analysis.viewDelta < 0 ? 'down' : hasViews ? 'cell-good' : 'neutral'; $('#metric-views-period').textContent = hasViews ? 'vs 自身历史基线' : hasPublicViews ? `${publicSummary.count} 条视频合计 · 非后台14天` : '需要近 14 天后台数据';
+  $('#metric-posts').textContent = hasPosts ? totalPosts : hasPublicPosts ? publicSummary.videoCount : '待导入'; $('#metric-posts-caption').textContent = hasPosts ? (isAll ? '全部账号近 14 天发布' : '当前账号近 14 天发布') : hasPublicPosts ? '公开主页已读取视频数' : (isAll ? '全部账号近 14 天发布' : '当前账号近 14 天发布'); $('#metric-posts-average').textContent = hasPosts ? `日均 ${(totalPosts / activeRange).toFixed(1)} 条` : hasPublicPosts ? `${publicSummary.timestampCount}/${publicSummary.videoCount} 条已读取精确发布时间` : '等待数据'; setBadge('#metric-posts-badge', hasPosts ? (recentPosts >= average(daily.slice(0, -3).map((day) => day.posts)) * 3 ? '节奏上升' : '节奏稳定') : hasPublicPosts ? '公开快照' : '待导入', hasPosts ? 'good' : 'neutral'); $('#metric-posts-status').textContent = hasPosts ? (recentPosts >= 3 ? '活跃' : '稳定') : hasPublicPosts ? '已读取' : '待导入';
   updateDataProvenance(); renderFollowerAlert(); renderRecentContentMonitor(); renderActions();
-  $('#posts-total-large').textContent = hasPosts ? totalPosts : hasPublicPosts ? publicSummary.videoCount : '待录入'; $('#posts-summary-label').textContent = hasPosts ? (isAll ? '条视频 · 全部账号' : '条视频 · 当前账号') : hasPublicPosts ? '条公开视频 · 当前快照' : '发布数量'; $('#posts-summary-detail').textContent = hasPosts ? `日均 ${(totalPosts / Math.max(daily.length, 1)).toFixed(1)} 条 · 最多的一天 ${Math.max(...daily.map((day) => day.posts))} 条` : hasPublicPosts ? `${publicSummary.timestampCount}/${publicSummary.videoCount} 条已读取精确发布时间 · 详情页快照` : '等待公开主页或本地记录'; $('#posts-panel-note').textContent = hasPosts ? `${isAll ? '总面板' : '单账号'} · 近 ${activeRange} 天` : hasPublicPosts ? `${publicSummary.videoCount} 条公开视频 · 详情页时间` : `${isAll ? '总面板' : '单账号'} · 近 ${activeRange} 天`; $('#account-breakdown').style.display = isAll ? '' : 'none';
+  $('#posts-total-large').textContent = hasPosts ? totalPosts : hasPublicPosts ? publicSummary.videoCount : '待录入'; $('#posts-summary-label').textContent = hasPosts ? (isAll ? '条视频 · 全部账号' : '条视频 · 当前账号') : hasPublicPosts ? '条公开视频 · 当前快照' : '发布数量'; $('#posts-summary-detail').textContent = hasPosts ? `日均 ${(totalPosts / activeRange).toFixed(1)} 条 · 最多的一天 ${Math.max(...daily.map((day) => day.posts))} 条` : hasPublicPosts ? `${publicSummary.timestampCount}/${publicSummary.videoCount} 条已读取精确发布时间 · 详情页快照` : '等待公开主页或本地记录'; $('#posts-panel-note').textContent = hasPosts ? `${isAll ? '总面板' : '单账号'} · 近 ${activeRange} 天` : hasPublicPosts ? `${publicSummary.videoCount} 条公开视频 · 详情页时间` : `${isAll ? '总面板' : '单账号'} · 近 ${activeRange} 天`; $('#account-breakdown').style.display = isAll ? '' : 'none';
   renderViewsChart(); renderPostsChart(); renderFollowerSparkline(); renderDiagnosis(); renderVideos(); renderVideoSelect(); renderVideoCurve(); if (isAll) renderAccountCards();
 }
 
@@ -1202,20 +1055,17 @@ document.querySelectorAll('[data-scroll]').forEach((button) => button.addEventLi
 function getRecordValue(record, keys) { const key = keys.find((candidate) => Object.prototype.hasOwnProperty.call(record, candidate)); return key ? record[key] : ''; }
 function parseCsv(text) {
   const rows = []; let row = []; let cell = ''; let quoted = false;
-  for (let index = 0; index < text.length; index += 1) {
-    const character = text[index];
-    if (character === '"' && quoted && text[index + 1] === '"') { cell += '"'; index += 1; }
-    else if (character === '"') quoted = !quoted;
+  for (const character of text) {
+    if (character === '"') quoted = !quoted;
     else if (character === ',' && !quoted) { row.push(cell.trim()); cell = ''; }
     else if ((character === '\n' || character === '\r') && !quoted) { if (character === '\n' && (cell || row.length)) { row.push(cell.trim()); rows.push(row); row = []; cell = ''; } }
     else cell += character;
   }
-  if (quoted) throw new Error('CSV 存在未闭合的引号');
   if (cell || row.length) { row.push(cell.trim()); rows.push(row); }
   if (rows.length < 2) throw new Error('CSV 至少需要一行表头和一行数据');
   const headers = rows.shift().map((header) => header.replace(/^\uFEFF/, '').trim()); const records = rows.map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] || ''])));
   if (!headers.includes('date') || !headers.includes('views')) throw new Error('CSV 必须包含 date 和 views 列');
-  const followersHeader = headers.find((header) => ['followers', 'follower_count'].includes(header)); const dailyRecords = records.filter((record) => record.date && !record.video_id && parseNullableNumber(record.views) !== null); const invalidDailyDate = dailyRecords.find((record) => !normalizeDateKey(record.date)); if (invalidDailyDate) throw new Error(`CSV 包含无效日期：${invalidDailyDate.date}`); const daily = dailyRecords.map((record) => ({ date: normalizeDateKey(record.date), views: parseNullableNumber(record.views) ?? 0, posts: parseNullableNumber(record.posts) ?? 0, complete: parseNullableNumber(record.complete_rate) ?? 0, fyp: parseNullableNumber(record.fyp_share) ?? 0, engagement: parseNullableNumber(record.engagement_rate) ?? 0, followers: followersHeader ? parseNullableNumber(record[followersHeader]) : null }));
+  const followersHeader = headers.find((header) => ['followers', 'follower_count'].includes(header)); const daily = records.filter((record) => record.date && !record.video_id && parseNullableNumber(record.views) !== null).map((record) => ({ date: normalizeDateKey(record.date), views: parseNullableNumber(record.views) ?? 0, posts: parseNullableNumber(record.posts) ?? 0, complete: parseNullableNumber(record.complete_rate) ?? 0, fyp: parseNullableNumber(record.fyp_share) ?? 0, engagement: parseNullableNumber(record.engagement_rate) ?? 0, followers: followersHeader ? parseNullableNumber(record[followersHeader]) : null }));
   if (daily.length && daily.length < 5) throw new Error('每日数据至少需要 5 天，才能建立自身基线');
   if (!daily.length && !records.some((record) => record.video_id)) throw new Error('CSV 没有可识别的每日数据或视频数据');
   ensureTimelineDates(daily.map((row) => row.date));
@@ -1239,8 +1089,7 @@ $('#account-link-form').addEventListener('submit', (event) => {
     const homepageUrl = validateTikTokUrl($('#homepage-url').value.trim(), '主页链接');
     const note = $('#account-note').value.trim();
     const rawFollowers = $('#account-followers').value.trim();
-    const followersSnapshot = rawFollowers === '' ? null : parseNullableNumber(rawFollowers);
-    if (rawFollowers !== '' && followersSnapshot === null) throw new Error('粉丝数必须是大于等于 0 的有效数字');
+    const followersSnapshot = rawFollowers === '' ? null : Math.max(0, Number(rawFollowers) || 0);
     const snapshotAt = $('#account-snapshot-at').value || new Date().toISOString().slice(0, 10);
     const account = accountId === 'new' ? createRegisteredAccount(homepageUrl, note) : dataset.accounts.find((item) => item.id === accountId);
     if (!account) throw new Error('请选择要保存的账号');
@@ -1261,8 +1110,7 @@ $('#video-link-form').addEventListener('submit', (event) => {
     const url = validateTikTokUrl($('#video-url').value.trim(), '视频链接');
     const note = $('#video-note').value.trim();
     const rawViews = $('#video-views').value.trim();
-    const views = rawViews === '' ? null : parseNullableNumber(rawViews);
-    if (rawViews !== '' && views === null) throw new Error('播放量必须是大于等于 0 的有效数字');
+    const views = rawViews === '' ? null : Math.max(0, Number(rawViews) || 0);
     const snapshotAt = $('#video-snapshot-at').value || new Date().toISOString();
     linkRegistry[accountId] = linkRegistry[accountId] || { homepageUrl: '', note: '', videos: [] };
     const record = linkRegistry[accountId];
