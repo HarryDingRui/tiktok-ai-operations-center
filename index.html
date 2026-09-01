@@ -474,7 +474,7 @@ body {
   .stats-row { grid-template-columns: 1fr 1fr; }
 }
 #operation-date-record-card {
-  margin-top: 22px;
+  margin-top: 56px !important;
   background: #fff;
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
@@ -1405,6 +1405,7 @@ body {
       </div>
     </div>
   </div>
+  <div aria-hidden="true" style="height:24px;"></div>
   <div class="card" id="operation-date-record-card">
     <div class="card-title">🗓️ 运营执行日期记录 <span>记录实际执行日期，便于后续 T+1 / T+3 / T+7 追踪</span></div>
     <form id="operation-date-record-form" style="display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;align-items:end;">
