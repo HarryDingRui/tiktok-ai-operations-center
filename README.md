@@ -49,13 +49,6 @@
 
 `data/operations-data.json`、`data/real-store-data.js` 和 WPS/Kdocs 模板作为数据接入资产保留；当前 v3 页面不会直接读取私有 WPS/Kdocs 文档。要实现实时刷新，需要增加后端同步/API，并将静态快照替换为接口数据。
 
-## 账号数据看板
-
-账号播放、粉丝、视频发布与公开内容监测页：`account-board/`。GitHub Pages 地址：
-`https://harrydingrui.github.io/tiktok-ai-operations-center/account-board/`
-
-该页面只展示已验证的 TikTok 公开主页快照；公开当前播放量不冒充后台近 14 天指标，缺失字段保持“待导入”。
-
 ## 小红书 / 抖音 / 闲鱼三域操盘中心
 
 独立的三平台账号运营操盘系统：`three-platform-ops-center/`。GitHub Pages 地址：
@@ -64,4 +57,3 @@
 该版本支持真实账号登记、本地核验、三平台 CSV 模板与本地导入、流量/评论/分享或转发/完播/想要/有效咨询/支付订单监测、证据预警、执行任务、规则和 JSON 备份。页面默认不包含真实经营数据；CSV 和备份只在当前浏览器处理，未提供的指标保持“待导入”，不会自动写成 0。
 
 GitHub Pages 是静态站，无法安全承载账号密码、多用户权限、D1 审计和后台定时采集。需要多人同步、审批与服务端数据治理时，继续使用私有动态版。
-
