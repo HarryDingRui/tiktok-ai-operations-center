@@ -1301,7 +1301,7 @@ body {
         <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">31</div><div style="height:125px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-25</div></div>
         <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">27</div><div style="height:108px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-26</div></div>
         <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">20</div><div style="height:76px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-27</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#0f172a;">32</div><div style="height:130px;background:linear-gradient(to top,#0f172a,#334155);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600;">08-28</div></div>
+        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#0f172a;">32</div><div style="height:130px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-28</div></div>
       </div>
     </div>
     <div class="card">
@@ -1315,6 +1315,27 @@ body {
     </div>
   </div>
 </div>
+
+  <div aria-hidden="true" style="height:24px;"></div>
+  <div class="card" id="operation-date-record-card">
+    <div class="card-title">🗓️ 运营执行日期记录 <span>记录实际执行日期，便于后续 T+1 / T+3 / T+7 追踪</span></div>
+    <form id="operation-date-record-form" style="display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;align-items:end;">
+      <label style="font-size:12px;color:#475569;">执行日期<input id="operation-record-date" type="date" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
+      <label style="font-size:12px;color:#475569;">店铺<input id="operation-record-store" type="text" placeholder="如 US-旗舰店" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
+      <label style="font-size:12px;color:#475569;">商品 / 对象<input id="operation-record-object" type="text" placeholder="如 商品 ID 100176" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
+      <label style="font-size:12px;color:#475569;">执行动作<input id="operation-record-action" type="text" placeholder="如 优化主图" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
+      <button class="btn btn-primary" type="submit" style="min-height:38px;">＋ 保存执行日期</button>
+    </form>
+    <div class="operation-date-search" style="display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-top:16px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+      <label style="font-size:12px;color:#475569;">按具体日期定位
+        <input id="operation-record-query-date" type="date" style="display:block;width:190px;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;">
+      </label>
+      <button id="operation-record-query-btn" class="btn btn-primary" type="button" style="min-height:38px;">🔎 查询当天记录</button>
+      <button id="operation-record-clear-btn" class="btn" type="button" style="min-height:38px;">显示全部</button>
+      <span id="operation-record-query-status" style="font-size:12px;color:#64748b;"></span>
+    </div>
+    <div id="operation-date-record-list" style="margin-top:12px;"></div>
+  </div>
 
 <!-- ========== 6. 动作验证 ========== -->
 <div id="page-validation" class="page">
@@ -1405,27 +1426,6 @@ body {
       </div>
     </div>
   </div>
-  <div aria-hidden="true" style="height:24px;"></div>
-  <div class="card" id="operation-date-record-card">
-    <div class="card-title">🗓️ 运营执行日期记录 <span>记录实际执行日期，便于后续 T+1 / T+3 / T+7 追踪</span></div>
-    <form id="operation-date-record-form" style="display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;align-items:end;">
-      <label style="font-size:12px;color:#475569;">执行日期<input id="operation-record-date" type="date" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
-      <label style="font-size:12px;color:#475569;">店铺<input id="operation-record-store" type="text" placeholder="如 US-旗舰店" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
-      <label style="font-size:12px;color:#475569;">商品 / 对象<input id="operation-record-object" type="text" placeholder="如 商品 ID 100176" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
-      <label style="font-size:12px;color:#475569;">执行动作<input id="operation-record-action" type="text" placeholder="如 优化主图" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
-      <button class="btn btn-primary" type="submit" style="min-height:38px;">＋ 保存执行日期</button>
-    </form>
-    <div class="operation-date-search" style="display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-top:16px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-      <label style="font-size:12px;color:#475569;">按具体日期定位
-        <input id="operation-record-query-date" type="date" style="display:block;width:190px;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;">
-      </label>
-      <button id="operation-record-query-btn" class="btn btn-primary" type="button" style="min-height:38px;">🔎 查询当天记录</button>
-      <button id="operation-record-clear-btn" class="btn" type="button" style="min-height:38px;">显示全部</button>
-      <span id="operation-record-query-status" style="font-size:12px;color:#64748b;"></span>
-    </div>
-    <div id="operation-date-record-list" style="margin-top:12px;"></div>
-  </div>
-
   <div class="card">
     <div class="card-title">📋 运营已执行清单 <span>全部店铺 · 已执行 · Agent 自动记录</span></div>
     <div class="desktop-table-wrap">
