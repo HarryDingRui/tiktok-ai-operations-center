@@ -597,6 +597,7 @@ body {
   <div class="nav-item" onclick="showPage('knowledge', this)"><span class="nav-icon">📚</span> <span>运营知识库</span></div>
   <div class="nav-item" onclick="showPage('agents', this)"><span class="nav-icon">🤖</span> <span>Agent 调度中心</span><span class="nav-badge">2</span></div>
   <div class="nav-item" onclick="showPage('data', this)"><span class="nav-icon">⚙️</span> <span>数据接入</span></div>
+  <div class="nav-item" onclick="openOperationRecords(this)"><span class="nav-icon">🗓️</span> <span>运营执行记录</span></div>
 </div>
 
 <!-- 移动端底部导航 -->
@@ -2217,6 +2218,11 @@ function bindOperationDateRecords() {
   form.addEventListener('submit', (event) => { event.preventDefault(); records.unshift({ date: dateInput.value, store: document.getElementById('operation-record-store').value.trim(), object: document.getElementById('operation-record-object').value.trim(), action: document.getElementById('operation-record-action').value.trim() }); localStorage.setItem(storageKey, JSON.stringify(records)); form.reset(); dateInput.value = new Date().toISOString().slice(0, 10); render(); });
   render();
 }
+function openOperationRecords(el) {
+  showPage('validation', el);
+  window.setTimeout(() => document.getElementById('operation-date-record-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+}
+
 // 页面切换
 function showPage(pageId, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
