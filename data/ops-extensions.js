@@ -615,7 +615,7 @@
     }
     if (!bdRange) bdRange = makeRangeState("bd", "creators");
     if (!rows.length) {
-      const guide = emptyBlock(`<b>达人数据待导入。</b>上传达人合作表（下方导入通道，Excel/CSV 均可）后，这里自动按日期展示每位达人的状态、GMV、交付视频数与播放量；列名差异会自动识别。<br>建议字段：日期、达人、店铺、状态、GMV、视频数、播放量——但不是必须，有什么传什么。`);
+      const guide = emptyBlock(`<b>达人数据待导入。</b>到「数据接入」页上传达人合作表（Excel/CSV 均可）后，这里自动按日期展示每位达人的状态、GMV、交付视频数与播放量；列名差异会自动识别。<br>建议字段：日期、达人、店铺、状态、GMV、视频数、播放量——但不是必须，有什么传什么。`);
       if (dailyPanel) dailyPanel.innerHTML = guide;
       if (top10Panel) top10Panel.innerHTML = emptyBlock(`达人数据导入后自动生成 TOP10 榜单。`);
       return;
@@ -789,7 +789,7 @@
     }
     if (!adsRange) adsRange = makeRangeState("ads", "ads");
     if (!rows.length) {
-      const guide = emptyBlock(`<b>广告数据待导入。</b>上传广告后台导出的数据表（下方导入通道）后，这里自动按日期展示各计划消耗、曝光、CTR、GMV、ROAS；列名差异自动识别。<br>建议字段：日期、计划、广告组、商品ID、消耗、曝光、点击、GMV——有什么传什么。`);
+      const guide = emptyBlock(`<b>广告数据待导入。</b>到「数据接入」页上传广告后台导出的数据表后，这里自动按日期展示各计划消耗、曝光、CTR、GMV、ROAS；列名差异自动识别。<br>建议字段：日期、计划、广告组、商品ID、消耗、曝光、点击、GMV——有什么传什么。`);
       if (dailyPanel) dailyPanel.innerHTML = guide;
       if (actionsPanel) actionsPanel.innerHTML = emptyBlock(`广告数据导入后，这里会按规则自动生成调整事项（关停亏损计划 / 换素材 / 扩量标杆 / 补归因）。`);
       return;
@@ -880,7 +880,7 @@
       status.textContent = rows.length ? `素材库 ${rows.length} 条` : "待导入";
     }
     if (!rows.length) {
-      panel.innerHTML = emptyBlock(`<b>素材库为空。</b>上传素材数据表（达人 / 视频链接 / 商品ID / 播放量 / GMV / ROAS / 标签）后生成素材卡片墙；视频文件用第二个通道上传，只保存在本机浏览器，按文件名自动关联。`);
+      panel.innerHTML = emptyBlock(`<b>素材库为空。</b>到「数据接入」页 · 优质达人素材库入口上传素材数据表（达人 / 视频链接 / 商品ID / 播放量 / GMV / ROAS / 标签）后生成素材卡片墙；视频文件也在那里上传，只保存在本机浏览器，按文件名自动关联。`);
       return;
     }
     const sorted = [...rows].sort((a, b) => (b[assetSort] || 0) - (a[assetSort] || 0));
@@ -966,7 +966,7 @@
     }
     if (!videosRange) videosRange = makeRangeState("videos", "videos");
     if (!rows.length) {
-      panel.innerHTML = emptyBlock(`<b>视频数据待导入。</b>上传 TikTok Studio / Seller Center 导出的视频明细（下方导入通道）后，自动生成三个排行榜；列名差异自动识别。<br>建议字段：日期、账号、视频ID/链接、商品ID、播放量、GMV——有什么传什么。`);
+      panel.innerHTML = emptyBlock(`<b>视频数据待导入。</b>到「数据接入」页上传 TikTok Studio / Seller Center 导出的视频明细后，自动生成三个排行榜；列名差异自动识别。<br>建议字段：日期、账号、视频ID/链接、商品ID、播放量、GMV——有什么传什么。`);
       return;
     }
     const bounds = videosRange.getBounds();
@@ -1039,7 +1039,7 @@
   function creatorPriorityProvider() {
     const rows = extraData.creators;
     if (!rows.length) {
-      return { items: [], emptyHtml: `<b>达人合作表未导入。</b>到「BD / 达人」页底部上传达人合作表后，这里会自动列出优先处理项：状态异常、待跟进、寄样未回传等，并附数据与建议动作。` };
+      return { items: [], emptyHtml: `<b>达人合作表未导入。</b>到「数据接入」页上传达人合作表后，这里会自动列出优先处理项：状态异常、待跟进、寄样未回传等，并附数据与建议动作。` };
     }
     const latestDate = datasetDates("creators").pop();
     const latestRows = rows.filter((record) => record.date === latestDate);
@@ -1072,7 +1072,7 @@
   function adsPriorityProvider() {
     const rows = extraData.ads;
     if (!rows.length) {
-      return { items: [], emptyHtml: `<b>广告数据未导入。</b>到「广告投放」页底部上传广告后台导出表后，这里会自动列出优先处理项：亏损计划关停、低效计划优化、标杆计划扩量、待归因提醒。` };
+      return { items: [], emptyHtml: `<b>广告数据未导入。</b>到「数据接入」页上传广告后台导出表后，这里会自动列出优先处理项：亏损计划关停、低效计划优化、标杆计划扩量、待归因提醒。` };
     }
     const dates = datasetDates("ads");
     const latest = dates[dates.length - 1];
@@ -1084,7 +1084,7 @@
   function videoPriorityProvider() {
     const rows = extraData.videos;
     if (!rows.length) {
-      return { items: [], emptyHtml: `<b>自营视频数据未导入。</b>到「自营短视频」页底部上传视频明细后，这里会自动列出优先处理项：0 播放/低播放视频复盘、爆款视频复用建议。` };
+      return { items: [], emptyHtml: `<b>自营视频数据未导入。</b>到「数据接入」页上传视频明细后，这里会自动列出优先处理项：0 播放/低播放视频复盘、爆款视频复用建议。` };
     }
     const dates = datasetDates("videos");
     const latest = dates[dates.length - 1];

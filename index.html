@@ -547,6 +547,18 @@ body {
 .upload-zone.small .upload-zone-title { font-size:13px; }
 .upload-zone.small .upload-zone-desc { font-size:11px; }
 
+/* ========== v3.2 统一数据接入中心 ========== */
+.upload-hub-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.upload-module { border:1px solid #e2e8f0; border-radius:10px; padding:14px; background:#fff; display:flex; flex-direction:column; gap:9px; }
+.upload-module-head { font-size:13px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px; }
+.upload-module-desc { font-size:11px; color:#64748b; line-height:1.65; }
+.upload-module-foot { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:auto; }
+.upload-module .upload-zone { margin:0; }
+.upload-module-link { font-size:11px; color:#2563eb; cursor:pointer; text-decoration:none; }
+.upload-module-link:hover { text-decoration:underline; }
+@media (max-width: 1100px) { .upload-hub-grid { grid-template-columns:1fr 1fr; } }
+@media (max-width: 640px) { .upload-hub-grid { grid-template-columns:1fr; } }
+
 @media (max-width: 860px) {
   .priority-hub-tabs { grid-template-columns:1fr 1fr; }
   .trend-grid { grid-template-columns:1fr; }
@@ -981,15 +993,8 @@ body {
     <div id="bd-top10-panel"></div>
   </div>
 
-  <div class="card">
-    <div class="card-title">📤 达人合作数据导入 <span>自适应列识别 · 不限定模板</span></div>
-    <div class="upload-zone small" id="bd-upload-zone" onclick="document.getElementById('bd-file-input').click()">
-      <div class="upload-zone-icon">📁</div>
-      <div class="upload-zone-title">选择达人合作表（Excel / CSV，可多选）</div>
-      <div class="upload-zone-desc">店铺后台或达人团队导出什么格式就直接传；系统自动识别 日期 / 达人 / 状态 / GMV / 视频数 / 播放量 等列，认不出的列会请你指认一次并记住。</div>
-    </div>
-    <input id="bd-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
-    <div style="text-align:center;margin-top:8px;"><span id="bd-upload-status" class="tag tag-yellow">待导入</span></div>
+  <div class="card" style="border-left:4px solid #38bdf8;">
+    <div style="font-size:12px;color:#475569;line-height:1.7;">📤 达人合作表已统一到 <a class="upload-module-link" onclick="showPage('data', null)">「数据接入」页 · 达人合作数据入口</a> 上传，列名差异自动识别。</div>
   </div>
 
   <div class="card">
@@ -1113,40 +1118,15 @@ body {
   </div>
 
   <div class="card">
-    <div class="card-title">⭐ 广告优质达人素材库 <span>数据表 + 视频文件双通道 · 仅保存在本机浏览器</span></div>
-    <div class="two-col" style="margin-bottom:12px;">
-      <div class="upload-zone small" onclick="document.getElementById('asset-file-input').click()">
-        <div class="upload-zone-icon">📊</div>
-        <div class="upload-zone-title">上传素材数据表（Excel / CSV）</div>
-        <div class="upload-zone-desc">自动识别 达人 / 视频链接 / 商品ID / 播放量 / GMV / ROAS / 素材标签 等列</div>
-      </div>
-      <div class="upload-zone small" onclick="document.getElementById('asset-video-input').click()">
-        <div class="upload-zone-icon">🎬</div>
-        <div class="upload-zone-title">上传素材视频（mp4，可多选）</div>
-        <div class="upload-zone-desc">视频只存本机浏览器；按文件名与数据表"视频链接/文件名"列自动关联</div>
-      </div>
-    </div>
-    <input id="asset-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
-    <input id="asset-video-input" type="file" accept="video/mp4,video/quicktime" multiple style="display:none;">
+    <div class="card-title">⭐ 广告优质达人素材库 <span>上传统一在「数据接入」页 · 仅保存在本机浏览器</span></div>
     <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
       <span class="tl-label">排序</span>
       <button class="ops-chip active" data-asset-sort="roas">按 ROAS</button>
       <button class="ops-chip" data-asset-sort="gmv">按 GMV</button>
       <button class="ops-chip" data-asset-sort="views">按播放量</button>
-      <span id="asset-upload-status" class="tag tag-yellow" style="margin-left:auto;">待导入</span>
+      <a class="upload-module-link" style="margin-left:auto;" onclick="showPage('data', null)">📤 去「数据接入」上传素材 →</a>
     </div>
     <div id="asset-library-panel"></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📤 广告投放数据导入 <span>自适应列识别 · 不限定模板</span></div>
-    <div class="upload-zone small" onclick="document.getElementById('ads-file-input').click()">
-      <div class="upload-zone-icon">📁</div>
-      <div class="upload-zone-title">选择广告数据表（Excel / CSV，可多选）</div>
-      <div class="upload-zone-desc">自动识别 日期 / 计划 / 广告组 / 商品ID / 消耗 / 曝光 / 点击 / CTR / CVR / GMV / ROAS 等列</div>
-    </div>
-    <input id="ads-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
-    <div style="text-align:center;margin-top:8px;"><span id="ads-upload-status" class="tag tag-yellow">待导入</span></div>
   </div>
 
   <div class="card">
@@ -1242,15 +1222,8 @@ body {
     <div id="video-leaderboard-panel"></div>
   </div>
 
-  <div class="card">
-    <div class="card-title">📤 自营短视频数据导入 <span>自适应列识别 · 不限定模板</span></div>
-    <div class="upload-zone small" onclick="document.getElementById('videos-file-input').click()">
-      <div class="upload-zone-icon">📁</div>
-      <div class="upload-zone-title">选择视频数据表（Excel / CSV，可多选）</div>
-      <div class="upload-zone-desc">TikTok Studio / Seller Center 导出的视频明细直接传；自动识别 日期 / 账号 / 视频ID / 商品ID / 播放量 / GMV 等列</div>
-    </div>
-    <input id="videos-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
-    <div style="text-align:center;margin-top:8px;"><span id="videos-upload-status" class="tag tag-yellow">待导入</span></div>
+  <div class="card" style="border-left:4px solid #38bdf8;">
+    <div style="font-size:12px;color:#475569;line-height:1.7;">📤 视频数据表已统一到 <a class="upload-module-link" onclick="showPage('data', null)">「数据接入」页 · 自营短视频数据入口</a> 上传，TikTok Studio / Seller Center 导出直接传。</div>
   </div>
 
   <div class="card">
@@ -2002,28 +1975,118 @@ body {
       </div>
     </div>
   </div>
-  <div class="two-col">
-    <div class="card">
-      <div class="card-title">📤 商品 / 店铺经营数据</div>
-      <div class="upload-zone" id="real-store-upload-zone" onclick="document.getElementById('real-store-file-input').click()">
-        <div class="upload-zone-icon">📁</div>
-        <div class="upload-zone-title">选择店铺导出文件（Excel / CSV，可多选）</div>
-        <div class="upload-zone-desc">店铺后台导出什么格式就直接传：列名差异自动识别，店铺和日期自动推断，认不出的列可指认一次永久记住</div>
+  <div class="card" style="margin-bottom:18px;border-left:4px solid #0f172a;">
+    <div class="card-title">🛰️ 统一数据接入中心 <span>所有版块的数据都从这里进 · 自适应列识别 · 认不出的列指认一次永久记住</span></div>
+    <div class="upload-hub-grid">
+      <div class="upload-module">
+        <div class="upload-module-head">🛍️ 商品 / 店铺经营数据</div>
+        <div class="upload-module-desc">店铺后台 product_list 导出表直接传。驱动：经营总览、排行榜、数据预警、近7天趋势图。</div>
+        <div class="upload-zone small" id="real-store-upload-zone" onclick="document.getElementById('real-store-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择店铺导出文件</div>
+          <div class="upload-zone-desc">支持多选 .xlsx / .xls / .csv；店铺和日期自动推断</div>
+        </div>
+        <input id="real-store-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="real-data-upload-status" class="tag tag-green">已加载公开快照</span>
+          <button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button>
+          <a class="upload-module-link" onclick="showPage('overview', null)">查看版块 →</a>
+        </div>
       </div>
-      <input id="real-store-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px;">
-        <span id="real-data-upload-status" class="tag tag-green">已加载公开快照</span>
-        <button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button>
+
+      <div class="upload-module">
+        <div class="upload-module-head">🤝 达人合作数据</div>
+        <div class="upload-module-desc">达人团队或后台导出的合作表直接传。驱动：达人每日时间轴、近7天 TOP10、达人优先处理。</div>
+        <div class="upload-zone small" onclick="document.getElementById('bd-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择达人合作表</div>
+          <div class="upload-zone-desc">自动识别 日期 / 达人 / 状态 / GMV / 视频数 / 播放量</div>
+        </div>
+        <input id="bd-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="bd-upload-status" class="tag tag-yellow">待导入</span>
+          <a class="upload-module-link" onclick="showPage('bd', null)">查看版块 →</a>
+        </div>
       </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📤 运营调整记录</div>
-      <div class="upload-zone" onclick="alert('📁 请选择动作记录 CSV\n\n建议字段：日期、商品ID、维度、动作类型、动作说明、负责人、验证节点')">
-        <div class="upload-zone-icon">📁</div>
-        <div class="upload-zone-title">选择动作记录 CSV</div>
-        <div class="upload-zone-desc">建议字段：日期、商品ID、维度、动作类型、动作说明、负责人、验证节点</div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">🎯 广告投放数据</div>
+        <div class="upload-module-desc">广告后台导出表直接传。驱动：每日广告时间轴、智能分析·调整事项、广告优先处理。</div>
+        <div class="upload-zone small" onclick="document.getElementById('ads-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择广告数据表</div>
+          <div class="upload-zone-desc">自动识别 日期 / 计划 / 广告组 / 消耗 / 曝光 / CTR / GMV / ROAS</div>
+        </div>
+        <input id="ads-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="ads-upload-status" class="tag tag-yellow">待导入</span>
+          <a class="upload-module-link" onclick="showPage('ads', null)">查看版块 →</a>
+        </div>
       </div>
-      <div style="text-align:center;margin-top:10px;"><span class="tag tag-green">本地可用</span></div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">🎬 自营短视频数据</div>
+        <div class="upload-module-desc">TikTok Studio / Seller Center 视频明细直接传。驱动：三个排行榜、短视频优先处理。</div>
+        <div class="upload-zone small" onclick="document.getElementById('videos-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择视频数据表</div>
+          <div class="upload-zone-desc">自动识别 日期 / 账号 / 视频ID / 商品ID / 播放量 / GMV</div>
+        </div>
+        <input id="videos-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="videos-upload-status" class="tag tag-yellow">待导入</span>
+          <a class="upload-module-link" onclick="showPage('videos', null)">查看版块 →</a>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">⭐ 优质达人素材库</div>
+        <div class="upload-module-desc">素材数据表 + mp4 视频双通道；视频只存本机浏览器，按文件名自动关联。</div>
+        <div class="upload-zone small" onclick="document.getElementById('asset-file-input').click()">
+          <div class="upload-zone-icon">📊</div>
+          <div class="upload-zone-title">上传素材数据表</div>
+          <div class="upload-zone-desc">自动识别 达人 / 视频链接 / 商品ID / GMV / ROAS / 标签</div>
+        </div>
+        <div class="upload-zone small" onclick="document.getElementById('asset-video-input').click()">
+          <div class="upload-zone-icon">🎬</div>
+          <div class="upload-zone-title">上传素材视频（mp4）</div>
+          <div class="upload-zone-desc">可多选；与数据表"视频链接/文件名"列自动关联</div>
+        </div>
+        <input id="asset-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <input id="asset-video-input" type="file" accept="video/mp4,video/quicktime" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="asset-upload-status" class="tag tag-yellow">待导入</span>
+          <a class="upload-module-link" onclick="showPage('ads', null)">查看素材库 →</a>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">📝 运营调整记录</div>
+        <div class="upload-module-desc">运营动作回传表。驱动：动作验证、T+1/T+3/T+7 效果追踪。</div>
+        <div class="upload-zone small" onclick="alert('📁 请选择动作记录 CSV\n\n建议字段：日期、商品ID、维度、动作类型、动作说明、负责人、验证节点')">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择动作记录 CSV</div>
+          <div class="upload-zone-desc">建议字段：日期、商品ID、维度、动作类型、动作说明、负责人</div>
+        </div>
+        <div class="upload-module-foot">
+          <span class="tag tag-green">本地可用</span>
+          <a class="upload-module-link" onclick="showPage('validation', null)">查看版块 →</a>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">📚 运营知识库数据</div>
+        <div class="upload-module-desc">团队方法论、SOP、案例文档，用于知识沉淀与 Agent 复用。</div>
+        <div class="upload-zone small" onclick="showPage('knowledge', null); const tabs = document.querySelectorAll('#page-knowledge .tab-bar .tab-btn'); if (tabs[2]) tabs[2].click();">
+          <div class="upload-zone-icon">📚</div>
+          <div class="upload-zone-title">前往知识库上传</div>
+          <div class="upload-zone-desc">在知识库版块的"上传"页签中提交文档与知识卡片</div>
+        </div>
+        <div class="upload-module-foot">
+          <span class="tag tag-green">可上传</span>
+          <a class="upload-module-link" onclick="showPage('knowledge', null)">查看版块 →</a>
+        </div>
+      </div>
     </div>
   </div>
   <div class="card" style="margin-top:14px;">
@@ -2078,8 +2141,8 @@ body {
 </div>
 
 <script src="./data/real-store-data.js"></script>
-<script src="./data/real-store-dashboard.js?v=ops-ext-1"></script>
-<script src="./data/ops-extensions.js?v=ops-ext-1"></script>
+<script src="./data/real-store-dashboard.js?v=ops-ext-2"></script>
+<script src="./data/ops-extensions.js?v=ops-ext-2"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'data']);
 const DEMO_PAGE_NOTICES = {
