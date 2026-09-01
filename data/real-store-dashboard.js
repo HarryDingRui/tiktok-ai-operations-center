@@ -40,31 +40,194 @@
     return Number.isFinite(number) ? number : null;
   }
 
+  /* ========== 自适应字段映射层：中控台适应店铺数据，不要求固定模板 ========== */
+  const HEADER_MAPPING_STORAGE_KEY = "tiktok-header-mapping-v1";
+  const HEADER_MAPPING_IGNORE = "__ignore__";
+
+  function normalizeHeaderText(value) {
+    return String(value ?? "")
+      .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xfee0))
+      .toLowerCase()
+      .replace(/（/g, "(").replace(/）/g, ")")
+      .replace(/％/g, "%")
+      .replace(/[\s_\-·:：,，.。/\\|]+/g, "")
+      .trim();
+  }
+
+  // 标准字段同义词库：中文 / 英文 / 常见简写，全部按 normalizeHeaderText 后的形态匹配
+  const HEADER_SYNONYMS = {
+    "商品 ID": ["商品id", "product id", "productid", "item id", "itemid", "pid", "spu id", "spuid", "商品编号", "产品id", "产品编号", "goods id", "goodsid"],
+    "商品名": ["product name", "productname", "商品名称", "产品名称", "商品标题", "产品标题", "item name", "itemname", "product title", "title", "product", "goods name", "goodsname"],
+    "发品状态": ["status", "商品状态", "产品状态", "listing status", "listingstatus", "状态", "上架状态"],
+    "GMV 区间": ["gmv区间", "gmv range", "gmvrange", "gmv band", "gmvband"],
+    "GMV": ["gmv", "成交额", "销售额", "成交金额", "交易总额", "gross merchandise value", "grossmerchandisevalue", "gmv(thb)", "gmvthb", "gmv($)", "总成交额"],
+    "订单数": ["orders", "order", "订单", "订单量", "order count", "ordercount", "total orders", "totalorders"],
+    "SKU 订单数": ["sku orders", "skuorders", "sku订单", "sku 订单", "sku order count", "skuordercount"],
+    "商品成交件数": ["units", "items sold", "itemssold", "成交件数", "销量", "销售件数", "件数", "sold units", "soldunits", "units sold", "unitssold", "product units", "productunits"],
+    "预计客户数": ["customers", "buyers", "客户数", "买家数", "estimated customers", "estimatedcustomers", "est. customers"],
+    "平均订单金额（SKU 订单）": ["average order value", "averageordervalue", "avg order value", "avgordervalue", "aov", "客单价", "平均订单金额", "平均订单价值"],
+    "商品曝光次数": ["impressions", "product impressions", "productimpressions", "曝光", "曝光量", "曝光次数", "商品曝光", "商品曝光量", "总曝光", "总曝光量", "views", "exposure"],
+    "商品点击量": ["clicks", "product clicks", "productclicks", "点击", "点击量", "点击次数", "商品点击", "商品点击量", "总点击", "总点击量"],
+    "商品点击率": ["ctr", "点击率", "click-through rate", "click through rate", "clickthroughrate", "product ctr", "productctr"],
+    "加购次数": ["add to cart", "addtocart", "atc", "加购", "加购数", "adds to cart", "addstocart", "add-to-cart", "add to carts", "addtocarts", "cart adds", "cartadds"],
+    "加购率": ["atc rate", "atcrate", "加购率", "add to cart rate", "addtocartrate", "add-to-cart rate"],
+    "CTOR（SKU 订单）": ["ctor", "ctor(sku orders)", "ctor(skuorders)", "ctor(sku 订单)", "ctor(sku订单)", "点击成交转化率", "点击下单转化率"],
+    "去重商品曝光次数": ["unique impressions", "uniqueimpressions", "去重曝光", "去重曝光量", "去重曝光次数", "unique exposure", "uniqueexposure"],
+    "去重点击次数": ["unique clicks", "uniqueclicks", "去重点击", "去重点击量", "去重点击量"],
+    "去重点击率": ["unique ctr", "uniquectr", "去重ctr", "去重点击率", "去重点击率"],
+    "已加购的用户数": ["atc users", "atcusers", "加购用户数", "已加购用户数", "add-to-cart users", "addtocartusers"],
+    "去重加购率": ["unique atc rate", "uniqueatcrate", "去重加购率"],
+    "去重点击成交转化率（SKU 订单）": ["cvr", "转化率", "成交转化率", "点击转化率", "conversion rate", "conversionrate", "unique click cvr", "uniqueclickcvr", "去重cvr", "去重转化率"],
+    "税费": ["tax", "税", "税费", "税金"],
+    "运费": ["shipping", "运费", "shipping fee", "shippingfee", "shipping cost", "shippingcost"],
+    "退款金额": ["refund", "refund amount", "refundamount", "退款", "退款额", "refunds"],
+    "已退款的商品件数": ["refunded units", "refundedunits", "退款件数", "已退款件数", "refund units", "refundunits"],
+    "退款客户数": ["refund customers", "refundcustomers", "退款客户数", "退款买家数"],
+    "商城页 GMV": ["mall gmv", "mallgmv", "商城gmv", "商城页gmv", "shop tab gmv", "shoptabgmv", "商城成交额"],
+    "新直播场次": ["new live sessions", "newlivesessions", "直播场次", "新开播场次", "live sessions", "livesessions"],
+    "新视频数": ["new videos", "newvideos", "新视频", "发布视频数", "video count", "videocount"],
+    "已发布内容的日均达人数": ["avg daily reach", "avgdailyreach", "日均达人数", "日均触达", "average daily reach"],
+    "日期": ["日期", "date", "day", "统计日期", "数据日期", "report date", "reportdate", "日期时间", "时间", "dt"],
+    "店铺": ["店铺", "店铺名称", "shop", "shop name", "shopname", "store", "store name", "storename", "卖家", "seller", "商家", "店铺名"],
+  };
+
+  function readLearnedHeaderMappings() {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(HEADER_MAPPING_STORAGE_KEY) || "{}");
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveLearnedHeaderMapping(rawHeader, canonicalName) {
+    const mappings = readLearnedHeaderMappings();
+    mappings[normalizeHeaderText(rawHeader)] = canonicalName;
+    try {
+      window.localStorage.setItem(HEADER_MAPPING_STORAGE_KEY, JSON.stringify(mappings));
+    } catch (error) {
+      console.warn("Unable to persist header mapping", error);
+    }
+  }
+
+  // 按优先级解析某标准字段在表头中的所有列下标（保持出现顺序，供第 N 组读取）
+  function resolveHeaderIndices(headers, canonicalName) {
+    if (!Array.isArray(headers)) return [];
+    const normalizedHeaders = headers.map((header) => String(header ?? "").trim());
+    // 第 1 层：精确匹配（保持原有 176 字段分组语义）
+    let indices = normalizedHeaders.map((header, index) => (header === canonicalName ? index : -1)).filter((index) => index >= 0);
+    if (indices.length) return indices;
+    // 第 2 层：规范化后精确匹配（全半角、大小写、空格、括号差异）
+    const target = normalizeHeaderText(canonicalName);
+    indices = normalizedHeaders.map((header, index) => (normalizeHeaderText(header) === target ? index : -1)).filter((index) => index >= 0);
+    if (indices.length) return indices;
+    // 第 3 层：用户指认过的记忆映射
+    const learned = readLearnedHeaderMappings();
+    indices = normalizedHeaders.map((header, index) => (learned[normalizeHeaderText(header)] === canonicalName ? index : -1)).filter((index) => index >= 0);
+    if (indices.length) return indices;
+    // 第 4 层：同义词库
+    const synonyms = (HEADER_SYNONYMS[canonicalName] || []).map((item) => normalizeHeaderText(item));
+    if (!synonyms.length) return [];
+    indices = normalizedHeaders.map((header, index) => (synonyms.includes(normalizeHeaderText(header)) ? index : -1)).filter((index) => index >= 0);
+    return indices;
+  }
+
+  function resolveHeaderIndex(headers, canonicalName, occurrence = 0) {
+    const indices = resolveHeaderIndices(headers, canonicalName);
+    return indices.length > occurrence ? indices[occurrence] : -1;
+  }
+
+  // 标准字段全集：以内嵌公开快照的 176 个来源字段为准（即平台标准导出的列名），同义词库负责非标准写法
+  function standardCanonicalHeaders() {
+    const fromData = sourceData && sourceData.stores && sourceData.stores[0] && sourceData.stores[0].snapshots && sourceData.stores[0].snapshots[0];
+    const headers = fromData && fromData.sourceHeaders;
+    return Array.isArray(headers) && headers.length ? headers : Object.keys(HEADER_SYNONYMS);
+  }
+
+  // 生成单文件的字段识别报告：匹配上的列与未识别的列
+  function buildHeaderMatchReport(headers) {
+    const learned = readLearnedHeaderMappings();
+    const canonicalNames = standardCanonicalHeaders();
+    const matched = [];
+    const unmatched = [];
+    const ignored = [];
+    headers.forEach((header, index) => {
+      const raw = String(header ?? "").trim();
+      if (!raw) return;
+      const normalized = normalizeHeaderText(raw);
+      if (learned[normalized] === HEADER_MAPPING_IGNORE) {
+        ignored.push({ raw, index });
+        return;
+      }
+      const canonical = learned[normalized] && learned[normalized] !== HEADER_MAPPING_IGNORE
+        ? learned[normalized]
+        : canonicalNames.find((name) => resolveHeaderIndices([raw], name).length > 0);
+      if (canonical) matched.push({ raw, canonical, index });
+      else unmatched.push({ raw, index });
+    });
+    return { matched, unmatched, ignored };
+  }
+
+
+  // 从文件名推断日期：支持 YYYYMMDD / YYYY-MM-DD / YYYY_MM_DD 等写法
   function parseDateFromFilename(fileName) {
-    const match = String(fileName).match(/product_list_(\d{8})/i);
-    if (!match) return "待确认";
-    return `${match[1].slice(0, 4)}-${match[1].slice(4, 6)}-${match[1].slice(6, 8)}`;
+    const name = String(fileName);
+    const dashed = name.match(/(20\d{2})[-_.](\d{2})[-_.](\d{2})/);
+    if (dashed) return `${dashed[1]}-${dashed[2]}-${dashed[3]}`;
+    const compact = name.match(/(20\d{2})(\d{2})(\d{2})/);
+    if (compact) return `${compact[1]}-${compact[2]}-${compact[3]}`;
+    return "";
+  }
+
+  // 从表格内容推断日期：找"日期"类列，若整列只有一个日期值则采用
+  function inferDateFromSheet(headers, dataRows) {
+    const dateIndex = resolveHeaderIndex(headers, "日期");
+    if (dateIndex < 0) return "";
+    const values = [...new Set(dataRows.map((row) => parseDateCell(row[dateIndex])).filter(Boolean))];
+    return values.length === 1 ? values[0] : "";
+  }
+
+  function parseDateCell(value) {
+    if (value == null || value === "") return "";
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+    const text = String(value).trim();
+    const match = text.match(/(20\d{2})[-/年.](\d{1,2})[-/月.](\d{1,2})/);
+    if (match) return `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(2, "0")}`;
+    const compact = text.match(/^(20\d{2})(\d{2})(\d{2})$/);
+    if (compact) return `${compact[1]}-${compact[2]}-${compact[3]}`;
+    return "";
   }
 
   function parseStoreFromFilename(fileName) {
-    const match = String(fileName).match(/^店铺名[:：](.+?)-product_list_\d{8}\.(?:xlsx|xls)$/i);
+    const match = String(fileName).match(/^店铺名[:：](.+?)-product_list_\d{8}\.(?:xlsx|xls|csv)$/i);
     if (match) return match[1].trim();
-    return String(fileName).replace(/\.(?:xlsx|xls)$/i, "").trim();
+    return "";
+  }
+
+  // 店铺名推断：文件名「店铺名：X-...」→ 表内店铺列唯一值 → 文件名主体（去掉日期与扩展名）
+  function inferStoreName(fileName, headers, dataRows) {
+    const fromFile = parseStoreFromFilename(fileName);
+    if (fromFile) return fromFile;
+    const storeIndex = resolveHeaderIndex(headers, "店铺");
+    if (storeIndex >= 0) {
+      const values = [...new Set(dataRows.map((row) => String(row[storeIndex] ?? "").trim()).filter(Boolean))];
+      if (values.length === 1) return values[0];
+    }
+    const stem = String(fileName).replace(/\.(?:xlsx|xls|csv)$/i, "").replace(/[-_]?\d{8}$/, "").replace(/[-_]?\d{4}[-_.]\d{2}[-_.]\d{2}$/, "").replace(/[-_]?product_list$/i, "").trim();
+    return stem;
   }
 
   function headerIndex(headers, names) {
     const candidates = Array.isArray(names) ? names : [names];
-    return candidates.map((name) => headers.indexOf(name)).find((index) => index >= 0);
+    for (const name of candidates) {
+      const index = resolveHeaderIndex(headers, name);
+      if (index >= 0) return index;
+    }
+    return undefined;
   }
 
   function headerOccurrenceIndex(headers, name, occurrence = 0) {
-    let matchCount = 0;
-    for (let index = 0; index < headers.length; index += 1) {
-      if (headers[index] !== name) continue;
-      if (matchCount === occurrence) return index;
-      matchCount += 1;
-    }
-    return -1;
+    return resolveHeaderIndex(headers, name, occurrence);
   }
 
   function sourceValue(headers, values, name, occurrence = 0) {
@@ -295,19 +458,23 @@
   }
 
   function parseProductListFile(file) {
-    const reader = new FileReader();
+    const isCsv = /\.csv$/i.test(file.name);
     return new Promise((resolve, reject) => {
+      const reader = new FileReader();
       reader.onload = () => {
         try {
-          const workbook = xlsxApi.read(reader.result, { type: "array", cellText: true, cellDates: true });
+          const workbook = isCsv
+            ? xlsxApi.read(reader.result, { type: "string" })
+            : xlsxApi.read(reader.result, { type: "array", cellText: true, cellDates: true });
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
           const rows = xlsxApi.utils.sheet_to_json(firstSheet, { header: 1, defval: null, raw: false });
           const headerRowIndex = rows.findIndex((row) => {
-            const normalizedCells = row.map((cell) => String(cell ?? "").trim());
-            return normalizedCells.includes("商品 ID") && normalizedCells.includes("商品名");
+            const cells = row.map((cell) => String(cell ?? "").trim());
+            return resolveHeaderIndex(cells, "商品 ID") >= 0 && resolveHeaderIndex(cells, "商品名") >= 0;
           });
-          if (headerRowIndex < 0) throw new Error("未找到“商品名 / 商品 ID”表头");
+          if (headerRowIndex < 0) throw new Error("未找到“商品名 / 商品 ID”表头；若列名是特殊写法，请先在数据接入页做一次字段指认，系统会记住");
           const headers = rows[headerRowIndex].map((cell) => String(cell ?? "").trim());
+          const dataRows = rows.slice(headerRowIndex + 1).filter((row) => row.some((cell) => cell != null && cell !== ""));
           const columns = {
             name: headerIndex(headers, "商品名"), id: headerIndex(headers, "商品 ID"), status: headerIndex(headers, "发品状态"),
             gmv: headerIndex(headers, "GMV"), orders: headerIndex(headers, "订单数"), skuOrders: headerIndex(headers, "SKU 订单数"),
@@ -316,32 +483,36 @@
             addToCart: headerIndex(headers, "加购次数"), addToCartRate: headerIndex(headers, "加购率"), ctor: headerIndex(headers, "CTOR（SKU 订单）"),
             uniqueClickCvr: headerIndex(headers, "去重点击成交转化率（SKU 订单）"),
           };
-          const products = rows.slice(headerRowIndex + 1).map((row) => hydrateProductFromSource({
-            id: row[columns.id] == null ? "" : String(row[columns.id]).trim(),
-            name: row[columns.name] == null ? "" : String(row[columns.name]).trim(),
-            status: row[columns.status] == null ? "" : String(row[columns.status]),
-            gmv: parseNumber(row[columns.gmv]), orders: parseNumber(row[columns.orders]), skuOrders: parseNumber(row[columns.skuOrders]),
-            units: parseNumber(row[columns.units]), customers: parseNumber(row[columns.customers]), avgOrderValue: parseNumber(row[columns.avgOrderValue]),
-            exposure: parseNumber(row[columns.exposure]), clicks: parseNumber(row[columns.clicks]), ctr: parseNumber(row[columns.ctr]),
-            addToCart: parseNumber(row[columns.addToCart]), addToCartRate: parseNumber(row[columns.addToCartRate]), ctor: parseNumber(row[columns.ctor]),
-            uniqueClickCvr: parseNumber(row[columns.uniqueClickCvr]),
+          const cellAt = (row, index) => (index == null || index < 0 ? null : row[index]);
+          const products = dataRows.map((row) => hydrateProductFromSource({
+            id: cellAt(row, columns.id) == null ? "" : String(cellAt(row, columns.id)).trim(),
+            name: cellAt(row, columns.name) == null ? "" : String(cellAt(row, columns.name)).trim(),
+            status: cellAt(row, columns.status) == null ? "" : String(cellAt(row, columns.status)),
+            gmv: parseNumber(cellAt(row, columns.gmv)), orders: parseNumber(cellAt(row, columns.orders)), skuOrders: parseNumber(cellAt(row, columns.skuOrders)),
+            units: parseNumber(cellAt(row, columns.units)), customers: parseNumber(cellAt(row, columns.customers)), avgOrderValue: parseNumber(cellAt(row, columns.avgOrderValue)),
+            exposure: parseNumber(cellAt(row, columns.exposure)), clicks: parseNumber(cellAt(row, columns.clicks)), ctr: parseNumber(cellAt(row, columns.ctr)),
+            addToCart: parseNumber(cellAt(row, columns.addToCart)), addToCartRate: parseNumber(cellAt(row, columns.addToCartRate)), ctor: parseNumber(cellAt(row, columns.ctor)),
+            uniqueClickCvr: parseNumber(cellAt(row, columns.uniqueClickCvr)),
             sourceValues: row.slice(0, headers.length),
           }, headers)).filter((product) => product.id && product.name);
           if (!products.length) throw new Error("文件中没有可识别的商品记录");
           resolve({
-            reportDate: parseDateFromFilename(file.name),
+            reportDate: parseDateFromFilename(file.name) || inferDateFromSheet(headers, dataRows),
+            inferredStore: inferStoreName(file.name, headers, dataRows),
             sourceFile: file.name,
             productCount: products.length,
             totals: summarizeProducts(products),
             sourceHeaders: headers,
             products,
+            matchReport: buildHeaderMatchReport(headers),
           });
         } catch (error) {
           reject(error);
         }
       };
       reader.onerror = () => reject(new Error("文件读取失败"));
-      reader.readAsArrayBuffer(file);
+      if (isCsv) reader.readAsText(file, "UTF-8");
+      else reader.readAsArrayBuffer(file);
     });
   }
 
@@ -624,33 +795,170 @@
     }
   }
 
+  /* ========== 今日优先处理：商品 / 达人 / 广告 / 短视频 四版块 ========== */
+  const PRIORITY_CATEGORIES = [
+    { key: "product", icon: "🛍️", label: "商品" },
+    { key: "creator", icon: "🤝", label: "达人" },
+    { key: "ads", icon: "🎯", label: "广告" },
+    { key: "video", icon: "🎬", label: "短视频" },
+  ];
+  let activePriorityCategory = "product";
+
+  function changeLabel(value, digits = 1) {
+    if (value == null) return "待导入";
+    return `${value > 0 ? "+" : ""}${value.toFixed(digits)}%`;
+  }
+
+  function daysBetween(fromDate, toDate) {
+    const from = new Date(`${fromDate}T00:00:00Z`);
+    const to = new Date(`${toDate}T00:00:00Z`);
+    const days = Math.round((to - from) / 86400000);
+    return days > 0 ? days : 1;
+  }
+
+  // 商品优先处理：用相邻两个真实快照逐项对比，生成带完整说明的处理项
+  function productPriorityData() {
+    const items = [];
+    let comparableStores = 0;
+    storesInScope().forEach((store) => {
+      const snapshots = snapshotsInRange(store);
+      if (snapshots.length < 2) return;
+      comparableStores += 1;
+      const previous = snapshots[snapshots.length - 2];
+      const current = snapshots[snapshots.length - 1];
+      const intervalDays = daysBetween(previous.reportDate, current.reportDate);
+      const intervalText = intervalDays === 1 ? "环比昨日" : `对比 ${previous.reportDate}（相隔 ${intervalDays} 天）`;
+      const previousMap = new Map(previous.products.map((product) => [product.id, product]));
+      current.products.forEach((product) => {
+        const prev = previousMap.get(product.id);
+        if (!prev) return;
+        const exposureChg = product.exposure != null && prev.exposure ? (product.exposure - prev.exposure) / prev.exposure * 100 : null;
+        const gmvChg = product.gmv != null && prev.gmv ? (product.gmv - prev.gmv) / prev.gmv * 100 : null;
+        const ctrChgPp = product.ctr != null && prev.ctr != null ? product.ctr - prev.ctr : null;
+        const cvrNow = product.ctor ?? product.uniqueClickCvr;
+        const cvrPrev = prev.ctor ?? prev.uniqueClickCvr;
+        const cvrChgPp = cvrNow != null && cvrPrev != null ? cvrNow - cvrPrev : null;
+        const metricLines = [
+          `曝光 ${formatCompact(prev.exposure)} → ${formatCompact(product.exposure)}（${changeLabel(exposureChg)}）`,
+          `CTR ${formatPercent(prev.ctr)} → ${formatPercent(product.ctr)}（${ctrChgPp == null ? "待导入" : `${ctrChgPp > 0 ? "+" : ""}${ctrChgPp.toFixed(2)}pp`}）`,
+          `CVR ${formatPercent(cvrPrev)} → ${formatPercent(cvrNow)}（${cvrChgPp == null ? "待导入" : `${cvrChgPp > 0 ? "+" : ""}${cvrChgPp.toFixed(2)}pp`}）`,
+          `GMV ${formatMoney(prev.gmv)} → ${formatMoney(product.gmv)}（${changeLabel(gmvChg)}）`,
+        ].join("；");
+        const impactText = prev.gmv != null && product.gmv != null && prev.gmv > product.gmv
+          ? `若趋势延续，每 ${intervalDays} 天影响 GMV 约 <b>${formatMoney(prev.gmv - product.gmv)}</b>。`
+          : "";
+        const header = `<b>${escapeHtml(store.name)}</b> · ${escapeHtml(product.name)} · 商品 ID <b>${escapeHtml(product.id)}</b> · ${intervalText}`;
+
+        if (exposureChg != null && exposureChg <= -20) {
+          const ctrStable = ctrChgPp != null && Math.abs(ctrChgPp) < 0.5;
+          items.push({
+            sev: "high", score: Math.abs(exposureChg) * 2,
+            title: `❗ ${product.id} · 曝光大幅下降 ${Math.abs(exposureChg).toFixed(1)}%`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${ctrStable ? "CTR 基本稳定而曝光骤降，初步判断是推荐流量入口变化或分发减少，<b>不是主图问题</b>；建议优先核查流量来源。" : "曝光与 CTR 同步下滑，疑似商品整体权重下降或触发风控限流，需同时排查流量入口与商品状态。"}<br>【建议动作】1) 检查商品是否仍在推荐池 / 是否掉出搜索排名；2) 核对是否有违规、下架、类目调整记录；3) 用广告或短视频补量验证承接是否正常。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
+            tags: ["高优先级", `基线 ${previous.reportDate}`],
+          });
+        } else if (exposureChg != null && exposureChg <= -8) {
+          items.push({
+            sev: "medium", score: Math.abs(exposureChg),
+            title: `📉 ${product.id} · 曝光下降 ${Math.abs(exposureChg).toFixed(1)}%`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】曝光降幅未达高风险线（20%），${cvrChgPp != null && cvrChgPp > 0 ? "且 CVR 逆势上涨，转化效率改善正在对冲曝光损失。" : "需观察是否为短期波动。"}<br>【建议动作】先观察 T+1 数据，暂不调整主图与价格；若连续两期下降再介入。`,
+            tags: ["中优先级", "观察"],
+          });
+        }
+        if (gmvChg != null && gmvChg <= -15) {
+          const driver = exposureChg != null && exposureChg <= -15 ? "主要由曝光下滑驱动，先解决流量问题。"
+            : (cvrChgPp != null && cvrChgPp <= -0.3 ? "曝光基本稳定但 CVR 下滑，问题在转化承接：重点核查价格、评价与详情页。" : "多指标联动变化，建议逐层排查流量与转化。");
+          items.push({
+            sev: "high", score: Math.abs(gmvChg) * 1.5,
+            title: `💰 ${product.id} · GMV 下降 ${Math.abs(gmvChg).toFixed(1)}%`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${driver}<br>【建议动作】1) 按上述方向定位主因；2) 恢复动作执行后记录到"运营调整记录"，T+1/T+3 自动验证效果。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
+            tags: ["高优先级", `基线 ${previous.reportDate}`],
+          });
+        }
+        if (ctrChgPp != null && ctrChgPp <= -0.5 && (exposureChg == null || exposureChg > -20)) {
+          items.push({
+            sev: "medium", score: Math.abs(ctrChgPp),
+            title: `👆 ${product.id} · CTR 下降 ${Math.abs(ctrChgPp).toFixed(2)}pp`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】曝光基本稳定但点击率下降，通常是主图 / 标题 / 价格展示吸引力下降，或同质竞品分流。<br>【建议动作】对比竞品前排链接的主图与价格带；可小步测试替换首图，改动后记录动作等 T+3 验证。`,
+            tags: ["中优先级", "主图/标题"],
+          });
+        }
+        if (cvrChgPp != null && cvrChgPp <= -0.3 && (gmvChg == null || gmvChg > -15)) {
+          items.push({
+            sev: "medium", score: Math.abs(cvrChgPp),
+            title: `🛒 ${product.id} · CVR 下降 ${Math.abs(cvrChgPp).toFixed(2)}pp`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】点击后的成交转化走弱，优先核查：价格变动、差评增加、详情页信息缺失、运费/优惠变化。<br>【建议动作】核对近期待价格与评价；如是价格测试导致，回滚或调整组合装策略。`,
+            tags: ["中优先级", "转化承接"],
+          });
+        }
+        if (gmvChg != null && gmvChg >= 15) {
+          items.push({
+            sev: "good", score: gmvChg,
+            title: `↗ ${product.id} · GMV 上涨 ${gmvChg.toFixed(1)}%（标杆）`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【动作建议】追溯近期对该链接做过的动作（主图 / 价格 / 标题 / 投放），如已记录则等 T+3/T+7 验证后沉淀到知识库，供同类商品复用。`,
+            tags: ["标杆", "可沉淀"],
+          });
+        }
+      });
+    });
+    if (!comparableStores) {
+      return {
+        items: [],
+        emptyHtml: `当前每个店铺只有 <b>1 个日期快照</b>，无法计算变化。每天导入一次店铺导出表后，这里会自动生成商品级优先处理清单（曝光 / GMV / CTR / CVR 异常 + 原因分析 + 建议动作 + 预估影响）。<br>缺数据不做假：这是本中控台的硬规则。`,
+      };
+    }
+    const severityOrder = { high: 0, medium: 1, low: 2, good: 3 };
+    items.sort((left, right) => severityOrder[left.sev] - severityOrder[right.sev] || right.score - left.score);
+    return { items: items.slice(0, 8) };
+  }
+
+  function priorityCategoryData(key) {
+    if (key === "product") return productPriorityData();
+    const providers = window.OPS_EXT_PRIORITY_PROVIDERS || {};
+    const provider = providers[key];
+    if (typeof provider === "function") {
+      try {
+        return provider();
+      } catch (error) {
+        console.warn("priority provider failed:", key, error);
+      }
+    }
+    return { items: [], emptyHtml: "模块加载中…" };
+  }
+
+  function priorityDetailHtml(data) {
+    if (!data || !Array.isArray(data.items)) return `<div class="ops-empty">模块加载中…</div>`;
+    if (!data.items.length) return `<div class="ops-empty">${data.emptyHtml || "当前没有待处理事项。"}</div>`;
+    const tagClass = { high: "tag-red", medium: "tag-yellow", low: "tag-blue", good: "tag-green" };
+    return data.items.map((item) => `<div class="priority-item sev-${item.sev}">
+      <div class="priority-item-title">${item.title}</div>
+      <div class="priority-item-body">${item.body}</div>
+      <div class="priority-item-tags">${(item.tags || []).map((tag, index) => `<span class="tag ${index === 0 ? (tagClass[item.sev] || "tag-gray") : "tag-gray"}">${escapeHtml(tag)}</span>`).join("")}</div>
+    </div>`).join("");
+  }
+
   function renderPriorityPanel() {
-    const page = document.getElementById("page-overview");
-    if (!page) return;
-    const card = [...page.querySelectorAll(".card")].find((candidate) => candidate.textContent.includes("今日优先处理"));
-    if (!card) return;
-    const list = card.querySelector("div[style*='flex-direction:column']");
-    if (!list) return;
-    const products = productsInScope().sort((left, right) => (right.gmv ?? 0) - (left.gmv ?? 0));
-    const topGmv = products[0];
-    const topUnits = [...products].sort((left, right) => (right.units ?? 0) - (left.units ?? 0))[0];
-    list.innerHTML = [
-      topGmv ? `<div style="padding:12px;background:#eff6ff;border-radius:8px;border-left:3px solid #3b82f6;">
-        <div style="font-weight:600;color:#1e40af;margin-bottom:3px;">💰 GMV 最高链接 · ${escapeHtml(topGmv.id)}</div>
-        <div style="font-size:12px;color:#1e3a8a;">${escapeHtml(topGmv.name)} · ${escapeHtml(topGmv.store)} · ${formatMoney(topGmv.gmv)}</div>
-        <div style="margin-top:6px;">${statusTag("已导入")}</div>
-      </div>` : "",
-      topUnits ? `<div style="padding:12px;background:#f0fdf4;border-radius:8px;border-left:3px solid #10b981;">
-        <div style="font-weight:600;color:#166534;margin-bottom:3px;">📦 成交件数最高链接 · ${escapeHtml(topUnits.id)}</div>
-        <div style="font-size:12px;color:#15803d;">${escapeHtml(topUnits.name)} · ${escapeHtml(topUnits.store)} · ${formatNumber(topUnits.units, 0)} 件</div>
-        <div style="margin-top:6px;">${statusTag("已导入")}</div>
-      </div>` : "",
-      `<div style="padding:12px;background:#fffbeb;border-radius:8px;border-left:3px solid #f59e0b;">
-        <div style="font-weight:600;color:#92400e;margin-bottom:3px;">⏱️ 当前查看范围</div>
-        <div style="font-size:12px;color:#a16207;">${escapeHtml(dateRangeLabel())}；指标按每个店铺区间内最新快照汇总。</div>
-        <div style="margin-top:6px;">${statusTag("真实数据")}</div>
-      </div>`,
-    ].filter(Boolean).join("");
+    const hub = document.getElementById("priority-hub");
+    if (!hub) return;
+    const dataByCategory = Object.fromEntries(PRIORITY_CATEGORIES.map((category) => [category.key, priorityCategoryData(category.key)]));
+    if (!dataByCategory[activePriorityCategory]) activePriorityCategory = "product";
+    hub.innerHTML = `
+      <div class="priority-hub-tabs">${PRIORITY_CATEGORIES.map((category) => {
+        const data = dataByCategory[category.key];
+        const count = data && Array.isArray(data.items) ? data.items.length : 0;
+        const preview = count ? data.items[0].title.replace(/<[^>]*>/g, "") : "暂无待处理";
+        return `<div class="priority-tab ${activePriorityCategory === category.key ? "active" : ""}" data-priority-cat="${category.key}" role="button" tabindex="0">
+          <div class="priority-tab-head"><span>${category.icon}</span><span>${category.label}</span><span class="priority-tab-count ${count ? "" : "zero"}">${count}</span></div>
+          <div class="priority-tab-desc">${escapeHtml(preview)}</div>
+        </div>`;
+      }).join("")}</div>
+      <div id="priority-detail">${priorityDetailHtml(dataByCategory[activePriorityCategory])}</div>`;
+    hub.querySelectorAll("[data-priority-cat]").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        activePriorityCategory = tab.getAttribute("data-priority-cat");
+        renderPriorityPanel();
+      });
+    });
   }
 
   function comparisonItems() {
@@ -767,7 +1075,7 @@
       if (statusCell) statusCell.innerHTML = '<span class="tag tag-green">已导入真实数据</span>';
     }
     const uploadDescription = page.querySelector(".upload-zone-desc");
-    if (uploadDescription) uploadDescription.textContent = `支持多选；当前保存 ${currentData.stores.length} 个店铺、${currentData.stores.reduce((sum, store) => sum + store.snapshots.length, 0)} 个日期快照。文件名格式：店铺名：xxx-product_list_YYYYMMDD.xlsx`;
+    if (uploadDescription) uploadDescription.textContent = `支持多选 .xlsx / .xls / .csv；当前保存 ${currentData.stores.length} 个店铺、${currentData.stores.reduce((sum, store) => sum + store.snapshots.length, 0)} 个日期快照。列名差异自动识别，店铺和日期自动推断。`;
   }
 
   function updateDateControls() {
@@ -797,6 +1105,93 @@
     status.textContent = message;
   }
 
+  function renderImportReports(importedSnapshots) {
+    const container = document.getElementById("import-report-panel");
+    if (!container) return;
+    const rows = importedSnapshots.map((snapshot) => {
+      const report = snapshot.matchReport || { matched: [], unmatched: [] };
+      const unmatchedText = report.unmatched.length
+        ? report.unmatched.slice(0, 8).map((item) => escapeHtml(item.raw)).join("、") + (report.unmatched.length > 8 ? ` 等 ${report.unmatched.length} 列` : "")
+        : "无（全部识别）";
+      return `<tr>
+        <td>${escapeHtml(snapshot.sourceFile)}</td>
+        <td>${escapeHtml(snapshot.inferredStore || parseStoreFromFilename(snapshot.sourceFile) || "—")}</td>
+        <td>${escapeHtml(snapshot.reportDate)}</td>
+        <td>${formatNumber(snapshot.productCount, 0)}</td>
+        <td>${report.matched.length} 列</td>
+        <td>${unmatchedText}</td>
+      </tr>`;
+    }).join("");
+    container.innerHTML = `<div class="import-report">
+      <div class="import-report-title">🧾 本次导入报告 · ${new Date().toLocaleString("zh-CN", { hour12: false })}</div>
+      <div style="overflow-x:auto;"><table>
+        <thead><tr><th>文件</th><th>店铺</th><th>日期</th><th>商品行数</th><th>成功识别</th><th>未识别列（可在上方指认）</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <div style="margin-top:8px;font-size:12px;color:#0369a1;">识别规则：标准列名 → 规范化匹配 → 你指认过的记忆 → 同义词库。未识别的列不会影响其他数据，只是暂时不用；指认一次后永久生效。</div>
+    </div>`;
+  }
+
+  function renderMappingPanel(importedSnapshots) {
+    const container = document.getElementById("import-mapping-panel");
+    if (!container) return;
+    const unmatchedMap = new Map();
+    importedSnapshots.forEach((snapshot) => {
+      ((snapshot.matchReport && snapshot.matchReport.unmatched) || []).forEach((item) => {
+        if (!unmatchedMap.has(item.raw)) unmatchedMap.set(item.raw, []);
+        unmatchedMap.get(item.raw).push(snapshot.sourceFile);
+      });
+    });
+    if (!unmatchedMap.size) {
+      container.innerHTML = "";
+      return;
+    }
+    const canonicalOptions = [...new Set(standardCanonicalHeaders())];
+    const rows = [...unmatchedMap.entries()].map(([raw, files], index) => `<tr>
+      <td><strong>${escapeHtml(raw)}</strong><div style="font-size:11px;color:#a16207;">来自：${escapeHtml(files.join("、"))}</div></td>
+      <td><select data-mapping-raw="${escapeHtml(raw)}" class="mapping-select">
+        <option value="">暂不处理（保持未识别）</option>
+        <option value="__ignore__">忽略此列（以后不再提示）</option>
+        ${canonicalOptions.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}
+      </select></td>
+    </tr>`).join("");
+    container.innerHTML = `<div class="mapping-panel">
+      <div class="mapping-panel-title">🧭 有 ${unmatchedMap.size} 列没有自动识别 —— 指认一次，系统永久记住</div>
+      <div style="font-size:12px;color:#92400e;margin-bottom:8px;">左边是文件里的原始列名，右边选择它对应的标准字段。不认识的列选"忽略此列"即可，不影响其他数据。</div>
+      <div style="overflow-x:auto;"><table class="desktop-table" style="background:#fff;">
+        <thead><tr><th style="width:45%;">原始列名</th><th>对应标准字段</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button type="button" class="btn btn-primary" id="apply-header-mapping">应用映射并重新计算</button>
+        <button type="button" class="btn" id="dismiss-header-mapping">暂不处理</button>
+      </div>
+    </div>`;
+    const applyButton = container.querySelector("#apply-header-mapping");
+    const dismissButton = container.querySelector("#dismiss-header-mapping");
+    if (dismissButton) dismissButton.addEventListener("click", () => { container.innerHTML = ""; });
+    if (applyButton) applyButton.addEventListener("click", async () => {
+      const selects = [...container.querySelectorAll("select[data-mapping-raw]")];
+      let applied = 0;
+      selects.forEach((select) => {
+        if (!select.value) return;
+        saveLearnedHeaderMapping(select.getAttribute("data-mapping-raw"), select.value);
+        applied += 1;
+      });
+      if (applied) {
+        currentData = normalizeData(currentData);
+        try {
+          await saveCurrentData();
+        } catch (error) {
+          window.alert(`❌ 映射已记住，但保存失败\n\n${error.message || ""}`);
+        }
+        renderAll();
+      }
+      container.innerHTML = "";
+      updateUploadStatus(applied ? `已记住 ${applied} 条字段映射并重新计算` : "未选择映射");
+    });
+  }
+
   async function handleFileImport(event) {
     const files = [...(event.target.files || [])];
     if (!files.length) return;
@@ -807,11 +1202,21 @@
       previousData = currentData;
       await ensureXlsxLibrary();
       const importedSnapshots = await Promise.all(files.map(parseProductListFile));
-      const invalidDate = importedSnapshots.find((snapshot) => !isDateKey(snapshot.reportDate));
-      if (invalidDate) throw new Error(`${invalidDate.sourceFile} 缺少 YYYYMMDD 日期，无法进入时间筛选`);
+      for (const snapshot of importedSnapshots) {
+        if (!isDateKey(snapshot.reportDate)) {
+          const input = window.prompt(`未能自动识别文件「${snapshot.sourceFile}」的数据日期。\n\n请输入该文件对应的日期（格式 YYYY-MM-DD），点取消则中止本次导入：`, "");
+          if (input && isDateKey(input.trim())) snapshot.reportDate = input.trim();
+          else throw new Error(`${snapshot.sourceFile} 缺少可用日期，本次导入已取消`);
+        }
+        if (!snapshot.inferredStore) {
+          const input = window.prompt(`未能自动识别文件「${snapshot.sourceFile}」的店铺名称。\n\n请输入店铺名，点取消则中止本次导入：`, "");
+          if (input && input.trim()) snapshot.inferredStore = input.trim();
+          else throw new Error(`${snapshot.sourceFile} 缺少店铺名称，本次导入已取消`);
+        }
+      }
       const storeMap = new Map(currentData.stores.map((store) => [store.name, normalizeStore(store)]));
       importedSnapshots.forEach((snapshot) => {
-        const storeName = parseStoreFromFilename(snapshot.sourceFile);
+        const storeName = snapshot.inferredStore;
         const store = storeMap.get(storeName) || { name: storeName, snapshots: [] };
         store.snapshots = [...store.snapshots.filter((item) => item.reportDate !== snapshot.reportDate), snapshot]
           .sort((left, right) => left.reportDate.localeCompare(right.reportDate));
@@ -824,8 +1229,11 @@
       customStartDate = "";
       customEndDate = "";
       renderAll();
+      renderImportReports(importedSnapshots);
+      renderMappingPanel(importedSnapshots);
+      const unmatchedCount = importedSnapshots.reduce((sum, snapshot) => sum + (((snapshot.matchReport || {}).unmatched || []).length), 0);
       updateUploadStatus(`已导入 ${importedSnapshots.length} 个文件 · ${importedSnapshots.reduce((sum, snapshot) => sum + snapshot.productCount, 0)} 条商品`);
-      window.alert(`✅ 数据导入完成\n\n${importedSnapshots.map((snapshot) => `${parseStoreFromFilename(snapshot.sourceFile)} · ${snapshot.reportDate}：${snapshot.productCount} 条商品`).join("\n")}\n\n历史快照已按店铺和日期保存。`);
+      window.alert(`✅ 数据导入完成\n\n${importedSnapshots.map((snapshot) => `${snapshot.inferredStore} · ${snapshot.reportDate}：${snapshot.productCount} 条商品`).join("\n")}\n\n历史快照已按店铺和日期保存。${unmatchedCount ? `\n\n有 ${unmatchedCount} 列未自动识别，请到「数据接入」页的黄色面板指认一次，系统会永久记住。` : "\n\n所有列均已自动识别。"}`);
     } catch (error) {
       currentData = previousData;
       renderAll();
@@ -893,7 +1301,48 @@
     renderOverviewRankings();
     renderDataSummary();
     updateDataSourceStatus();
+    if (window.OPS_EXT && typeof window.OPS_EXT.render === "function") {
+      try {
+        window.OPS_EXT.render();
+      } catch (error) {
+        console.warn("OPS_EXT render failed", error);
+      }
+    }
   }
+
+  // 供 ops-extensions.js 使用的数据与工具桥
+  window.OPS_BRIDGE = {
+    getData: () => currentData,
+    normalizeData,
+    setData: (data) => { currentData = data; },
+    saveCurrentData,
+    ensureXlsxLibrary,
+    productsInScope,
+    storesInScope,
+    snapshotsInRange,
+    totalsInScope,
+    availableDateKeys,
+    dateBounds,
+    selectedDateBounds,
+    hydrateProductFromSource,
+    summarizeProducts,
+    formatMoney,
+    formatNumber,
+    formatPercent,
+    formatCompact,
+    escapeHtml,
+    isDateKey,
+    addDays,
+    parseNumber,
+    parseDateCell,
+    normalizeHeaderText,
+    resolveHeaderIndex,
+    resolveHeaderIndices,
+    standardCanonicalHeaders,
+    renderAll,
+    renderPriorityPanel,
+    updateUploadStatus,
+  };
 
   bindFilters();
   const fileInput = document.getElementById("real-store-file-input");

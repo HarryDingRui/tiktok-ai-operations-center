@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>TikTok AI 智能运营中控台 v3 — Agent Native</title>
+<link rel="icon" href="data:,">
 <style>
 /* ========== 基础重置 ========== */
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -480,6 +481,88 @@ body {
   .operation-record-row { grid-template-columns: 1fr 1fr; }
   .operation-record-row button { justify-self: start; }
 }
+
+/* ========== v3.1 新增：优先处理四版块 / 趋势图 / 时间轴 / 排行榜 / 素材库 / 字段映射 ========== */
+.priority-hub-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }
+.priority-tab { padding:12px; border-radius:9px; border:1px solid #e2e8f0; background:#f8fafc; cursor:pointer; transition:all .18s; text-align:left; }
+.priority-tab:hover { border-color:#7dd3fc; background:#f0f9ff; }
+.priority-tab.active { border-color:#38bdf8; background:#f0f9ff; box-shadow:0 0 0 2px rgba(56,189,248,.18); }
+.priority-tab-head { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; color:#0f172a; }
+.priority-tab-count { margin-left:auto; min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:#ef4444; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.priority-tab-count.zero { background:#cbd5e1; }
+.priority-tab-desc { margin-top:5px; font-size:11px; color:#64748b; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.priority-item { padding:13px; border-radius:9px; margin-bottom:10px; border-left:3px solid #94a3b8; background:#f8fafc; }
+.priority-item.sev-high { background:#fef2f2; border-left-color:#ef4444; }
+.priority-item.sev-medium { background:#fffbeb; border-left-color:#f59e0b; }
+.priority-item.sev-low { background:#eff6ff; border-left-color:#3b82f6; }
+.priority-item.sev-good { background:#f0fdf4; border-left-color:#10b981; }
+.priority-item-title { font-weight:700; font-size:13px; color:#0f172a; margin-bottom:5px; }
+.priority-item-body { font-size:12px; color:#475569; line-height:1.75; }
+.priority-item-body b { color:#0f172a; }
+.priority-item-tags { margin-top:7px; display:flex; gap:6px; flex-wrap:wrap; }
+.ops-empty { padding:16px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:9px; font-size:12px; color:#64748b; line-height:1.8; }
+.ops-empty b { color:#334155; }
+
+.trend-panel-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.mini-chart-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:9px; padding:12px; }
+.mini-chart-title { font-size:12px; font-weight:700; color:#334155; margin-bottom:6px; display:flex; justify-content:space-between; gap:8px; }
+.mini-chart-title span:last-child { color:#0f172a; }
+.mini-chart-card svg { width:100%; height:auto; display:block; }
+
+.ops-timeline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.ops-timeline .tl-label { font-size:12px; color:#64748b; font-weight:600; }
+.ops-timeline select, .ops-timeline input[type="date"] { padding:7px 10px; border:1px solid #cbd5e1; border-radius:7px; font-size:12px; color:#334155; background:#fff; }
+.ops-chip { padding:6px 12px; border-radius:16px; border:1px solid #cbd5e1; background:#fff; font-size:12px; color:#475569; cursor:pointer; }
+.ops-chip.active { background:#0f172a; color:#fff; border-color:#0f172a; }
+
+.lb-list { display:flex; flex-direction:column; gap:7px; }
+.lb-row { display:flex; align-items:center; gap:10px; padding:9px 11px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:12px; }
+.lb-rank { width:22px; height:22px; border-radius:50%; background:#e2e8f0; color:#475569; font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.lb-row:nth-child(1) .lb-rank, .lb-row:nth-child(2) .lb-rank, .lb-row:nth-child(3) .lb-rank { background:#0f172a; color:#fff; }
+.lb-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; color:#1e293b; }
+.lb-sub { color:#94a3b8; font-size:11px; flex-shrink:0; }
+.lb-value { font-weight:700; color:#0f172a; flex-shrink:0; }
+.lb-bar-wrap { height:5px; background:#e2e8f0; border-radius:3px; margin-top:3px; overflow:hidden; }
+.lb-bar { height:100%; background:linear-gradient(90deg,#38bdf8,#0ea5e9); border-radius:3px; }
+
+.asset-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+.asset-card { border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; background:#fff; }
+.asset-card video { width:100%; aspect-ratio:9/12; background:#0f172a; object-fit:cover; display:block; }
+.asset-card-body { padding:10px 12px; }
+.asset-card-title { font-size:12px; font-weight:700; color:#0f172a; margin-bottom:4px; }
+.asset-card-meta { font-size:11px; color:#64748b; line-height:1.7; }
+.asset-card-tags { margin-top:6px; display:flex; gap:5px; flex-wrap:wrap; }
+
+.import-report { border:1px solid #bae6fd; background:#f0f9ff; border-radius:10px; padding:14px; margin-bottom:14px; }
+.import-report-title { font-size:13px; font-weight:700; color:#075985; margin-bottom:8px; }
+.import-report table { width:100%; border-collapse:collapse; font-size:12px; }
+.import-report th, .import-report td { text-align:left; padding:7px 9px; border-bottom:1px solid #e0f2fe; color:#334155; vertical-align:top; }
+.import-report th { color:#0369a1; font-weight:700; background:#e0f2fe55; }
+.mapping-panel { border:1px solid #fde68a; background:#fffbeb; border-radius:10px; padding:14px; margin-bottom:14px; }
+.mapping-panel-title { font-size:13px; font-weight:700; color:#92400e; margin-bottom:6px; }
+.mapping-panel select { max-width:260px; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; }
+
+.upload-zone.small { padding:14px; }
+.upload-zone.small .upload-zone-title { font-size:13px; }
+.upload-zone.small .upload-zone-desc { font-size:11px; }
+
+/* ========== v3.2 统一数据接入中心 ========== */
+.upload-hub-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.upload-module { border:1px solid #e2e8f0; border-radius:10px; padding:14px; background:#fff; display:flex; flex-direction:column; gap:9px; }
+.upload-module-head { font-size:13px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px; }
+.upload-module-desc { font-size:11px; color:#64748b; line-height:1.65; }
+.upload-module-foot { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:auto; }
+.upload-module .upload-zone { margin:0; }
+.upload-module-link { font-size:11px; color:#2563eb; cursor:pointer; text-decoration:none; }
+.upload-module-link:hover { text-decoration:underline; }
+@media (max-width: 1100px) { .upload-hub-grid { grid-template-columns:1fr 1fr; } }
+@media (max-width: 640px) { .upload-hub-grid { grid-template-columns:1fr; } }
+
+@media (max-width: 860px) {
+  .priority-hub-tabs { grid-template-columns:1fr 1fr; }
+  .trend-grid { grid-template-columns:1fr; }
+}
 </style>
 <script src="./vendor/xlsx.mini.min.js"></script>
 </head>
@@ -585,26 +668,9 @@ body {
 
   <div class="two-col">
     <div class="card">
-      <div class="card-title">⚡ 今日优先处理 <span>按影响度排序 · Agent 已扫描</span></div>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div style="padding:12px;background:#fef2f2;border-radius:8px;border-left:3px solid #ef4444;">
-          <div style="font-weight:600;color:#991b1b;margin-bottom:3px;">❗ 商品 ID 100238 · 曝光下滑 28%</div>
-          <div style="font-size:12px;color:#7f1d1d;">点击率基本稳定，优先检查推荐流量与主图承接；不是直接判定为限流。</div>
-          <div style="margin-top:6px;display:flex;gap:6px;">
-            <span class="tag tag-red">高优先级</span>
-            <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 已调用 商品优化Agent\n\n任务：诊断商品 ID 100238 曝光下滑原因\n预计执行：分析流量来源 → 检查主图 → 输出优化建议')">▶ 调用Agent</span>
-          </div>
-        </div>
-        <div style="padding:12px;background:#f0fdf4;border-radius:8px;border-left:3px solid #10b981;">
-          <div style="font-weight:600;color:#166534;margin-bottom:3px;">↗ 商品 ID 100176 · 转化率逆势上涨</div>
-          <div style="font-size:12px;color:#15803d;">近 3 日 CVR 从 2.1% 升至 4.8%，可作为标题与价格调整的对照样本。</div>
-          <div style="margin-top:6px;"><span class="tag tag-green">标杆</span></div>
-        </div>
-        <div style="padding:12px;background:#fefce8;border-radius:8px;border-left:3px solid #eab308;">
-          <div style="font-weight:600;color:#854d0e;margin-bottom:3px;">⏳ 3 条运营动作进入 T+1 验证</div>
-          <div style="font-size:12px;color:#a16207;">动作已记录，明天自动对比同商品昨日基线；当前仍不能下结论。</div>
-          <div style="margin-top:6px;"><span class="tag tag-yellow">待验证</span></div>
-        </div>
+      <div class="card-title">⚡ 今日优先处理 <span>商品 / 达人 / 广告 / 短视频 · 按影响度排序 · Agent 已扫描</span></div>
+      <div id="priority-hub">
+        <div class="ops-empty">正在扫描各版块待处理事项…</div>
       </div>
     </div>
     <div class="card">
@@ -755,12 +821,14 @@ body {
   </div>
 
   <div class="toolbar">
-    <div class="search-box"><span class="search-icon">🔍</span><input type="text" placeholder="搜索商品 ID、店铺、异常类型..."></div>
+    <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="alert-search-input" placeholder="搜索商品 ID 查看近7天趋势（GMV / 曝光 / CTR / CVR），或筛选预警卡片..."></div>
     <button class="filter-btn active">全部</button>
     <button class="filter-btn">🔴 高风险</button>
     <button class="filter-btn">🟡 中风险</button>
     <button class="filter-btn">🔵 低风险</button>
   </div>
+
+  <div id="product-trend-panel" style="display:none;"></div>
 
   <div class="alert-grid">
     <div class="alert-card high">
@@ -901,6 +969,35 @@ body {
   </div>
 
   <div class="card">
+    <div class="card-title">🗓️ 达人每日情况 <span>时间轴自定义查看 · 真实达人合作表驱动</span></div>
+    <div class="ops-timeline" id="bd-timeline">
+      <span class="tl-label">时间轴</span>
+      <button class="ops-chip active" data-bd-range="7">近7天</button>
+      <button class="ops-chip" data-bd-range="14">近14天</button>
+      <button class="ops-chip" data-bd-range="all">全部</button>
+      <button class="ops-chip" data-bd-range="custom">自定义</button>
+      <input type="date" id="bd-date-start" aria-label="达人统计开始日期">
+      <span style="font-size:12px;color:#94a3b8;">至</span>
+      <input type="date" id="bd-date-end" aria-label="达人统计结束日期">
+    </div>
+    <div id="bd-daily-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏆 近7天 TOP10 达人 <span>跟随上方时间轴范围 · 默认按合作 GMV 排序</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <button class="ops-chip active" data-bd-sort="gmv">按 GMV</button>
+      <button class="ops-chip" data-bd-sort="videos">按交付视频数</button>
+      <button class="ops-chip" data-bd-sort="views">按播放量</button>
+    </div>
+    <div id="bd-top10-panel"></div>
+  </div>
+
+  <div class="card" style="border-left:4px solid #38bdf8;">
+    <div style="font-size:12px;color:#475569;line-height:1.7;">📤 达人合作表已统一到 <a class="upload-module-link" onclick="showPage('data', null)">「数据接入」页 · 达人合作数据入口</a> 上传，列名差异自动识别。</div>
+  </div>
+
+  <div class="card">
     <div class="card-title">📋 今日 BD 待办 <span>Agent 已扫描 · 点击调用Agent执行</span></div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <div style="padding:12px;background:#fef3c7;border-radius:8px;border-left:3px solid #f59e0b;display:flex;align-items:center;gap:12px;">
@@ -1001,6 +1098,38 @@ body {
   </div>
 
   <div class="card">
+    <div class="card-title">🗓️ 每日广告 <span>时间轴自定义查看 · 真实广告数据驱动</span></div>
+    <div class="ops-timeline" id="ads-timeline">
+      <span class="tl-label">时间轴</span>
+      <button class="ops-chip active" data-ads-range="7">近7天</button>
+      <button class="ops-chip" data-ads-range="14">近14天</button>
+      <button class="ops-chip" data-ads-range="all">全部</button>
+      <button class="ops-chip" data-ads-range="custom">自定义</button>
+      <input type="date" id="ads-date-start" aria-label="广告统计开始日期">
+      <span style="font-size:12px;color:#94a3b8;">至</span>
+      <input type="date" id="ads-date-end" aria-label="广告统计结束日期">
+    </div>
+    <div id="ads-daily-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🤖 广告智能分析 · 调整事项 <span>按规则从真实广告数据生成 · 缺字段不硬算</span></div>
+    <div id="ads-actions-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⭐ 广告优质达人素材库 <span>上传统一在「数据接入」页 · 仅保存在本机浏览器</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+      <span class="tl-label">排序</span>
+      <button class="ops-chip active" data-asset-sort="roas">按 ROAS</button>
+      <button class="ops-chip" data-asset-sort="gmv">按 GMV</button>
+      <button class="ops-chip" data-asset-sort="views">按播放量</button>
+      <a class="upload-module-link" style="margin-left:auto;" onclick="showPage('data', null)">📤 去「数据接入」上传素材 →</a>
+    </div>
+    <div id="asset-library-panel"></div>
+  </div>
+
+  <div class="card">
     <div class="card-title">📋 广告计划 <span>计划 → 商品 ID → 产出 · 点击调用Agent优化</span></div>
     <div class="desktop-table-wrap">
       <table class="desktop-table">
@@ -1076,6 +1205,25 @@ body {
     <div class="stat-card"><div class="stat-label">有发布记录商品</div><div class="stat-value">11</div><div class="stat-trend">当前窗口</div></div>
     <div class="stat-card"><div class="stat-label">近7天播放</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">后台历史字段缺失</div></div>
     <div class="stat-card"><div class="stat-label">近7天内容GMV</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">需商品归因</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏆 自营账号 / 视频排行榜 <span>时间轴自定义选时间 · 真实视频数据驱动</span></div>
+    <div class="ops-timeline" id="videos-timeline">
+      <span class="tl-label">时间轴</span>
+      <button class="ops-chip active" data-videos-range="7">近7天</button>
+      <button class="ops-chip" data-videos-range="14">近14天</button>
+      <button class="ops-chip" data-videos-range="all">全部</button>
+      <button class="ops-chip" data-videos-range="custom">自定义</button>
+      <input type="date" id="videos-date-start" aria-label="视频统计开始日期">
+      <span style="font-size:12px;color:#94a3b8;">至</span>
+      <input type="date" id="videos-date-end" aria-label="视频统计结束日期">
+    </div>
+    <div id="video-leaderboard-panel"></div>
+  </div>
+
+  <div class="card" style="border-left:4px solid #38bdf8;">
+    <div style="font-size:12px;color:#475569;line-height:1.7;">📤 视频数据表已统一到 <a class="upload-module-link" onclick="showPage('data', null)">「数据接入」页 · 自营短视频数据入口</a> 上传，TikTok Studio / Seller Center 导出直接传。</div>
   </div>
 
   <div class="card">
@@ -1802,6 +1950,19 @@ body {
   </div>
   <div class="alert alert-info" style="margin-bottom:18px;"><span>ℹ️</span><span>文件只在本机浏览器内解析和保存，不会自动上传。正式网站部署前，需要主管确认数据源、账号权限、同步频率和敏感字段处理方式。</span></div>
   <div id="real-data-summary"></div>
+  <div id="import-mapping-panel"></div>
+  <div id="import-report-panel"></div>
+  <div class="card" style="margin-bottom:18px;border-left:4px solid #10b981;">
+    <div class="card-title">🧩 数据上传自适应 <span>核心原则：中控台适应店铺数据，不要求固定模板</span></div>
+    <div style="font-size:13px;line-height:1.8;color:#475569;">
+      店铺后台能导出什么表，就直接上传什么表，<strong>不需要手工改成指定格式</strong>。系统会自动做四件事：
+      ① <strong>智能识别表头</strong>——中英文列名、同义写法、带单位/空格的列名都能认；
+      ② <strong>自动推断店铺和日期</strong>——优先读表内字段，其次读文件名，都读不到才会问你；
+      ③ <strong>粒度自适应</strong>——有什么字段算什么指标，缺字段的模块显示"待导入"，不会卡住其他模块；
+      ④ <strong>导入报告 + 映射记忆</strong>——每次导入生成报告（识别行数、匹配字段、未识别列），没认出的列手动指认一次，系统永久记住。
+    </div>
+  </div>
+
   <div class="card" style="margin-bottom:18px;border-left:4px solid #38bdf8;">
     <div class="card-title">☁️ WPS / Kdocs 云文档 <span>统一填报源 · 适配当前 v3 模块</span></div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
@@ -1814,28 +1975,118 @@ body {
       </div>
     </div>
   </div>
-  <div class="two-col">
-    <div class="card">
-      <div class="card-title">📤 商品 / 店铺经营数据</div>
-      <div class="upload-zone" id="real-store-upload-zone" onclick="document.getElementById('real-store-file-input').click()">
-        <div class="upload-zone-icon">📁</div>
-        <div class="upload-zone-title">选择 product_list Excel 文件</div>
-        <div class="upload-zone-desc">支持多选 .xlsx / .xls；文件名格式：店铺名：xxx-product_list_YYYYMMDD.xlsx</div>
+  <div class="card" style="margin-bottom:18px;border-left:4px solid #0f172a;">
+    <div class="card-title">🛰️ 统一数据接入中心 <span>所有版块的数据都从这里进 · 自适应列识别 · 认不出的列指认一次永久记住</span></div>
+    <div class="upload-hub-grid">
+      <div class="upload-module">
+        <div class="upload-module-head">🛍️ 商品 / 店铺经营数据</div>
+        <div class="upload-module-desc">店铺后台 product_list 导出表直接传。驱动：经营总览、排行榜、数据预警、近7天趋势图。</div>
+        <div class="upload-zone small" id="real-store-upload-zone" onclick="document.getElementById('real-store-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择店铺导出文件</div>
+          <div class="upload-zone-desc">支持多选 .xlsx / .xls / .csv；店铺和日期自动推断</div>
+        </div>
+        <input id="real-store-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="real-data-upload-status" class="tag tag-green">已加载公开快照</span>
+          <button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button>
+          <a class="upload-module-link" onclick="showPage('overview', null)">查看版块 →</a>
+        </div>
       </div>
-      <input id="real-store-file-input" type="file" accept=".xlsx,.xls" multiple style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px;">
-        <span id="real-data-upload-status" class="tag tag-green">已加载公开快照</span>
-        <button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button>
+
+      <div class="upload-module">
+        <div class="upload-module-head">🤝 达人合作数据</div>
+        <div class="upload-module-desc">达人团队或后台导出的合作表直接传。驱动：达人每日时间轴、近7天 TOP10、达人优先处理。</div>
+        <div class="upload-zone small" onclick="document.getElementById('bd-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择达人合作表</div>
+          <div class="upload-zone-desc">自动识别 日期 / 达人 / 状态 / GMV / 视频数 / 播放量</div>
+        </div>
+        <input id="bd-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="bd-upload-status" class="tag tag-yellow">待导入</span>
+          <a class="upload-module-link" onclick="showPage('bd', null)">查看版块 →</a>
+        </div>
       </div>
-    </div>
-    <div class="card">
-      <div class="card-title">📤 运营调整记录</div>
-      <div class="upload-zone" onclick="alert('📁 请选择动作记录 CSV\n\n建议字段：日期、商品ID、维度、动作类型、动作说明、负责人、验证节点')">
-        <div class="upload-zone-icon">📁</div>
-        <div class="upload-zone-title">选择动作记录 CSV</div>
-        <div class="upload-zone-desc">建议字段：日期、商品ID、维度、动作类型、动作说明、负责人、验证节点</div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">🎯 广告投放数据</div>
+        <div class="upload-module-desc">广告后台导出表直接传。驱动：每日广告时间轴、智能分析·调整事项、广告优先处理。</div>
+        <div class="upload-zone small" onclick="document.getElementById('ads-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择广告数据表</div>
+          <div class="upload-zone-desc">自动识别 日期 / 计划 / 广告组 / 消耗 / 曝光 / CTR / GMV / ROAS</div>
+        </div>
+        <input id="ads-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="ads-upload-status" class="tag tag-yellow">待导入</span>
+          <a class="upload-module-link" onclick="showPage('ads', null)">查看版块 →</a>
+        </div>
       </div>
-      <div style="text-align:center;margin-top:10px;"><span class="tag tag-green">本地可用</span></div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">🎬 自营短视频数据</div>
+        <div class="upload-module-desc">TikTok Studio / Seller Center 视频明细直接传。驱动：三个排行榜、短视频优先处理。</div>
+        <div class="upload-zone small" onclick="document.getElementById('videos-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择视频数据表</div>
+          <div class="upload-zone-desc">自动识别 日期 / 账号 / 视频ID / 商品ID / 播放量 / GMV</div>
+        </div>
+        <input id="videos-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="videos-upload-status" class="tag tag-yellow">待导入</span>
+          <a class="upload-module-link" onclick="showPage('videos', null)">查看版块 →</a>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">⭐ 优质达人素材库</div>
+        <div class="upload-module-desc">素材数据表 + mp4 视频双通道；视频只存本机浏览器，按文件名自动关联。</div>
+        <div class="upload-zone small" onclick="document.getElementById('asset-file-input').click()">
+          <div class="upload-zone-icon">📊</div>
+          <div class="upload-zone-title">上传素材数据表</div>
+          <div class="upload-zone-desc">自动识别 达人 / 视频链接 / 商品ID / GMV / ROAS / 标签</div>
+        </div>
+        <div class="upload-zone small" onclick="document.getElementById('asset-video-input').click()">
+          <div class="upload-zone-icon">🎬</div>
+          <div class="upload-zone-title">上传素材视频（mp4）</div>
+          <div class="upload-zone-desc">可多选；与数据表"视频链接/文件名"列自动关联</div>
+        </div>
+        <input id="asset-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <input id="asset-video-input" type="file" accept="video/mp4,video/quicktime" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="asset-upload-status" class="tag tag-yellow">待导入</span>
+          <a class="upload-module-link" onclick="showPage('ads', null)">查看素材库 →</a>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">📝 运营调整记录</div>
+        <div class="upload-module-desc">运营动作回传表。驱动：动作验证、T+1/T+3/T+7 效果追踪。</div>
+        <div class="upload-zone small" onclick="alert('📁 请选择动作记录 CSV\n\n建议字段：日期、商品ID、维度、动作类型、动作说明、负责人、验证节点')">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择动作记录 CSV</div>
+          <div class="upload-zone-desc">建议字段：日期、商品ID、维度、动作类型、动作说明、负责人</div>
+        </div>
+        <div class="upload-module-foot">
+          <span class="tag tag-green">本地可用</span>
+          <a class="upload-module-link" onclick="showPage('validation', null)">查看版块 →</a>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">📚 运营知识库数据</div>
+        <div class="upload-module-desc">团队方法论、SOP、案例文档，用于知识沉淀与 Agent 复用。</div>
+        <div class="upload-zone small" onclick="showPage('knowledge', null); const tabs = document.querySelectorAll('#page-knowledge .tab-bar .tab-btn'); if (tabs[2]) tabs[2].click();">
+          <div class="upload-zone-icon">📚</div>
+          <div class="upload-zone-title">前往知识库上传</div>
+          <div class="upload-zone-desc">在知识库版块的"上传"页签中提交文档与知识卡片</div>
+        </div>
+        <div class="upload-module-foot">
+          <span class="tag tag-green">可上传</span>
+          <a class="upload-module-link" onclick="showPage('knowledge', null)">查看版块 →</a>
+        </div>
+      </div>
     </div>
   </div>
   <div class="card" style="margin-top:14px;">
@@ -1845,6 +2096,10 @@ body {
         <thead><tr><th>模块</th><th>推荐来源</th><th>关键字段</th><th>Agent 依赖</th><th>当前状态</th></tr></thead>
         <tbody>
           <tr><td><strong>商品经营</strong></td><td>TikTok Shop CSV</td><td>商品 ID、曝光、点击、成交、GMV</td><td>诊断Agent、预警Agent</td><td><span class="tag tag-yellow">待接入</span></td></tr>
+          <tr><td><strong>达人合作</strong></td><td>达人团队 / 后台导出表</td><td>日期、达人、状态、GMV、视频数</td><td>达人跟进Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td></tr>
+          <tr><td><strong>广告投放</strong></td><td>广告后台导出表</td><td>日期、计划、消耗、曝光、CTR、ROAS</td><td>调价Agent、素材Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td></tr>
+          <tr><td><strong>自营短视频</strong></td><td>TikTok Studio / Seller Center</td><td>日期、账号、视频 ID、播放量、GMV</td><td>内容Agent、排期Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td></tr>
+          <tr><td><strong>优质素材库</strong></td><td>素材数据表 + mp4 视频</td><td>达人、视频链接、GMV、ROAS、标签</td><td>素材测试Agent</td><td><span class="tag tag-yellow">可导入 · 双通道</span></td></tr>
           <tr><td><strong>发布数量</strong></td><td>Kdocs / 运营回传表</td><td>日期、账号、商品 ID、数量</td><td>内容Agent、排期Agent</td><td><span class="tag tag-green">可导入</span></td></tr>
           <tr><td><strong>运营动作</strong></td><td>动作记录表</td><td>日期、商品 ID、动作、验证节点</td><td>追踪Agent、沉淀Agent</td><td><span class="tag tag-green">本地可用</span></td></tr>
           <tr><td><strong>公开视频</strong></td><td>TikTok 主页快照</td><td>视频 ID、当前播放、snapshot_time</td><td>内容Agent</td><td><span class="tag tag-gray">快照性质</span></td></tr>
@@ -1886,7 +2141,8 @@ body {
 </div>
 
 <script src="./data/real-store-data.js"></script>
-<script src="./data/real-store-dashboard.js?v=bug-audit-2"></script>
+<script src="./data/real-store-dashboard.js?v=ops-ext-2"></script>
+<script src="./data/ops-extensions.js?v=ops-ext-2"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'data']);
 const DEMO_PAGE_NOTICES = {
