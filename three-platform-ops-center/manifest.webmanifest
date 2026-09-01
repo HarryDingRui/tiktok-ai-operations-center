@@ -1,7 +1,7 @@
-{
-  "name": "三域操盘中心",
-  "short_name": "三域操盘",
-  "description": "小红书、抖音、闲鱼账号运营操盘中心",
+﻿{
+  "name": "Codex Business OS",
+  "short_name": "Codex OS",
+  "description": "Codex 与 AI 服务业务经营中台",
   "lang": "zh-CN",
   "start_url": "./#overview",
   "scope": "./",
@@ -16,3 +16,4 @@
     }
   ]
 }
+

@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   "use strict";
 
   const TEST_MODE = new URLSearchParams(window.location.search).get("test") === "1";
@@ -8,11 +8,11 @@
   const DAY_MS = 24 * 60 * 60 * 1000;
 
   const NAV_ITEMS = [
-    { id: "overview", label: "今日操盘", glyph: "今" },
-    { id: "operations", label: "平台工作台", glyph: "台" },
-    { id: "alerts", label: "信号与预警", glyph: "警" },
+    { id: "overview", label: "经营总览", glyph: "总" },
+    { id: "operations", label: "渠道与销售", glyph: "渠" },
+    { id: "alerts", label: "交付与预警", glyph: "警" },
     { id: "tasks", label: "任务与实验", glyph: "验" },
-    { id: "knowledge", label: "知识与规则", glyph: "知" },
+    { id: "knowledge", label: "SOP 与知识", glyph: "知" },
     { id: "data", label: "数据与治理", glyph: "数" },
   ];
 
@@ -586,9 +586,9 @@
   function renderSidebar(alertCount) {
     return `
       <aside class="sidebar">
-        <a class="brand-lockup" href="#overview" aria-label="三域操盘中心首页">
+        <a class="brand-lockup" href="#overview" aria-label="Codex Business OS 首页">
           <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
-          <div><strong>三域操盘中心</strong><span>LOCAL OPERATIONS OS</span></div>
+          <div><strong>Codex Business OS</strong><span>AI SERVICE OPERATIONS</span></div>
         </a>
         <p class="nav-caption">工作区</p>
         <nav class="side-nav" aria-label="主导航">
@@ -601,8 +601,8 @@
           `).join("")}
         </nav>
         <div class="sidebar-foot">
-          <div class="environment-pill"><i></i> GitHub 本地版</div>
-          <p>数据只保存在当前浏览器<br />未知不写成 0 · 来源可追溯</p>
+          <div class="environment-pill"><i></i> 团队经营版</div>
+          <p>客户、订单、交付、续费<br />未知不写成 0 · 来源可追溯</p>
         </div>
       </aside>
     `;
@@ -663,9 +663,23 @@
     `;
   }
 
+  function renderCodexOverview() {
+    const alerts = deriveAlerts().filter((alert) => !alert.handled);
+    const taskCount = state.tasks.filter((task) => !task.completedAt).length;
+    const orderCount = state.snapshots.reduce((sum, snapshot) => sum + Number(snapshot.orders || snapshot.paid_orders || 0), 0);
+    const hasRealData = state.accounts.length || state.snapshots.length;
+    const kpis = [["新增线索", "待接入", "今日"], ["有效咨询", "待接入", "今日"], ["成交订单", orderCount ? formatNumber(orderCount) : "—", "来自已导入事实"], ["待交付订单", "待登记", "订单台账"], ["7天内到期", "待接入", "续费看板"], ["开放预警", String(alerts.length), alerts.length ? "需要处理" : "暂无"]];
+    return `
+      <section class="codex-hero"><div><div class="eyebrow"><i class="status-dot cyan"></i> CODEX BUSINESS OS · 2026-09-01</div><h2>把每一笔成交，变成可交付、可复购的服务。</h2><p>这是团队的 AI 订阅协助、Codex 配置、培训与持续支持经营中台。渠道负责带来线索，订单负责产生现金流，交付与续费负责验证业务是否真的成立。</p><div class="decision-actions"><button class="primary-button" type="button" data-action="open-register">新增客户 / 订单<span>→</span></button><button class="text-button" type="button" data-action="go-tasks">打开今日任务</button></div></div><div class="codex-hero-note"><span>本周唯一目标</span><strong>验证一个稳定交付且贡献为正的 SKU</strong><small>${hasRealData ? "已有本地业务数据，继续补齐订单与交付字段" : "先登记客户与第一笔订单，再开始积累真实数据"}</small></div></section>
+      <section class="section-block"><div class="section-heading"><div><span>OPERATING PULSE</span><h2>今日经营脉搏</h2></div><p>空白代表待接入，不把未知写成 0</p></div><div class="codex-kpi-grid">${kpis.map(([label,value,meta]) => `<article class="codex-kpi"><span>${label}</span><b>${value}</b><small>${meta}</small></article>`).join("")}</div></section>
+      <section class="codex-grid-2 section-block"><article class="workspace-surface codex-funnel"><div class="surface-heading"><div><h3>客户与订单漏斗</h3><p>从首次咨询到续费的唯一经营链路</p></div><span>本周</span></div><div class="funnel-steps"><div><b>01</b><span>获客</span><em>渠道与内容</em></div><div><b>02</b><span>咨询</span><em>需求与报价</em></div><div><b>03</b><span>成交</span><em>实收与 SKU</em></div><div><b>04</b><span>交付</span><em>激活与确认</em></div><div><b>05</b><span>续费</span><em>复购与支持</em></div></div></article><article class="workspace-surface codex-priority"><div class="surface-heading"><div><h3>现在最该处理</h3><p>优先解决阻塞现金流的事项</p></div><button type="button" data-action="go-alerts">查看预警</button></div><ul class="priority-list"><li><span class="priority-dot red"></span><div><b>${alerts.length ? `${alerts.length} 个开放预警等待处理` : "暂无开放预警"}</b><small>${alerts.length ? "先处理交付、退款和数据缺口" : "继续记录真实订单与售后事实"}</small></div><button type="button" data-action="go-alerts">处理</button></li><li><span class="priority-dot amber"></span><div><b>${taskCount ? `${taskCount} 项任务尚未完成` : "今天还没有执行任务"}</b><small>把结论变成负责人和截止时间</small></div><button type="button" data-action="go-tasks">打开</button></li><li><span class="priority-dot cyan"></span><div><b>检查当前价盘与供应商评分</b><small>旧资料只作参考，当前价格必须重新核验</small></div><button type="button" data-action="go-data">治理</button></li></ul></article></section>
+      <section class="section-block"><div class="section-heading"><div><span>BUSINESS MODULES</span><h2>业务模块</h2></div><p>围绕客户、产品、交付和现金流组织工作</p></div><div class="module-grid">${[["客户与订单","管理客户阶段、订单金额和负责人","go-tasks"],["产品与 SKU","定义服务边界、价格与贡献","go-data"],["交付与售后","记录激活、问题和处理时长","go-alerts"],["续费与复购","跟进到期、复购和流失原因","go-tasks"],["渠道与销售","比较闲鱼、内容和私域的真实成交","go-platform"],["数据与证据","保留来源、复核日和决策依据","go-data"]].map(([title,desc,action]) => `<button class="module-card" type="button" data-action="${action}"><span>${title}</span><b>→</b><small>${desc}</small></button>`).join("")}</div></section>
+      <div class="governance-strip"><span>TEAM OPERATING RULE</span><p>不把共享账号、接码或规避平台限制作为默认主业务；不在网页或笔记中保存密码、Cookie、Token、API Key。</p><button type="button" class="text-button" data-action="go-data">打开数据治理 →</button></div>`;
+  }
+
   function renderCurrentView() {
     const renderers = {
-      overview: renderOverview,
+      overview: renderCodexOverview,
       operations: renderOperations,
       alerts: renderAlerts,
       tasks: renderTasks,
@@ -1655,3 +1669,4 @@
   if (!window.location.hash) window.history.replaceState(null, "", "#overview");
   render();
 })();
+
