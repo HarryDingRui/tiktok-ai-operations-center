@@ -1,0 +1,2244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TikTok AI 智能运营中控台 v3 — Agent Native</title>
+<link rel="icon" href="data:,">
+<style>
+/* ========== 基础重置 ========== */
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+body { 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; 
+  color: #1f2937; background: #f1f5f9; -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+
+/* ========== 桌面端左侧导航 ========== */
+.sidebar { 
+  position: fixed; left: 0; top: 0; bottom: 0; width: 230px; 
+  background: #0f172a; color: #94a3b8; padding: 16px 0; 
+  overflow-y: auto; z-index: 300; transition: transform 0.3s ease;
+}
+.sidebar-brand { 
+  padding: 0 18px 16px; font-size: 14px; font-weight: 700; color: #fff; 
+  border-bottom: 1px solid #1e293b; margin-bottom: 10px; 
+  display: flex; align-items: center; gap: 8px;
+}
+.nav-item { 
+  padding: 10px 18px; cursor: pointer; display: flex; align-items: center; 
+  gap: 10px; font-size: 13px; transition: all 0.2s; 
+  border-left: 3px solid transparent; text-decoration: none; color: #94a3b8;
+  min-height: 42px;
+}
+.nav-item:hover { background: #1e293b; color: #e2e8f0; }
+.nav-item.active { background: #1e293b; color: #38bdf8; border-left-color: #38bdf8; }
+.nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.nav-badge { 
+  margin-left: auto; background: #ef4444; color: #fff; font-size: 10px; 
+  padding: 2px 6px; border-radius: 10px; font-weight: 600;
+}
+
+/* ========== 移动端顶部栏 ========== */
+.mobile-header {
+  display: none; position: fixed; top: 0; left: 0; right: 0; height: 52px;
+  background: #0f172a; color: #fff; z-index: 200;
+  align-items: center; justify-content: space-between; padding: 0 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.mobile-header-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.mobile-menu-btn { 
+  width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;
+}
+
+/* ========== 移动端底部导航 ========== */
+.mobile-bottom-nav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
+  background: #fff; border-top: 1px solid #e2e8f0; z-index: 200;
+  justify-content: space-around; align-items: center; padding: 2px 0 8px;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+}
+.mobile-bottom-item {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  font-size: 10px; color: #94a3b8; cursor: pointer; padding: 4px 6px;
+  min-width: 52px; text-align: center; border: none; background: none;
+}
+.mobile-bottom-item.active { color: #38bdf8; }
+.mobile-bottom-item .nav-icon { font-size: 18px; margin-bottom: 1px; }
+
+/* ========== 移动端遮罩 ========== */
+.mobile-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 150;
+}
+.mobile-overlay.open { display: block; }
+
+/* ========== 主内容区 ========== */
+.main { width: calc(100% - 230px); margin-left: 230px; padding: 20px; min-height: 100vh; min-width: 0; padding-bottom: 80px; }
+.page, .card, .two-col, .three-col, .agent-grid, .stats-row { min-width: 0; }
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+.page-header { margin-bottom: 20px; }
+.page-title { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+.page-subtitle { font-size: 13px; color: #64748b; line-height: 1.5; }
+
+/* ========== 真实店铺数据上下文 ========== */
+.data-context-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 12px 16px; margin-bottom: 18px; background: #fff;
+  border: 1px solid #dbeafe; border-left: 4px solid #38bdf8; border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.04); flex-wrap: wrap;
+}
+.data-context-bar[hidden] { display: none !important; }
+.data-boundary-notice {
+  display: flex; align-items: flex-start; gap: 9px; margin: -6px 0 18px; padding: 11px 13px;
+  border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 9px;
+  background: #fffbeb; color: #92400e; font-size: 12px; line-height: 1.6;
+}
+.data-boundary-notice strong { color: #78350f; }
+.data-context-heading { display: flex; align-items: center; gap: 8px; color: #0f172a; font-size: 14px; font-weight: 700; }
+.data-context-heading small { color: #16a34a; font-size: 11px; font-weight: 600; background: #f0fdf4; padding: 4px 8px; border-radius: 999px; }
+.data-context-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.data-context-label { color: #64748b; font-size: 12px; }
+.data-context-select { min-height: 38px; min-width: 210px; padding: 7px 32px 7px 10px; border: 1px solid #cbd5e1; border-radius: 8px; color: #0f172a; background: #fff; font: inherit; outline: none; }
+.data-context-select:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.12); }
+.data-context-meta { color: #64748b; font-size: 12px; }
+.real-data-card { border-left: 4px solid #10b981; }
+.real-data-card .desktop-table th { background: #f0fdf4; }
+.real-data-status { display: inline-flex; align-items: center; gap: 5px; color: #15803d; font-weight: 600; }
+.real-data-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
+.real-data-note { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 12px; line-height: 1.6; }
+.real-product-table .long-text { max-width: 340px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; }
+.real-product-table .metric-positive { color: #16a34a; font-weight: 700; }
+.real-product-table .metric-muted { color: #94a3b8; }
+.data-context-date-select { min-width: 150px; }
+.data-context-date-input { min-height: 38px; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 8px; color: #0f172a; background: #fff; font: inherit; outline: none; }
+.data-context-date-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.12); }
+.data-context-date-custom { display: none; align-items: center; gap: 6px; color: #64748b; font-size: 12px; }
+.data-context-date-custom.is-visible { display: inline-flex; }
+.real-field-grid { display: grid; grid-template-columns: repeat(5, minmax(130px, 1fr)); gap: 10px; }
+.source-metric-groups { display: grid; gap: 18px; }
+.source-metric-section { padding: 14px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; }
+.source-metric-section-title, .source-field-section-title { margin-bottom: 10px; color: #1e3a8a; font-size: 14px; font-weight: 700; }
+.source-metric-section .real-field-grid { grid-template-columns: repeat(6, minmax(120px, 1fr)); }
+.source-metric-card { min-width: 0; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 9px; background: #fff; }
+.source-metric-label { color: #64748b; font-size: 12px; line-height: 1.4; }
+.source-metric-value { margin-top: 5px; overflow: hidden; color: #0f172a; font-size: 17px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.source-product-label { display: block; margin-bottom: 7px; color: #475569; font-size: 13px; font-weight: 600; }
+.source-product-select { width: min(100%, 720px); min-height: 38px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; color: #0f172a; background: #fff; font-size: 13px; }
+.source-field-inspector { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.source-field-section { min-width: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; }
+.source-field-section-title { margin: 0; padding: 10px 12px; border-bottom: 1px solid #dbeafe; background: #eff6ff; }
+.source-field-rows { padding: 4px 12px 8px; }
+.source-field-row { display: grid; grid-template-columns: minmax(150px, 0.9fr) minmax(0, 1.1fr); gap: 12px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; line-height: 1.45; }
+.source-field-row:last-child { border-bottom: 0; }
+.source-field-row > span { color: #64748b; }
+.source-field-row > strong { overflow: hidden; color: #0f172a; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.real-ranking-grid { display: grid; grid-template-columns: repeat(5, minmax(180px, 1fr)); gap: 10px; }
+.real-ranking-card { padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; min-width: 0; }
+.real-ranking-card.gmv { background: #eff6ff; border-color: #bfdbfe; }
+.real-ranking-card.up { background: #f0fdf4; border-color: #bbf7d0; }
+.real-ranking-card.down { background: #fef2f2; border-color: #fecaca; }
+.real-ranking-card.cvr { background: #fffbeb; border-color: #fde68a; }
+.real-ranking-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+.real-ranking-subtitle { font-size: 11px; color: #64748b; margin-bottom: 10px; }
+.real-ranking-item { display: flex; align-items: center; gap: 7px; padding: 7px 0; border-top: 1px solid rgba(148,163,184,0.22); min-width: 0; }
+.real-ranking-item:first-of-type { border-top: 0; }
+.real-ranking-rank { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: #1e3a8a; color: #fff; font-size: 11px; font-weight: 700; }
+.real-ranking-name { flex: 1; min-width: 0; color: #334155; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.real-ranking-value { color: #0f172a; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.real-ranking-empty { padding: 14px 4px; color: #92400e; font-size: 12px; line-height: 1.6; }
+@media (max-width: 1100px) { .real-ranking-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); } .real-field-grid, .source-metric-section .real-field-grid { grid-template-columns: repeat(3, minmax(130px, 1fr)); } }
+@media (max-width: 768px) { .data-context-bar { align-items: flex-start; } .data-context-controls { width: 100%; } .data-context-select, .data-context-date-select, .data-context-date-input { flex: 1; min-width: 180px; } .data-context-date-custom { width: 100%; } .real-ranking-grid { grid-template-columns: 1fr; } .real-field-grid, .source-metric-section .real-field-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); } .source-field-inspector { grid-template-columns: 1fr; } }
+
+/* ========== 统计卡片 ========== */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { 
+  background: #fff; border-radius: 12px; padding: 16px; 
+  border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.stat-label { font-size: 11px; color: #64748b; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 24px; font-weight: 700; color: #0f172a; line-height: 1.2; }
+.stat-trend { font-size: 12px; margin-top: 3px; }
+.trend-up { color: #10b981; }
+.trend-down { color: #ef4444; }
+
+/* ========== 通用卡片 ========== */
+.card { 
+  background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; 
+  padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 14px;
+}
+.card-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+.card-title span { font-size: 12px; color: #64748b; font-weight: 400; }
+
+/* ========== 标签 ========== */
+.tag { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; display: inline-block; white-space: nowrap; }
+.tag-blue { background: #eff6ff; color: #2563eb; }
+.tag-green { background: #f0fdf4; color: #16a34a; }
+.tag-yellow { background: #fef3c7; color: #b45309; }
+.tag-red { background: #fef2f2; color: #dc2626; }
+.tag-gray { background: #f1f5f9; color: #475569; }
+.tag-purple { background: #f3e8ff; color: #7c3aed; }
+.tag-dark { background: #0f172a; color: #fff; }
+
+/* ========== 警示条 ========== */
+.alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+.alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+.alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.alert-danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* ========== 进度条 ========== */
+.progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; }
+
+/* ========== 两列/三列布局 ========== */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
+
+/* ========== Agent 入口卡片 ========== */
+.agent-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #fff; border-radius: 12px; padding: 16px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer; transition: all 0.2s; border: 1px solid #334155;
+  position: relative; overflow: hidden;
+}
+.agent-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15,23,42,0.2); }
+.agent-card::after {
+  content: '▶'; position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  color: #38bdf8; font-size: 14px; opacity: 0.7;
+}
+.agent-card-icon { 
+  width: 40px; height: 40px; background: rgba(56,189,248,0.15); 
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.agent-card-body { flex: 1; }
+.agent-card-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.agent-card-desc { font-size: 12px; color: #94a3b8; }
+.agent-card-status {
+  position: absolute; top: 10px; right: 36px;
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.agent-card-status.idle { background: #10b981; }
+.agent-card-status.running { background: #f59e0b; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* ========== 预警卡片 ========== */
+.alert-card { 
+  background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; 
+  padding: 16px; margin-bottom: 10px; position: relative; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: all 0.2s;
+}
+.alert-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.alert-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+.alert-card.high::before { background: #ef4444; }
+.alert-card.medium::before { background: #f59e0b; }
+.alert-card.low::before { background: #3b82f6; }
+.alert-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+.alert-card-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+.alert-card-desc { font-size: 13px; color: #475569; line-height: 1.6; margin-bottom: 10px; }
+.alert-card-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; }
+.alert-card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b; flex-wrap: wrap; gap: 6px; }
+
+/* ========== 知识库卡片 ========== */
+.kb-card { 
+  background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; 
+  padding: 16px; transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.kb-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); border-color: #cbd5e1; transform: translateY(-1px); }
+.kb-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #10b981; }
+.kb-card.pending::before { background: #f59e0b; }
+.kb-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+.kb-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.kb-date { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+.kb-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 6px; line-height: 1.4; }
+.kb-desc { font-size: 13px; color: #475569; line-height: 1.6; margin-bottom: 12px; }
+.kb-meta { 
+  display: flex; gap: 12px; padding: 10px; background: #f8fafc; border-radius: 8px; 
+  margin-bottom: 10px; border: 1px solid #f1f5f9; flex-wrap: wrap;
+}
+.kb-meta-item { font-size: 12px; }
+.kb-meta-label { color: #64748b; }
+.kb-meta-value { color: #0f172a; font-weight: 600; }
+.kb-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; margin-bottom: 10px; border: 1px solid #f1f5f9; }
+.metric { text-align: center; }
+.metric-value { font-size: 16px; font-weight: 700; color: #0f172a; }
+.metric-label { font-size: 11px; color: #64748b; margin-top: 2px; }
+.kb-footer { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b; padding-top: 4px; flex-wrap: wrap; gap: 8px; }
+.kb-author { display: flex; align-items: center; gap: 8px; }
+.avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #fff; flex-shrink: 0; }
+.kb-actions { display: flex; gap: 8px; align-items: center; }
+.kb-action { cursor: pointer; padding: 5px 10px; border-radius: 6px; transition: all 0.2s; font-size: 12px; background: #f8fafc; border: 1px solid #e2e8f0; }
+.kb-action:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.usage-badge { background: #ecfdf5; color: #059669; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid #d1fae5; }
+.audit-badge { background: #f3e8ff; color: #7c3aed; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid #ddd6fe; }
+
+/* ========== 导入/上传横幅 ========== */
+.import-banner { 
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; 
+  border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; 
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+}
+.import-banner strong { display: block; font-size: 15px; margin-bottom: 3px; }
+.import-banner-text { font-size: 13px; line-height: 1.5; }
+.import-btn { 
+  background: #38bdf8; color: #0f172a; border: none; padding: 10px 18px; 
+  border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; min-height: 44px;
+}
+.import-btn:hover { background: #7dd3fc; }
+
+/* ========== 筛选工具栏 ========== */
+.toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+.search-box { flex: 1; min-width: 200px; max-width: 360px; position: relative; }
+.search-box input { 
+  width: 100%; padding: 10px 14px 10px 38px; border: 1px solid #e2e8f0; 
+  border-radius: 8px; font-size: 14px; outline: none; transition: all 0.2s; background: #fff; min-height: 44px;
+}
+.search-box input:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.1); }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; }
+.filter-btn { 
+  padding: 9px 14px; border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; 
+  font-size: 13px; cursor: pointer; color: #475569; transition: all 0.2s; min-height: 44px;
+}
+.filter-btn:hover { border-color: #cbd5e1; }
+.filter-btn.active { border-color: #38bdf8; color: #0284c7; background: #f0f9ff; font-weight: 600; }
+
+/* ========== 桌面端表格 ========== */
+.desktop-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.desktop-table th { text-align: left; padding: 10px 12px; background: #f8fafc; color: #475569; font-weight: 600; border-bottom: 1px solid #e2e8f0; font-size: 12px; white-space: nowrap; }
+.desktop-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.desktop-table tr:hover td { background: #f8fafc; }
+.desktop-table-wrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ========== 移动端卡片列表 ========== */
+.mobile-card-list { display: none; }
+.mobile-data-card {
+  background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;
+  padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.mobile-data-card-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+}
+.mobile-data-card-title { font-size: 14px; font-weight: 600; color: #0f172a; }
+.mobile-data-card-row {
+  display: flex; justify-content: space-between; padding: 7px 0;
+  border-bottom: 1px solid #f1f5f9; font-size: 13px;
+}
+.mobile-data-card-row:last-child { border-bottom: none; }
+.mobile-data-card-label { color: #64748b; }
+.mobile-data-card-value { color: #0f172a; font-weight: 500; }
+
+/* ========== Agent 调度面板 ========== */
+.agent-panel {
+  background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;
+  padding: 16px; margin-bottom: 14px;
+}
+.agent-panel-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+}
+.agent-panel-title { font-size: 14px; font-weight: 600; color: #0f172a; }
+.agent-list { display: flex; flex-direction: column; gap: 10px; }
+.agent-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px;
+  background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9;
+}
+.agent-row-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: #eff6ff; flex-shrink: 0; }
+.agent-row-body { flex: 1; }
+.agent-row-name { font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 2px; }
+.agent-row-desc { font-size: 12px; color: #64748b; }
+.agent-row-status {
+  display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b;
+}
+.agent-row-status-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ========== 任务队列 ========== */
+.task-queue { display: flex; flex-direction: column; gap: 8px; }
+.task-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+.task-item-status { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.task-item-name { flex: 1; color: #0f172a; font-weight: 500; }
+.task-item-time { color: #94a3b8; font-size: 12px; }
+
+/* ========== 步骤流程 ========== */
+.step-flow { display: flex; align-items: stretch; gap: 0; margin-top: 14px; flex-wrap: wrap; }
+.step-item { 
+  flex: 1; min-width: 100px; text-align: center; padding: 12px 8px; 
+  border: 1px solid; position: relative;
+}
+.step-item:first-child { border-radius: 8px 0 0 8px; }
+.step-item:last-child { border-radius: 0 8px 8px 0; }
+.step-num { 
+  width: 26px; height: 26px; border-radius: 50%; display: flex; 
+  align-items: center; justify-content: center; font-weight: 700; 
+  font-size: 11px; margin: 0 auto 6px; color: #fff;
+}
+.step-title { font-weight: 600; font-size: 12px; margin-bottom: 2px; }
+.step-desc { font-size: 11px; }
+
+/* ========== 按钮 ========== */
+.btn { 
+  padding: 10px 16px; border: 1px solid #e2e8f0; background: #fff; 
+  border-radius: 8px; font-size: 13px; cursor: pointer; color: #475569; 
+  transition: all 0.2s; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
+}
+.btn:hover { border-color: #cbd5e1; }
+.btn-primary { background: #0f172a; color: #fff; border-color: #0f172a; }
+.btn-primary:hover { background: #1e293b; }
+
+/* ========== 上传区域 ========== */
+.upload-zone {
+  border: 2px dashed #e2e8f0; border-radius: 12px; padding: 24px;
+  text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s;
+}
+.upload-zone:hover { border-color: #38bdf8; background: #f0f9ff; }
+.upload-zone-icon { font-size: 32px; margin-bottom: 8px; }
+.upload-zone-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+.upload-zone-desc { font-size: 12px; color: #64748b; }
+
+/* ========== 表单 ========== */
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 6px; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px;
+  font-size: 14px; outline: none; transition: all 0.2s; background: #fff; min-height: 44px;
+  font-family: inherit;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.1); }
+.form-textarea { min-height: 100px; resize: vertical; }
+
+/* ========== Tab 切换 ========== */
+.tab-bar { display: flex; gap: 4px; margin-bottom: 16px; background: #f8fafc; padding: 4px; border-radius: 10px; }
+.tab-btn { 
+  flex: 1; padding: 10px 16px; border: none; background: transparent; 
+  border-radius: 8px; font-size: 13px; cursor: pointer; color: #64748b; font-weight: 500;
+  transition: all 0.2s; min-height: 44px;
+}
+.tab-btn:hover { color: #0f172a; }
+.tab-btn.active { background: #fff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+/* ========== 网格布局 ========== */
+.kb-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.alert-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.agent-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+/* ========== 响应式断点 ========== */
+@media (max-width: 1024px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  .kb-grid, .alert-grid, .agent-grid { grid-template-columns: 1fr; }
+  .step-flow { flex-direction: column; }
+  .step-item { border-radius: 8px !important; margin-bottom: 6px; }
+}
+
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); width: 280px; box-shadow: 2px 0 16px rgba(0,0,0,0.2); }
+  .sidebar.open { transform: translateX(0); }
+  .mobile-header { display: flex; }
+  .mobile-bottom-nav { display: flex; }
+  .main { width: 100%; margin-left: 0; padding: 64px 12px 72px 12px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat-card { padding: 12px; }
+  .stat-value { font-size: 20px; }
+  .stat-label { font-size: 10px; }
+  .page-title { font-size: 18px; }
+  .page-subtitle { font-size: 12px; }
+  .card { padding: 14px; }
+  .card-title { font-size: 14px; }
+  .import-banner { padding: 14px 16px; }
+  .toolbar { gap: 8px; }
+  .search-box { max-width: 100%; min-width: 100%; }
+  .filter-btn { padding: 8px 12px; font-size: 12px; min-height: 40px; }
+  .desktop-table-wrap { display: none; }
+  .mobile-card-list { display: block; }
+  .kb-card, .alert-card { padding: 14px; }
+  .kb-metrics, .alert-card-metrics { grid-template-columns: repeat(3, 1fr); padding: 10px; }
+  .metric-value { font-size: 15px; }
+  .agent-card { padding: 14px; }
+  .agent-card::after { display: none; }
+  .step-flow { gap: 6px; }
+  .step-item { padding: 10px 6px; min-width: auto; }
+  .agent-grid { grid-template-columns: 1fr; }
+  .tab-bar { flex-wrap: wrap; }
+  .tab-btn { font-size: 12px; padding: 8px 12px; }
+}
+
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr 1fr; }
+}
+#operation-date-record-form { grid-template-columns: repeat(5, minmax(120px, 1fr)); }
+.operation-record-row { display:grid; grid-template-columns:120px 130px 1fr 1fr auto; gap:10px; align-items:center; padding:9px 10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; font-size:12px; }
+@media (max-width: 768px) {
+  #operation-date-record-form { grid-template-columns: 1fr 1fr !important; }
+  #operation-date-record-form button { grid-column: 1 / -1; }
+  .operation-record-row { grid-template-columns: 1fr 1fr; }
+  .operation-record-row button { justify-self: start; }
+}
+
+/* ========== v3.1 新增：优先处理四版块 / 趋势图 / 时间轴 / 排行榜 / 素材库 / 字段映射 ========== */
+.priority-hub-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }
+.priority-tab { padding:12px; border-radius:9px; border:1px solid #e2e8f0; background:#f8fafc; cursor:pointer; transition:all .18s; text-align:left; }
+.priority-tab:hover { border-color:#7dd3fc; background:#f0f9ff; }
+.priority-tab.active { border-color:#38bdf8; background:#f0f9ff; box-shadow:0 0 0 2px rgba(56,189,248,.18); }
+.priority-tab-head { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; color:#0f172a; }
+.priority-tab-count { margin-left:auto; min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:#ef4444; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.priority-tab-count.zero { background:#cbd5e1; }
+.priority-tab-desc { margin-top:5px; font-size:11px; color:#64748b; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.priority-item { padding:13px; border-radius:9px; margin-bottom:10px; border-left:3px solid #94a3b8; background:#f8fafc; }
+.priority-item.sev-high { background:#fef2f2; border-left-color:#ef4444; }
+.priority-item.sev-medium { background:#fffbeb; border-left-color:#f59e0b; }
+.priority-item.sev-low { background:#eff6ff; border-left-color:#3b82f6; }
+.priority-item.sev-good { background:#f0fdf4; border-left-color:#10b981; }
+.priority-item-title { font-weight:700; font-size:13px; color:#0f172a; margin-bottom:5px; }
+.priority-item-body { font-size:12px; color:#475569; line-height:1.75; }
+.priority-item-body b { color:#0f172a; }
+.priority-item-tags { margin-top:7px; display:flex; gap:6px; flex-wrap:wrap; }
+.ops-empty { padding:16px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:9px; font-size:12px; color:#64748b; line-height:1.8; }
+.ops-empty b { color:#334155; }
+
+.trend-panel-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.mini-chart-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:9px; padding:12px; }
+.mini-chart-title { font-size:12px; font-weight:700; color:#334155; margin-bottom:6px; display:flex; justify-content:space-between; gap:8px; }
+.mini-chart-title span:last-child { color:#0f172a; }
+.mini-chart-card svg { width:100%; height:auto; display:block; }
+
+.ops-timeline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.ops-timeline .tl-label { font-size:12px; color:#64748b; font-weight:600; }
+.ops-timeline select, .ops-timeline input[type="date"] { padding:7px 10px; border:1px solid #cbd5e1; border-radius:7px; font-size:12px; color:#334155; background:#fff; }
+.ops-chip { padding:6px 12px; border-radius:16px; border:1px solid #cbd5e1; background:#fff; font-size:12px; color:#475569; cursor:pointer; }
+.ops-chip.active { background:#0f172a; color:#fff; border-color:#0f172a; }
+
+.lb-list { display:flex; flex-direction:column; gap:7px; }
+.lb-row { display:flex; align-items:center; gap:10px; padding:9px 11px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; font-size:12px; }
+.lb-rank { width:22px; height:22px; border-radius:50%; background:#e2e8f0; color:#475569; font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.lb-row:nth-child(1) .lb-rank, .lb-row:nth-child(2) .lb-rank, .lb-row:nth-child(3) .lb-rank { background:#0f172a; color:#fff; }
+.lb-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; color:#1e293b; }
+.lb-sub { color:#94a3b8; font-size:11px; flex-shrink:0; }
+.lb-value { font-weight:700; color:#0f172a; flex-shrink:0; }
+.lb-bar-wrap { height:5px; background:#e2e8f0; border-radius:3px; margin-top:3px; overflow:hidden; }
+.lb-bar { height:100%; background:linear-gradient(90deg,#38bdf8,#0ea5e9); border-radius:3px; }
+
+.asset-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+.asset-card { border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; background:#fff; }
+.asset-card video { width:100%; aspect-ratio:9/12; background:#0f172a; object-fit:cover; display:block; }
+.asset-card-body { padding:10px 12px; }
+.asset-card-title { font-size:12px; font-weight:700; color:#0f172a; margin-bottom:4px; }
+.asset-card-meta { font-size:11px; color:#64748b; line-height:1.7; }
+.asset-card-tags { margin-top:6px; display:flex; gap:5px; flex-wrap:wrap; }
+
+.import-report { border:1px solid #bae6fd; background:#f0f9ff; border-radius:10px; padding:14px; margin-bottom:14px; }
+.import-report-title { font-size:13px; font-weight:700; color:#075985; margin-bottom:8px; }
+.import-report table { width:100%; border-collapse:collapse; font-size:12px; }
+.import-report th, .import-report td { text-align:left; padding:7px 9px; border-bottom:1px solid #e0f2fe; color:#334155; vertical-align:top; }
+.import-report th { color:#0369a1; font-weight:700; background:#e0f2fe55; }
+.mapping-panel { border:1px solid #fde68a; background:#fffbeb; border-radius:10px; padding:14px; margin-bottom:14px; }
+.mapping-panel-title { font-size:13px; font-weight:700; color:#92400e; margin-bottom:6px; }
+.mapping-panel select { max-width:260px; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; }
+
+.upload-zone.small { padding:14px; }
+.upload-zone.small .upload-zone-title { font-size:13px; }
+.upload-zone.small .upload-zone-desc { font-size:11px; }
+
+@media (max-width: 860px) {
+  .priority-hub-tabs { grid-template-columns:1fr 1fr; }
+  .trend-grid { grid-template-columns:1fr; }
+}
+</style>
+<script src="./vendor/xlsx.mini.min.js"></script>
+</head>
+<body>
+
+<!-- 移动端顶部栏 -->
+<div class="mobile-header">
+  <div class="mobile-header-title">🎵 TikTok 运营中心</div>
+  <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
+</div>
+
+<!-- 移动端遮罩 -->
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleMenu()"></div>
+
+<!-- 左侧导航 -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-brand">🎵 <span>TikTok AI 运营中心</span></div>
+  <div class="nav-item active" onclick="showPage('overview', this)"><span class="nav-icon">📊</span> <span>经营总览</span></div>
+  <div class="nav-item" onclick="showPage('alert', this)"><span class="nav-icon">🚨</span> <span>商品数据预警</span><span class="nav-badge">3</span></div>
+  <div class="nav-item" onclick="showPage('bd', this)"><span class="nav-icon">🤝</span> <span>BD / 达人</span></div>
+  <div class="nav-item" onclick="showPage('ads', this)"><span class="nav-icon">🎯</span> <span>广告投放</span></div>
+  <div class="nav-item" onclick="showPage('videos', this)"><span class="nav-icon">🎬</span> <span>自营短视频</span></div>
+  <div class="nav-item" onclick="showPage('validation', this)"><span class="nav-icon">✅</span> <span>动作验证</span></div>
+  <div class="nav-item" onclick="showPage('knowledge', this)"><span class="nav-icon">📚</span> <span>运营知识库</span></div>
+  <div class="nav-item" onclick="showPage('agents', this)"><span class="nav-icon">🤖</span> <span>Agent 调度中心</span><span class="nav-badge">2</span></div>
+  <div class="nav-item" onclick="showPage('data', this)"><span class="nav-icon">⚙️</span> <span>数据接入</span></div>
+</div>
+
+<!-- 移动端底部导航 -->
+<div class="mobile-bottom-nav">
+  <button class="mobile-bottom-item active" onclick="showPage('overview', this); updateMobileNav(this)"><span class="nav-icon">📊</span><span>总览</span></button>
+  <button class="mobile-bottom-item" onclick="showPage('alert', this); updateMobileNav(this)"><span class="nav-icon">🚨</span><span>预警</span></button>
+  <button class="mobile-bottom-item" onclick="showPage('agents', this); updateMobileNav(this)"><span class="nav-icon">🤖</span><span>Agent</span></button>
+  <button class="mobile-bottom-item" onclick="showPage('knowledge', this); updateMobileNav(this)"><span class="nav-icon">📚</span><span>知识</span></button>
+  <button class="mobile-bottom-item" onclick="showPage('videos', this); updateMobileNav(this)"><span class="nav-icon">🎬</span><span>内容</span></button>
+</div>
+
+<!-- 主内容 -->
+<div class="main">
+
+<!-- ========== 真实店铺数据范围 ========== -->
+<div class="data-context-bar" id="data-context-bar">
+  <div class="data-context-heading">📥 真实店铺数据 <small>已导入</small></div>
+  <div class="data-context-controls">
+    <span class="data-context-label">当前店铺</span>
+    <select class="data-context-select" id="store-filter" aria-label="选择店铺">
+      <option value="all">全部店铺</option>
+      <option value="yaya112">yaya112</option>
+      <option value="yaya thailand tth">yaya thailand tth</option>
+      <option value="PETTOS">PETTOS</option>
+      <option value="Miniyaya">Miniyaya</option>
+      <option value="INSPIRE PURIFY">INSPIRE PURIFY</option>
+    </select>
+    <span class="data-context-label">时间范围</span>
+    <select class="data-context-select data-context-date-select" id="date-range-preset" aria-label="选择时间范围">
+      <option value="all">全部日期</option>
+      <option value="7">近7天</option>
+      <option value="14">近14天</option>
+      <option value="custom">自定义日期</option>
+    </select>
+    <span class="data-context-date-custom" id="custom-date-range">
+      <input class="data-context-date-input" id="date-range-start" type="date" aria-label="开始日期">
+      <span>至</span>
+      <input class="data-context-date-input" id="date-range-end" type="date" aria-label="结束日期">
+    </span>
+    <span class="data-context-meta" id="data-context-summary">正在读取真实数据…</span>
+  </div>
+</div>
+
+<!-- ========== 1. 经营总览 ========== -->
+<div id="page-overview" class="page active">
+  <div class="page-header">
+    <div class="page-title">📊 经营总览</div>
+    <div class="page-subtitle">Control Plane 数据中心 · 先看全局，再调度 Agent 下钻执行</div>
+  </div>
+
+  <!-- Agent 快捷入口 -->
+  <div class="agent-grid" style="margin-bottom: 16px;">
+    <div class="agent-card" onclick="alert('🤖 AI日报Agent 启动中...\n\n正在读取今日经营数据...\n分析异常商品...\n生成日报草稿...\n✅ 日报已生成，请前往"日报预览"查看')">
+      <div class="agent-card-status idle"></div>
+      <div class="agent-card-icon">📰</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">AI 日报生成 Agent</div>
+        <div class="agent-card-desc">自动读取数据 → 分析异常 → 生成结构化日报</div>
+      </div>
+    </div>
+    <div class="agent-card" onclick="alert('🤖 智能诊断Agent 启动中...\n\n正在扫描全部商品数据...\n识别异常指标...\n生成诊断报告...\n✅ 发现 3 个高风险预警，已同步到"商品数据预警"')">
+      <div class="agent-card-status running"></div>
+      <div class="agent-card-icon">🔍</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">智能诊断 Agent</div>
+        <div class="agent-card-desc">扫描全店数据 → 识别异常 → 输出诊断建议</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">店铺 GMV</div><div class="stat-value">¥128,420</div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
+    <div class="stat-card"><div class="stat-label">成交订单</div><div class="stat-value">1,862</div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
+    <div class="stat-card"><div class="stat-label">店铺总曝光</div><div class="stat-value">2.84M</div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
+    <div class="stat-card"><div class="stat-label">成交转化率</div><div class="stat-value">3.86%</div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">⚡ 今日优先处理 <span>商品 / 达人 / 广告 / 短视频 · 按影响度排序 · Agent 已扫描</span></div>
+      <div id="priority-hub">
+        <div class="ops-empty">正在扫描各版块待处理事项…</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 成交来源占比 <span>全部店铺 · 成交订单</span></div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding-top:6px;">
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;"><span>🎬 短视频</span><span style="font-weight:700;">42%</span></div><div class="progress-bar"><div class="progress-fill" style="width:42%;background:#38bdf8;"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;"><span>📺 直播</span><span style="font-weight:700;">31%</span></div><div class="progress-bar"><div class="progress-fill" style="width:31%;background:#8b5cf6;"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;"><span>🛒 商品卡</span><span style="font-weight:700;">19%</span></div><div class="progress-bar"><div class="progress-fill" style="width:19%;background:#10b981;"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;"><span>📦 其他</span><span style="font-weight:700;">8%</span></div><div class="progress-bar"><div class="progress-fill" style="width:8%;background:#94a3b8;"></div></div></div>
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:#64748b;">成交占比需要店铺后台字段支持；无字段时保持"待导入"。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏆 五组链接对比排行 <span>商品 ID 为链接主键 · 点击调用分析Agent</span></div>
+    <div id="overview-ranking-grid" class="real-ranking-grid">
+      <div style="padding:12px;background:#f8fafc;border-radius:8px;text-align:center;cursor:pointer;" onclick="alert('🤖 调用 排行榜分析Agent\n\n维度：销量 Top5\n任务：自动分析销量领先商品特征 → 提取可复用策略')">
+        <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:6px;">📊 销量 Top5</div>
+        <div style="font-size:12px;color:#64748b;">按成交销量降序</div>
+        <div style="margin-top:10px;font-size:12px;color:#94a3b8;">待导入</div>
+      </div>
+      <div style="padding:12px;background:#f8fafc;border-radius:8px;text-align:center;cursor:pointer;" onclick="alert('🤖 调用 排行榜分析Agent\n\n维度：GMV Top5\n任务：分析高GMV商品定价/主图/流量结构')">
+        <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:6px;">💰 GMV Top5</div>
+        <div style="font-size:12px;color:#64748b;">按链接 GMV 降序</div>
+        <div style="margin-top:10px;font-size:12px;color:#94a3b8;">待导入</div>
+      </div>
+      <div style="padding:12px;background:#f0fdf4;border-radius:8px;text-align:center;cursor:pointer;" onclick="alert('🤖 调用 增长分析Agent\n\n维度：GMV 上涨 Top5\n任务：分析上涨原因 → 沉淀有效方法论')">
+        <div style="font-size:13px;font-weight:600;color:#166534;margin-bottom:6px;">📈 上涨 Top5</div>
+        <div style="font-size:12px;color:#15803d;">对比上一周期</div>
+        <div style="margin-top:10px;font-size:12px;color:#94a3b8;">待导入</div>
+      </div>
+      <div style="padding:12px;background:#fef2f2;border-radius:8px;text-align:center;cursor:pointer;" onclick="alert('🤖 调用 下滑诊断Agent\n\n维度：GMV 下降 Top5\n任务：诊断下滑原因 → 输出挽回方案')">
+        <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:6px;">📉 下降 Top5</div>
+        <div style="font-size:12px;color:#7f1d1d;">优先排查下滑原因</div>
+        <div style="margin-top:10px;font-size:12px;color:#94a3b8;">待导入</div>
+      </div>
+      <div style="padding:12px;background:#fef3c7;border-radius:8px;text-align:center;cursor:pointer;" onclick="alert('🤖 调用 转化诊断Agent\n\n维度：CVR 下降 Top5\n任务：分析转化流失点 → 输出优化建议')">
+        <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:6px;">⚠️ CVR 下降 Top5</div>
+        <div style="font-size:12px;color:#a16207;">转化率环比变化</div>
+        <div style="margin-top:10px;font-size:12px;color:#94a3b8;">待导入</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#64748b;">排行榜只展示有对应真实字段的链接；缺少字段时显示"待导入"，不以 0 代替未知。</div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">🛍️ 商品经营</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="font-size:32px;font-weight:700;color:#0f172a;">11</div>
+        <div style="font-size:13px;color:#64748b;">当前窗口有发布记录的商品 ID<br><span style="color:#ef4444;font-weight:600;">2 个需处理</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🤝 BD / 达人</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="font-size:32px;font-weight:700;color:#0f172a;">28</div>
+        <div style="font-size:13px;color:#64748b;">合作中达人，待跟进 6 个<br>履约率 78%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎯 广告投放</div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="font-size:28px;font-weight:700;color:#0f172a;">¥18,640</div>
+      <div style="font-size:13px;color:#64748b;">当前窗口广告消耗<br>ROAS 待导入</div>
+      <span class="tag tag-dark" style="cursor:pointer;margin-left:auto;" onclick="alert('🤖 调用 广告优化Agent\n\n任务：分析广告计划表现 → 输出调价/换素材建议')">▶ 广告优化Agent</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📝 日报草稿预览 <span>AI日报Agent 生成 · 提交前复核</span></div>
+    <div style="background:#f8fafc;padding:14px;border-radius:8px;font-size:13px;line-height:1.8;color:#334155;white-space:pre-line;">【结论】今日 GMV 较昨日上升 12.8%，但总曝光下降 3.1%，增长主要来自转化效率改善。
+
+【异常】商品 ID 100238 曝光下降 28%，点击率未同步下降，建议先核查流量入口与主图承接。
+
+【动作】3 条运营动作进入 T+1 验证，暂不判定有效/无效。
+
+【明日重点】补充后台播放、广告 ROAS 与商品级成交来源字段。</div>
+    <div style="margin-top:10px;display:flex;gap:8px;">
+      <button class="btn btn-primary" onclick="alert('✅ 日报已确认并保存到系统')">确认日报</button>
+      <button class="btn" onclick="alert('🤖 已重新调用 AI日报Agent 生成新版本')">重新生成</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 2. 商品数据预警 ========== -->
+<div id="page-alert" class="page">
+  <div class="page-header">
+    <div class="page-title">🚨 商品数据预警</div>
+    <div class="page-subtitle">T+1 / T+3 / T+7 预警流程样例 · 真实预警需导入同店铺多日期快照</div>
+  </div>
+
+  <!-- Agent 快捷入口 -->
+  <div class="agent-grid" style="margin-bottom: 16px;">
+    <div class="agent-card" onclick="alert('🤖 自动巡检Agent 启动中...\n\n正在扫描全部 11 个商品...\n对比 T+1/T+3/T+7 基线...\n✅ 扫描完成：发现 3 个高风险、5 个中风险、2 个低风险')">
+      <div class="agent-card-status idle"></div>
+      <div class="agent-card-icon">🔍</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">自动巡检 Agent</div>
+        <div class="agent-card-desc">全量扫描 → T+1/T+3/T+7 对比 → 自动分级预警</div>
+      </div>
+    </div>
+    <div class="agent-card" onclick="alert('🤖 智能诊断Agent 启动中...\n\n正在分析高风险商品根因...\n输出诊断报告与优化建议...')">
+      <div class="agent-card-status idle"></div>
+      <div class="agent-card-icon">🩺</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">智能诊断 Agent</div>
+        <div class="agent-card-desc">分析异常根因 → 输出可执行优化方案</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">高风险预警</div><div class="stat-value" style="color:#ef4444;">3</div><div class="stat-trend trend-down">需立即处理</div></div>
+    <div class="stat-card"><div class="stat-label">中风险预警</div><div class="stat-value" style="color:#f59e0b;">5</div><div class="stat-trend">需观察跟进</div></div>
+    <div class="stat-card"><div class="stat-label">低风险预警</div><div class="stat-value" style="color:#3b82f6;">2</div><div class="stat-trend">持续关注</div></div>
+    <div class="stat-card"><div class="stat-label">今日检测商品</div><div class="stat-value">11</div><div class="stat-trend">全部店铺 · 当前窗口</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-title">⚙️ 预警规则配置 <span>T+1 / T+3 / T+7 自动触发 · Agent 执行</span></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+      <div style="padding:12px;background:#fef2f2;border-radius:8px;text-align:center;border:1px solid #fecaca;">
+        <div style="font-size:18px;margin-bottom:4px;">📉</div>
+        <div style="font-weight:600;color:#991b1b;font-size:13px;">曝光下降</div>
+        <div style="font-size:12px;color:#7f1d1d;margin-top:3px;">环比 > 20%</div>
+      </div>
+      <div style="padding:12px;background:#fef2f2;border-radius:8px;text-align:center;border:1px solid #fecaca;">
+        <div style="font-size:18px;margin-bottom:4px;">💰</div>
+        <div style="font-weight:600;color:#991b1b;font-size:13px;">GMV 下降</div>
+        <div style="font-size:12px;color:#7f1d1d;margin-top:3px;">环比 > 15%</div>
+      </div>
+      <div style="padding:12px;background:#fef3c7;border-radius:8px;text-align:center;border:1px solid #fde68a;">
+        <div style="font-size:18px;margin-bottom:4px;">👆</div>
+        <div style="font-weight:600;color:#92400e;font-size:13px;">CTR 下降</div>
+        <div style="font-size:12px;color:#a16207;margin-top:3px;">环比 > 0.5pp</div>
+      </div>
+      <div style="padding:12px;background:#fef3c7;border-radius:8px;text-align:center;border:1px solid #fde68a;">
+        <div style="font-size:18px;margin-bottom:4px;">🛒</div>
+        <div style="font-weight:600;color:#92400e;font-size:13px;">CVR 下降</div>
+        <div style="font-size:12px;color:#a16207;margin-top:3px;">环比 > 0.3pp</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#64748b;">预警基于同商品 ID 的 T+1 / T+3 / T+7 数据对比，需要昨日基线数据支持。缺少字段时不触发预警。</div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="alert-search-input" placeholder="搜索商品 ID 查看近7天趋势（GMV / 曝光 / CTR / CVR），或筛选预警卡片..."></div>
+    <button class="filter-btn active">全部</button>
+    <button class="filter-btn">🔴 高风险</button>
+    <button class="filter-btn">🟡 中风险</button>
+    <button class="filter-btn">🔵 低风险</button>
+  </div>
+
+  <div id="product-trend-panel" style="display:none;"></div>
+
+  <div class="alert-grid">
+    <div class="alert-card high">
+      <div class="alert-card-header">
+        <div><span class="tag tag-red">🔴 高风险</span> <span class="tag tag-yellow">T+1 检测</span></div>
+        <span style="font-size:12px;color:#94a3b8;">2026-08-28</span>
+      </div>
+      <div class="alert-card-title">商品 ID 100238 · 曝光下降 28%</div>
+      <div class="alert-card-desc">US-日用店 · 儿童户外泡泡机。T+1 对比昨日基线，曝光从 434,200 降至 312,600，下降 28.0%。点击率基本稳定（3.91% vs 3.85%），初步判断非主图问题，建议检查推荐流量入口。</div>
+      <div class="alert-card-metrics">
+        <div class="metric"><div class="metric-value" style="color:#ef4444;">-28.0%</div><div class="metric-label">曝光变化</div></div>
+        <div class="metric"><div class="metric-value">3.91%</div><div class="metric-label">当前 CTR</div></div>
+        <div class="metric"><div class="metric-value">1.72%</div><div class="metric-label">当前 CVR</div></div>
+      </div>
+      <div class="alert-card-footer">
+        <span>检测节点：T+1 · 基线：08-27</span>
+        <span style="cursor:pointer;color:#2563eb;font-weight:500;" onclick="alert('🤖 调用 商品诊断Agent\n\n商品：100238\n任务：深度诊断曝光下滑根因 → 输出优化方案')">▶ 调用诊断Agent</span>
+      </div>
+    </div>
+
+    <div class="alert-card high">
+      <div class="alert-card-header">
+        <div><span class="tag tag-red">🔴 高风险</span> <span class="tag tag-yellow">T+3 检测</span></div>
+        <span style="font-size:12px;color:#94a3b8;">2026-08-28</span>
+      </div>
+      <div class="alert-card-title">商品 ID 100407 · CVR 连续下降 3 天</div>
+      <div class="alert-card-desc">TH-主店 · 磁力迷宫玩具。T+3 追踪显示 CVR 从 2.1% → 1.8% → 1.48%，连续 3 天下降，累计降幅 29.5%。同时 GMV 从 ¥11,500 降至 ¥8,120，下降 29.4%。</div>
+      <div class="alert-card-metrics">
+        <div class="metric"><div class="metric-value" style="color:#ef4444;">-29.5%</div><div class="metric-label">CVR 累计降</div></div>
+        <div class="metric"><div class="metric-value" style="color:#ef4444;">-29.4%</div><div class="metric-label">GMV 累计降</div></div>
+        <div class="metric"><div class="metric-value">1.48%</div><div class="metric-label">当前 CVR</div></div>
+      </div>
+      <div class="alert-card-footer">
+        <span>检测节点：T+3 · 基线：08-25</span>
+        <span style="cursor:pointer;color:#2563eb;font-weight:500;" onclick="alert('🤖 调用 商品诊断Agent\n\n商品：100407\n任务：诊断CVR持续下滑根因 → 输出挽回方案')">▶ 调用诊断Agent</span>
+      </div>
+    </div>
+
+    <div class="alert-card high">
+      <div class="alert-card-header">
+        <div><span class="tag tag-red">🔴 高风险</span> <span class="tag tag-yellow">T+7 检测</span></div>
+        <span style="font-size:12px;color:#94a3b8;">2026-08-28</span>
+      </div>
+      <div class="alert-card-title">商品 ID 100091 · GMV 连续 7 天下滑</div>
+      <div class="alert-card-desc">TH-主店 · 益智拼图礼盒。T+7 追踪显示 GMV 从 ¥22,100（08-21）降至 ¥15,760（08-28），累计下降 28.7%。曝光同步下降 18.3%，CTR 下降 0.6pp，多指标联动异常。</div>
+      <div class="alert-card-metrics">
+        <div class="metric"><div class="metric-value" style="color:#ef4444;">-28.7%</div><div class="metric-label">GMV 累计降</div></div>
+        <div class="metric"><div class="metric-value" style="color:#ef4444;">-18.3%</div><div class="metric-label">曝光累计降</div></div>
+        <div class="metric"><div class="metric-value">2.84%</div><div class="metric-label">当前 CTR</div></div>
+      </div>
+      <div class="alert-card-footer">
+        <span>检测节点：T+7 · 基线：08-21</span>
+        <span style="cursor:pointer;color:#2563eb;font-weight:500;" onclick="alert('🤖 调用 商品诊断Agent\n\n商品：100091\n任务：T+7深度诊断 → 输出综合优化方案')">▶ 调用诊断Agent</span>
+      </div>
+    </div>
+
+    <div class="alert-card medium">
+      <div class="alert-card-header">
+        <div><span class="tag tag-yellow">🟡 中风险</span> <span class="tag tag-yellow">T+1 检测</span></div>
+        <span style="font-size:12px;color:#94a3b8;">2026-08-28</span>
+      </div>
+      <div class="alert-card-title">商品 ID 100512 · CTR 下降 0.6pp</div>
+      <div class="alert-card-desc">US-日用店 · 折叠儿童画板。T+1 对比昨日，CTR 从 3.62% 降至 3.02%，下降 0.6 个百分点。曝光基本稳定，需观察是否为短期波动。</div>
+      <div class="alert-card-metrics">
+        <div class="metric"><div class="metric-value" style="color:#f59e0b;">-0.6pp</div><div class="metric-label">CTR 变化</div></div>
+        <div class="metric"><div class="metric-value">3.02%</div><div class="metric-label">当前 CTR</div></div>
+        <div class="metric"><div class="metric-value">2.64%</div><div class="metric-label">当前 CVR</div></div>
+      </div>
+      <div class="alert-card-footer">
+        <span>检测节点：T+1 · 建议 T+3 再确认</span>
+        <span style="cursor:pointer;color:#2563eb;font-weight:500;" onclick="alert('🤖 调用 商品诊断Agent\n\n商品：100512\n任务：分析CTR波动原因 → 建议观察或行动')">▶ 调用诊断Agent</span>
+      </div>
+    </div>
+
+    <div class="alert-card low">
+      <div class="alert-card-header">
+        <div><span class="tag tag-blue">🔵 低风险</span> <span class="tag tag-yellow">T+1 检测</span></div>
+        <span style="font-size:12px;color:#94a3b8;">2026-08-28</span>
+      </div>
+      <div class="alert-card-title">商品 ID 100314 · 曝光微降 8%</div>
+      <div class="alert-card-desc">US-旗舰店 · 儿童绘画水彩笔。T+1 曝光从 216,000 降至 198,400，下降 8.1%，未达高风险阈值（20%），但 CVR 逆势上涨至 3.90%，转化效率改善抵消了曝光下降的影响。</div>
+      <div class="alert-card-metrics">
+        <div class="metric"><div class="metric-value" style="color:#3b82f6;">-8.1%</div><div class="metric-label">曝光变化</div></div>
+        <div class="metric"><div class="metric-value" style="color:#10b981;">+0.4pp</div><div class="metric-label">CVR 变化</div></div>
+        <div class="metric"><div class="metric-value">3.90%</div><div class="metric-label">当前 CVR</div></div>
+      </div>
+      <div class="alert-card-footer">
+        <span>检测节点：T+1 · 转化效率改善中</span>
+        <span style="cursor:pointer;color:#2563eb;font-weight:500;" onclick="alert('🤖 调用 商品诊断Agent\n\n商品：100314\n任务：分析CVR上涨原因 → 沉淀有效策略')">▶ 调用诊断Agent</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 预警检测逻辑说明</div>
+    <div style="font-size:13px;color:#475569;line-height:1.8;">
+      <p style="margin-bottom:6px;"><strong>T+1 检测：</strong>对比昨日同商品数据，检测单日异常波动。适合发现突发问题（如曝光骤降、广告计划异常）。</p>
+      <p style="margin-bottom:6px;"><strong>T+3 检测：</strong>对比 3 天前基线，检测短期趋势变化。适合发现持续下滑（如 CTR 连续下降、CVR 走弱）。</p>
+      <p><strong>T+7 检测：</strong>对比 7 天前基线，检测中长期趋势。适合评估运营动作后的整体效果（如价格调整、主图优化后的 GMV 变化）。</p>
+    </div>
+    <div style="margin-top:10px;padding:10px;background:#f8fafc;border-radius:6px;font-size:12px;color:#64748b;">
+      ⚠️ 当前卡片是主管版流程演示数据，不是由上方真实店铺快照自动生成。正式预警只基于同店铺、同商品 ID 的多日期真实数据；缺少基线时保持“待导入”。
+    </div>
+  </div>
+</div>
+
+<!-- ========== 3. BD / 达人 ========== -->
+<div id="page-bd" class="page">
+  <div class="page-header">
+    <div class="page-title">🤝 BD / 达人</div>
+    <div class="page-subtitle">达人合作流程样例 · 尚未接入真实达人表与交付记录</div>
+  </div>
+
+  <div class="agent-grid" style="margin-bottom: 16px;">
+    <div class="agent-card" onclick="alert('🤖 达人跟进Agent 启动中...\n\n扫描 28 位合作达人状态...\n识别 6 位待跟进达人...\n生成跟进话术与排期建议...\n✅ 跟进任务已生成，请查看今日待办')">
+      <div class="agent-card-status idle"></div>
+      <div class="agent-card-icon">📬</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">达人跟进 Agent</div>
+        <div class="agent-card-desc">扫描合作状态 → 识别待跟进 → 生成跟进话术</div>
+      </div>
+    </div>
+    <div class="agent-card" onclick="alert('🤖 寄样提醒Agent 启动中...\n\n检查寄样物流状态...\n识别 3 个已签收未回传...\n生成提醒消息...\n✅ 提醒已发送给对应达人')">
+      <div class="agent-card-status idle"></div>
+      <div class="agent-card-icon">📦</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">寄样提醒 Agent</div>
+        <div class="agent-card-desc">追踪物流 → 签收提醒 → 回传催办</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">合作中达人</div><div class="stat-value">28</div><div class="stat-trend">来源：达人表</div></div>
+    <div class="stat-card"><div class="stat-label">待跟进</div><div class="stat-value" style="color:#f59e0b;">6</div><div class="stat-trend">需要今日处理</div></div>
+    <div class="stat-card"><div class="stat-label">本周交付视频</div><div class="stat-value">43</div><div class="stat-trend">完成率 78%</div></div>
+    <div class="stat-card"><div class="stat-label">合作 GMV</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">没有后台字段不推算</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🗓️ 达人每日情况 <span>时间轴自定义查看 · 真实达人合作表驱动</span></div>
+    <div class="ops-timeline" id="bd-timeline">
+      <span class="tl-label">时间轴</span>
+      <button class="ops-chip active" data-bd-range="7">近7天</button>
+      <button class="ops-chip" data-bd-range="14">近14天</button>
+      <button class="ops-chip" data-bd-range="all">全部</button>
+      <button class="ops-chip" data-bd-range="custom">自定义</button>
+      <input type="date" id="bd-date-start" aria-label="达人统计开始日期">
+      <span style="font-size:12px;color:#94a3b8;">至</span>
+      <input type="date" id="bd-date-end" aria-label="达人统计结束日期">
+    </div>
+    <div id="bd-daily-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏆 近7天 TOP10 达人 <span>跟随上方时间轴范围 · 默认按合作 GMV 排序</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <button class="ops-chip active" data-bd-sort="gmv">按 GMV</button>
+      <button class="ops-chip" data-bd-sort="videos">按交付视频数</button>
+      <button class="ops-chip" data-bd-sort="views">按播放量</button>
+    </div>
+    <div id="bd-top10-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📤 达人合作数据导入 <span>自适应列识别 · 不限定模板</span></div>
+    <div class="upload-zone small" id="bd-upload-zone" onclick="document.getElementById('bd-file-input').click()">
+      <div class="upload-zone-icon">📁</div>
+      <div class="upload-zone-title">选择达人合作表（Excel / CSV，可多选）</div>
+      <div class="upload-zone-desc">店铺后台或达人团队导出什么格式就直接传；系统自动识别 日期 / 达人 / 状态 / GMV / 视频数 / 播放量 等列，认不出的列会请你指认一次并记住。</div>
+    </div>
+    <input id="bd-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+    <div style="text-align:center;margin-top:8px;"><span id="bd-upload-status" class="tag tag-yellow">待导入</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 今日 BD 待办 <span>Agent 已扫描 · 点击调用Agent执行</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="padding:12px;background:#fef3c7;border-radius:8px;border-left:3px solid #f59e0b;display:flex;align-items:center;gap:12px;">
+        <div style="width:28px;height:28px;background:#f59e0b;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">1</div>
+        <div style="flex:1;"><div style="font-weight:600;color:#92400e;">跟进达人 @lina_home</div><div style="font-size:12px;color:#a16207;">已寄样 5 天，尚未回传视频；确认收货和发布时间。</div></div>
+        <span class="tag tag-yellow">今日</span>
+        <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 达人跟进Agent 已接单\n\n达人：@lina_home\n动作：生成跟进话术 → 发送消息 → 记录到系统')">▶ Agent</span>
+      </div>
+      <div style="padding:12px;background:#fef3c7;border-radius:8px;border-left:3px solid #f59e0b;display:flex;align-items:center;gap:12px;">
+        <div style="width:28px;height:28px;background:#f59e0b;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">2</div>
+        <div style="flex:1;"><div style="font-weight:600;color:#92400e;">复核 @momo_deals 的视频挂车</div><div style="font-size:12px;color:#a16207;">视频已交付，商品 ID 100176 链接需要确认。</div></div>
+        <span class="tag tag-yellow">今日</span>
+        <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 内容审核Agent 已接单\n\n视频：@momo_deals 交付\n动作：检查挂车链接 → 确认商品ID → 记录审核结果')">▶ Agent</span>
+      </div>
+      <div style="padding:12px;background:#fef3c7;border-radius:8px;border-left:3px solid #f59e0b;display:flex;align-items:center;gap:12px;">
+        <div style="width:28px;height:28px;background:#f59e0b;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">3</div>
+        <div style="flex:1;"><div style="font-weight:600;color:#92400e;">重新激活低响应合作</div><div style="font-size:12px;color:#a16207;">连续两次未回复，按团队 SOP 做一次最后跟进。</div></div>
+        <span class="tag tag-yellow">今日</span>
+        <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 达人跟进Agent 已接单\n\n动作：生成最后跟进话术 → 发送 → 标记为"最后跟进"')">▶ Agent</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">📊 合作状态 <span>演示数据</span></div>
+      <div class="desktop-table-wrap">
+        <table class="desktop-table">
+          <thead><tr><th>状态</th><th>达人数</th><th>占比</th></tr></thead>
+          <tbody>
+            <tr><td><span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;margin-right:6px;"></span>正常交付</td><td>22</td><td><strong>78%</strong></td></tr>
+            <tr><td><span style="display:inline-block;width:8px;height:8px;background:#f59e0b;border-radius:50%;margin-right:6px;"></span>待跟进</td><td>4</td><td><strong>14%</strong></td></tr>
+            <tr><td><span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-right:6px;"></span>异常</td><td>2</td><td><strong>8%</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mobile-card-list">
+        <div class="mobile-data-card">
+          <div class="mobile-data-card-row"><span class="mobile-data-card-label">状态</span><span class="mobile-data-card-value" style="color:#10b981;">● 正常交付</span></div>
+          <div class="mobile-data-card-row"><span class="mobile-data-card-label">达人数</span><span class="mobile-data-card-value">22</span></div>
+          <div class="mobile-data-card-row"><span class="mobile-data-card-label">占比</span><span class="mobile-data-card-value">78%</span></div>
+        </div>
+        <div class="mobile-data-card">
+          <div class="mobile-data-card-row"><span class="mobile-data-card-label">状态</span><span class="mobile-data-card-value" style="color:#f59e0b;">● 待跟进</span></div>
+          <div class="mobile-data-card-row"><span class="mobile-data-card-label">达人数</span><span class="mobile-data-card-value">4</span></div>
+          <div class="mobile-data-card-row"><span class="mobile-data-card-label">占比</span><span class="mobile-data-card-value">14%</span></div>
+        </div>
+        <div class="mobile-data-card">
+          <div class="mobile-data-card-row"><span class="mobile-data-card-label">状态</span><span class="mobile-data-card-value" style="color:#ef4444;">● 异常</span></div>
+          <div class="mobile-data-card-row"><span class="mobile-data-card-label">达人数</span><span class="mobile-data-card-value">2</span></div>
+          <div class="mobile-data-card-row"><span class="mobile-data-card-label">占比</span><span class="mobile-data-card-value">8%</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 履约率趋势</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;height:140px;padding:10px 0;">
+        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;">72%</div><div style="height:90px;background:#e2e8f0;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">W1</div></div>
+        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;">75%</div><div style="height:100px;background:#e2e8f0;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">W2</div></div>
+        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;">74%</div><div style="height:96px;background:#e2e8f0;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">W3</div></div>
+        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;color:#0f172a;">78%</div><div style="height:115px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600;">本周</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 4. 广告投放 ========== -->
+<div id="page-ads" class="page">
+  <div class="page-header">
+    <div class="page-title">🎯 广告投放</div>
+    <div class="page-subtitle">广告投放流程样例 · 尚未接入真实广告计划和归因数据</div>
+  </div>
+
+  <div class="agent-grid" style="margin-bottom: 16px;">
+    <div class="agent-card" onclick="alert('🤖 智能调价Agent 启动中...\n\n分析 3 个广告计划表现...\n识别 AD-24076 ROAS 偏低...\n输出调价建议：缩减预算 50% + 复制新建测试组...\n✅ 建议已生成，请审核后执行')">
+      <div class="agent-card-status idle"></div>
+      <div class="agent-card-icon">💰</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">智能调价 Agent</div>
+        <div class="agent-card-desc">分析计划表现 → 识别低效计划 → 输出调价/关停建议</div>
+      </div>
+    </div>
+    <div class="agent-card" onclick="alert('🤖 素材测试Agent 启动中...\n\n分析当前素材 CTR/CVR...\n生成新素材方向建议...\n✅ 已生成 2 组新素材方案')">
+      <div class="agent-card-status idle"></div>
+      <div class="agent-card-icon">🎨</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">素材测试 Agent</div>
+        <div class="agent-card-desc">分析素材表现 → 生成测试方案 → 追踪测试结果</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">广告消耗</div><div class="stat-value">¥18,640</div><div class="stat-trend trend-up">↑ 6.2%</div></div>
+    <div class="stat-card"><div class="stat-label">广告曝光</div><div class="stat-value">486,200</div><div class="stat-trend trend-up">↑ 14.7%</div></div>
+    <div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">需 GMV 归因</div></div>
+    <div class="stat-card"><div class="stat-label">运行中计划</div><div class="stat-value">3</div><div class="stat-trend">1 个需观察</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🗓️ 每日广告 <span>时间轴自定义查看 · 真实广告数据驱动</span></div>
+    <div class="ops-timeline" id="ads-timeline">
+      <span class="tl-label">时间轴</span>
+      <button class="ops-chip active" data-ads-range="7">近7天</button>
+      <button class="ops-chip" data-ads-range="14">近14天</button>
+      <button class="ops-chip" data-ads-range="all">全部</button>
+      <button class="ops-chip" data-ads-range="custom">自定义</button>
+      <input type="date" id="ads-date-start" aria-label="广告统计开始日期">
+      <span style="font-size:12px;color:#94a3b8;">至</span>
+      <input type="date" id="ads-date-end" aria-label="广告统计结束日期">
+    </div>
+    <div id="ads-daily-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🤖 广告智能分析 · 调整事项 <span>按规则从真实广告数据生成 · 缺字段不硬算</span></div>
+    <div id="ads-actions-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⭐ 广告优质达人素材库 <span>数据表 + 视频文件双通道 · 仅保存在本机浏览器</span></div>
+    <div class="two-col" style="margin-bottom:12px;">
+      <div class="upload-zone small" onclick="document.getElementById('asset-file-input').click()">
+        <div class="upload-zone-icon">📊</div>
+        <div class="upload-zone-title">上传素材数据表（Excel / CSV）</div>
+        <div class="upload-zone-desc">自动识别 达人 / 视频链接 / 商品ID / 播放量 / GMV / ROAS / 素材标签 等列</div>
+      </div>
+      <div class="upload-zone small" onclick="document.getElementById('asset-video-input').click()">
+        <div class="upload-zone-icon">🎬</div>
+        <div class="upload-zone-title">上传素材视频（mp4，可多选）</div>
+        <div class="upload-zone-desc">视频只存本机浏览器；按文件名与数据表"视频链接/文件名"列自动关联</div>
+      </div>
+    </div>
+    <input id="asset-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+    <input id="asset-video-input" type="file" accept="video/mp4,video/quicktime" multiple style="display:none;">
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+      <span class="tl-label">排序</span>
+      <button class="ops-chip active" data-asset-sort="roas">按 ROAS</button>
+      <button class="ops-chip" data-asset-sort="gmv">按 GMV</button>
+      <button class="ops-chip" data-asset-sort="views">按播放量</button>
+      <span id="asset-upload-status" class="tag tag-yellow" style="margin-left:auto;">待导入</span>
+    </div>
+    <div id="asset-library-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📤 广告投放数据导入 <span>自适应列识别 · 不限定模板</span></div>
+    <div class="upload-zone small" onclick="document.getElementById('ads-file-input').click()">
+      <div class="upload-zone-icon">📁</div>
+      <div class="upload-zone-title">选择广告数据表（Excel / CSV，可多选）</div>
+      <div class="upload-zone-desc">自动识别 日期 / 计划 / 广告组 / 商品ID / 消耗 / 曝光 / 点击 / CTR / CVR / GMV / ROAS 等列</div>
+    </div>
+    <input id="ads-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+    <div style="text-align:center;margin-top:8px;"><span id="ads-upload-status" class="tag tag-yellow">待导入</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 广告计划 <span>计划 → 商品 ID → 产出 · 点击调用Agent优化</span></div>
+    <div class="desktop-table-wrap">
+      <table class="desktop-table">
+        <thead><tr><th>计划 ID</th><th>广告组</th><th>商品 ID</th><th>花费</th><th>曝光</th><th>CTR</th><th>CVR</th><th>状态</th><th>Agent</th></tr></thead>
+        <tbody>
+          <tr><td><strong>AD-24081</strong></td><td>US_Top_Summer</td><td>100176</td><td style="font-weight:600;">¥8,420</td><td>221,400</td><td>2.8%</td><td><span style="color:#94a3b8;">待导入</span></td><td><span class="tag tag-green">运行中</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n\n计划：AD-24081\n结论：表现正常，建议保持当前预算')">分析</span></td></tr>
+          <tr><td><strong>AD-24076</strong></td><td>US_Test_A</td><td>100238</td><td style="font-weight:600;">¥5,180</td><td>140,600</td><td>1.6%</td><td><span style="color:#94a3b8;">待导入</span></td><td><span class="tag tag-yellow">需观察</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n\n计划：AD-24076\n结论：CTR 1.6% 偏低，建议：\n1. 缩减预算 50%\n2. 复制新建 2 组测试不同素材\n3. 原素材更换首图')">优化</span></td></tr>
+          <tr><td><strong>AD-24069</strong></td><td>TH_Retarget</td><td>100091</td><td style="font-weight:600;">¥5,040</td><td>124,200</td><td>3.1%</td><td><span style="color:#94a3b8;">待导入</span></td><td><span class="tag tag-blue">待归因</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 归因分析Agent 分析中...\n\n计划：AD-24069\n任务：建立商品级 GMV 归因...\n状态：需要导入归因字段')">归因</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mobile-card-list">
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">AD-24081</span><span class="tag tag-green">运行中</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">广告组</span><span class="mobile-data-card-value">US_Top_Summer</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品 ID</span><span class="mobile-data-card-value">100176</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">花费</span><span class="mobile-data-card-value" style="font-weight:600;">¥8,420</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">221,400</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">CTR</span><span class="mobile-data-card-value">2.8%</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n计划：AD-24081\n结论：表现正常，建议保持当前预算')">分析</span></div>
+      </div>
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">AD-24076</span><span class="tag tag-yellow">需观察</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">广告组</span><span class="mobile-data-card-value">US_Test_A</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品 ID</span><span class="mobile-data-card-value">100238</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">花费</span><span class="mobile-data-card-value" style="font-weight:600;">¥5,180</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">140,600</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">CTR</span><span class="mobile-data-card-value">1.6%</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n计划：AD-24076\n结论：CTR 偏低，建议缩减预算+复制测试')">优化</span></div>
+      </div>
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">AD-24069</span><span class="tag tag-blue">待归因</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">广告组</span><span class="mobile-data-card-value">TH_Retarget</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品 ID</span><span class="mobile-data-card-value">100091</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">花费</span><span class="mobile-data-card-value" style="font-weight:600;">¥5,040</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">124,200</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">CTR</span><span class="mobile-data-card-value">3.1%</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 归因分析Agent 分析中...\n计划：AD-24069\n状态：需要导入归因字段')">归因</span></div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#64748b;">CVR 与 ROAS 需要商品级 GMV 归因字段支持；缺少字段时显示"待导入"，不以 0 代替未知。</div>
+  </div>
+</div>
+
+<!-- ========== 5. 自营短视频（合并商品与发布） ========== -->
+<div id="page-videos" class="page">
+  <div class="page-header">
+    <div class="page-title">🎬 自营短视频 + 商品发布</div>
+    <div class="page-subtitle">内容发布流程样例 · 尚未接入真实发布记录与视频归因数据</div>
+  </div>
+
+  <div class="agent-grid" style="margin-bottom: 16px;">
+    <div class="agent-card" onclick="alert('🤖 内容生成Agent 启动中...\n\n分析高转化商品特征...\n生成 3 条视频脚本...\n推荐最佳发布时间...\n✅ 脚本已生成，请审核后发布')">
+      <div class="agent-card-status idle"></div>
+      <div class="agent-card-icon">✍️</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">内容生成 Agent</div>
+        <div class="agent-card-desc">分析爆款特征 → 生成脚本/文案 → 推荐发布时间</div>
+      </div>
+    </div>
+    <div class="agent-card" onclick="alert('🤖 发布排期Agent 启动中...\n\n分析 US 市场最佳时段...\n结合商品库存与活动节奏...\n生成 7 天发布排期表...\n✅ 排期已生成')">
+      <div class="agent-card-status idle"></div>
+      <div class="agent-card-icon">📅</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">发布排期 Agent</div>
+        <div class="agent-card-desc">分析最佳时段 → 结合商品节奏 → 生成发布日历</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">今日自营发布</div><div class="stat-value">32</div><div class="stat-trend">全部店铺</div></div>
+    <div class="stat-card"><div class="stat-label">有发布记录商品</div><div class="stat-value">11</div><div class="stat-trend">当前窗口</div></div>
+    <div class="stat-card"><div class="stat-label">近7天播放</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">后台历史字段缺失</div></div>
+    <div class="stat-card"><div class="stat-label">近7天内容GMV</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">需商品归因</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏆 自营账号 / 视频排行榜 <span>时间轴自定义选时间 · 真实视频数据驱动</span></div>
+    <div class="ops-timeline" id="videos-timeline">
+      <span class="tl-label">时间轴</span>
+      <button class="ops-chip active" data-videos-range="7">近7天</button>
+      <button class="ops-chip" data-videos-range="14">近14天</button>
+      <button class="ops-chip" data-videos-range="all">全部</button>
+      <button class="ops-chip" data-videos-range="custom">自定义</button>
+      <input type="date" id="videos-date-start" aria-label="视频统计开始日期">
+      <span style="font-size:12px;color:#94a3b8;">至</span>
+      <input type="date" id="videos-date-end" aria-label="视频统计结束日期">
+    </div>
+    <div id="video-leaderboard-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📤 自营短视频数据导入 <span>自适应列识别 · 不限定模板</span></div>
+    <div class="upload-zone small" onclick="document.getElementById('videos-file-input').click()">
+      <div class="upload-zone-icon">📁</div>
+      <div class="upload-zone-title">选择视频数据表（Excel / CSV，可多选）</div>
+      <div class="upload-zone-desc">TikTok Studio / Seller Center 导出的视频明细直接传；自动识别 日期 / 账号 / 视频ID / 商品ID / 播放量 / GMV 等列</div>
+    </div>
+    <input id="videos-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+    <div style="text-align:center;margin-top:8px;"><span id="videos-upload-status" class="tag tag-yellow">待导入</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 商品发布数据明细 <span>商品 ID 是分析与动作跟踪主键</span></div>
+    <div class="desktop-table-wrap">
+      <table class="desktop-table">
+        <thead><tr><th>商品 ID</th><th>商品 / 店铺</th><th>发布数量</th><th>曝光</th><th>点击率</th><th>成交转化</th><th>GMV</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td><strong>100176</strong></td><td>3D磁吸积木套装<br><span style="font-size:11px;color:#64748b;">US-旗舰店</span></td><td>26</td><td>486,200</td><td>4.82%</td><td>4.80%</td><td style="font-weight:600;">¥42,680</td><td><span class="tag tag-green">表现良好</span></td></tr>
+          <tr><td><strong>100238</strong></td><td>儿童户外泡泡机<br><span style="font-size:11px;color:#64748b;">US-日用店</span></td><td>18</td><td>312,600</td><td>3.91%</td><td>1.72%</td><td style="font-weight:600;">¥18,420</td><td><span class="tag tag-red">需处理</span></td></tr>
+          <tr><td><strong>100091</strong></td><td>益智拼图礼盒<br><span style="font-size:11px;color:#64748b;">TH-主店</span></td><td>15</td><td>284,100</td><td>2.84%</td><td>2.20%</td><td style="font-weight:600;">¥15,760</td><td><span class="tag tag-yellow">需观察</span></td></tr>
+          <tr><td><strong>100314</strong></td><td>儿童绘画水彩笔<br><span style="font-size:11px;color:#64748b;">US-旗舰店</span></td><td>13</td><td>198,400</td><td>3.48%</td><td>3.90%</td><td style="font-weight:600;">¥12,360</td><td><span class="tag tag-green">表现良好</span></td></tr>
+          <tr><td><strong>100407</strong></td><td>磁力迷宫玩具<br><span style="font-size:11px;color:#64748b;">TH-主店</span></td><td>9</td><td>166,800</td><td>2.19%</td><td>1.48%</td><td style="font-weight:600;">¥8,120</td><td><span class="tag tag-red">需处理</span></td></tr>
+          <tr><td><strong>100512</strong></td><td>折叠儿童画板<br><span style="font-size:11px;color:#64748b;">US-日用店</span></td><td>11</td><td>143,200</td><td>3.02%</td><td>2.64%</td><td style="font-weight:600;">¥7,680</td><td><span class="tag tag-yellow">需观察</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mobile-card-list">
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">100176 · 3D磁吸积木套装</span><span class="tag tag-green">表现良好</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">US-旗舰店</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">发布数量</span><span class="mobile-data-card-value">26</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">486,200</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">点击率</span><span class="mobile-data-card-value">4.82%</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">成交转化</span><span class="mobile-data-card-value">4.80%</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">GMV</span><span class="mobile-data-card-value" style="font-weight:600;">¥42,680</span></div>
+      </div>
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">100238 · 儿童户外泡泡机</span><span class="tag tag-red">需处理</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">US-日用店</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">发布数量</span><span class="mobile-data-card-value">18</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">312,600</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">点击率</span><span class="mobile-data-card-value">3.91%</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">成交转化</span><span class="mobile-data-card-value">1.72%</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">GMV</span><span class="mobile-data-card-value" style="font-weight:600;">¥18,420</span></div>
+      </div>
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">100091 · 益智拼图礼盒</span><span class="tag tag-yellow">需观察</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">TH-主店</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">发布数量</span><span class="mobile-data-card-value">15</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">284,100</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">点击率</span><span class="mobile-data-card-value">2.84%</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">成交转化</span><span class="mobile-data-card-value">2.20%</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">GMV</span><span class="mobile-data-card-value" style="font-weight:600;">¥15,760</span></div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#64748b;">发布数量按日期、商品 ID 汇总。公开主页播放量只能标记为"当前快照"，不能反推近 7 天后台播放。</div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">📈 每日发布趋势 <span>近 7 天</span></div>
+      <div style="display:flex;align-items:flex-end;gap:8px;height:140px;padding:14px 0;">
+        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">18</div><div style="height:70px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-22</div></div>
+        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">25</div><div style="height:100px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-23</div></div>
+        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">22</div><div style="height:85px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-24</div></div>
+        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">31</div><div style="height:125px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-25</div></div>
+        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">27</div><div style="height:108px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-26</div></div>
+        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">20</div><div style="height:76px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-27</div></div>
+        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#0f172a;">32</div><div style="height:130px;background:linear-gradient(to top,#0f172a,#334155);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600;">08-28</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚠️ 内容数据边界</div>
+      <div class="alert alert-info" style="margin-bottom:10px;"><span>ℹ️</span><span>一次公开主页读取到的播放量，只能显示为"公开当前快照合计"。没有重复快照，不能画播放增长曲线。</span></div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="padding:10px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;"><div style="font-weight:600;color:#166534;font-size:13px;">1. 后台播放历史</div><div style="font-size:12px;color:#15803d;margin-top:2px;">导入 TikTok Studio / Seller Center CSV 后显示。</div></div>
+        <div style="padding:10px;background:#fefce8;border-radius:8px;border:1px solid #fde68a;"><div style="font-weight:600;color:#854d0e;font-size:13px;">2. 发布数量</div><div style="font-size:12px;color:#a16207;margin-top:2px;">按日期与账号的发布记录汇总。</div></div>
+        <div style="padding:10px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;"><div style="font-weight:600;color:#1e40af;font-size:13px;">3. GMV 归因</div><div style="font-size:12px;color:#1e3a8a;margin-top:2px;">必须有视频或商品归因字段，否则保持待导入。</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 6. 动作验证 ========== -->
+<div id="page-validation" class="page">
+  <div class="page-header">
+    <div class="page-title">✅ 运营动作有效性验证</div>
+    <div class="page-subtitle">动作验证流程样例 · 尚未接入真实动作表和 T+1 / T+3 / T+7 证据</div>
+  </div>
+
+  <div class="agent-grid" style="margin-bottom: 16px;">
+    <div class="agent-card" onclick="alert('🤖 效果追踪Agent 启动中...\n\n扫描全部验证队列...\n对比 T+1/T+3/T+7 基线数据...\n自动判定有效/无效...\n✅ 追踪完成：2 条有效、1 条待验证、2 条无效')">
+      <div class="agent-card-status running"></div>
+      <div class="agent-card-icon">📊</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">效果追踪 Agent</div>
+        <div class="agent-card-desc">自动对比基线 → 追踪指标变化 → 判定有效/无效</div>
+      </div>
+    </div>
+    <div class="agent-card" onclick="alert('🤖 知识沉淀Agent 启动中...\n\n扫描验证有效的动作...\n提取关键要素（商品ID、动作、效果、周期）...\n生成知识库卡片...\n✅ 2 条有效动作已生成知识卡片，等待审核入库')">
+      <div class="agent-card-status idle"></div>
+      <div class="agent-card-icon">📚</div>
+      <div class="agent-card-body">
+        <div class="agent-card-title">知识沉淀 Agent</div>
+        <div class="agent-card-desc">提取有效动作要素 → 生成知识卡片 → 推送审核</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">验证有效</div><div class="stat-value" style="color:#10b981;">2</div><div class="stat-trend">已达到验证节点</div></div>
+    <div class="stat-card"><div class="stat-label">待验证</div><div class="stat-value" style="color:#f59e0b;">1</div><div class="stat-trend">暂不下结论</div></div>
+    <div class="stat-card"><div class="stat-label">验证无效</div><div class="stat-value" style="color:#ef4444;">2</div><div class="stat-trend">需复盘或停止</div></div>
+    <div class="stat-card"><div class="stat-label">验证队列总计</div><div class="stat-value">5</div><div class="stat-trend">条记录</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-title">✅ 验证有效 <span>已达到验证节点 · Agent 已判定</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="padding:14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+          <div><div style="font-weight:600;color:#166534;">2026-08-25 · 商品 ID-100176 · T+3 验证</div><div style="font-size:13px;color:#15803d;margin-top:2px;">优化主图与详情页</div></div>
+          <span class="tag tag-green">验证有效</span>
+        </div>
+        <div style="font-size:13px;color:#334155;background:#fff;padding:10px 12px;border-radius:6px;">T+1 CVR 提升 0.8%，T+3 CVR 提升 1.7%，判定有效</div>
+        <div style="margin-top:8px;display:flex;gap:6px;">
+          <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 知识沉淀Agent 已接单\n\n动作：优化主图与详情页\n商品：100176\n效果：CVR +1.7%\n周期：T+3\n✅ 已生成知识卡片，推送至"运营知识库-待审核"')">📚 沉淀到知识库</span>
+        </div>
+      </div>
+      <div style="padding:14px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+          <div><div style="font-weight:600;color:#166534;">2026-08-23 · 商品 ID-100314 · T+7 验证</div><div style="font-size:13px;color:#15803d;margin-top:2px;">调整价格</div></div>
+          <span class="tag tag-green">验证有效</span>
+        </div>
+        <div style="font-size:13px;color:#334155;background:#fff;padding:10px 12px;border-radius:6px;">T+3 销量提升 18%，T+7 GMV 提升 26%，判定有效</div>
+        <div style="margin-top:8px;display:flex;gap:6px;">
+          <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 知识沉淀Agent 已接单\n\n动作：调整价格（组合装）\n商品：100314\n效果：GMV +26%\n周期：T+7\n✅ 已生成知识卡片，推送至"运营知识库-待审核"')">📚 沉淀到知识库</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-title">⏳ 待验证 <span>暂不下结论</span></div>
+    <div style="padding:14px;background:#fefce8;border-radius:8px;border:1px solid #fde68a;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+        <div><div style="font-weight:600;color:#854d0e;">2026-08-27 · 商品 ID-100238 · T+1 验证</div><div style="font-size:13px;color:#a16207;margin-top:2px;">调整标题</div></div>
+        <span class="tag tag-yellow">待验证</span>
+      </div>
+      <div style="font-size:13px;color:#334155;background:#fff;padding:10px 12px;border-radius:6px;">等待 T+1 数据回传，暂不下结论。Agent 将在明天自动对比基线并更新状态。</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-title">❌ 验证无效 <span>需复盘或停止</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="padding:14px;background:#fef2f2;border-radius:8px;border:1px solid #fecaca;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+          <div><div style="font-weight:600;color:#991b1b;">2026-08-18 · 商品 ID-100091 · T+7 验证</div><div style="font-size:13px;color:#7f1d1d;margin-top:2px;">调整价格</div></div>
+          <span class="tag tag-red">验证无效</span>
+        </div>
+        <div style="font-size:13px;color:#334155;background:#fff;padding:10px 12px;border-radius:6px;">T+7 CVR 无变化，ROI 下降，判定无效。建议停止此策略在该类目的复用。</div>
+      </div>
+      <div style="padding:14px;background:#fef2f2;border-radius:8px;border:1px solid #fecaca;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+          <div><div style="font-weight:600;color:#991b1b;">2026-08-21 · 商品 ID-100407 · T+3 验证</div><div style="font-size:13px;color:#7f1d1d;margin-top:2px;">更换广告落地页</div></div>
+          <span class="tag tag-red">验证无效</span>
+        </div>
+        <div style="font-size:13px;color:#334155;background:#fff;padding:10px 12px;border-radius:6px;">T+3 曝光未恢复，销量继续下降，判定无效。已记录为"已证伪"，避免团队重复踩坑。</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="operation-date-record-card">
+    <div class="card-title">🗓️ 运营执行日期记录 <span>记录实际执行日期，便于后续 T+1 / T+3 / T+7 追踪</span></div>
+    <form id="operation-date-record-form" style="display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;align-items:end;">
+      <label style="font-size:12px;color:#475569;">执行日期<input id="operation-record-date" type="date" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
+      <label style="font-size:12px;color:#475569;">店铺<input id="operation-record-store" type="text" placeholder="如 US-旗舰店" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
+      <label style="font-size:12px;color:#475569;">商品 / 对象<input id="operation-record-object" type="text" placeholder="如 商品 ID 100176" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
+      <label style="font-size:12px;color:#475569;">执行动作<input id="operation-record-action" type="text" placeholder="如 优化主图" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
+      <button class="btn btn-primary" type="submit" style="min-height:38px;">＋ 保存执行日期</button>
+    </form>
+    <div id="operation-date-record-list" style="margin-top:12px;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 运营已执行清单 <span>全部店铺 · 已执行 · Agent 自动记录</span></div>
+    <div class="desktop-table-wrap">
+      <table class="desktop-table">
+        <thead><tr><th>执行日期</th><th>店铺</th><th>对象</th><th>已执行动作</th><th>负责人</th><th>验证状态</th><th>Agent</th></tr></thead>
+        <tbody>
+          <tr><td>2026-08-25</td><td>US-旗舰店</td><td><strong>商品 ID 100176</strong></td><td>优化主图与详情页<br><span style="font-size:11px;color:#64748b;">替换首图并增加使用场景</span></td><td>运营A</td><td><span class="tag tag-green">验证有效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：优化主图\n追踪周期：T+1 → T+3\n结果：有效，CVR +1.7%')">已追踪</span></td></tr>
+          <tr><td>2026-08-23</td><td>US-旗舰店</td><td><strong>商品 ID 100314</strong></td><td>调整价格<br><span style="font-size:11px;color:#64748b;">测试组合装价格</span></td><td>运营A</td><td><span class="tag tag-green">验证有效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：调整价格\n追踪周期：T+1 → T+3 → T+7\n结果：有效，GMV +26%')">已追踪</span></td></tr>
+          <tr><td>2026-08-27</td><td>US-日用店</td><td><strong>商品 ID 100238</strong></td><td>调整标题<br><span style="font-size:11px;color:#64748b;">前置核心卖点</span></td><td>运营B</td><td><span class="tag tag-yellow">待验证</span></td><td><span class="tag tag-yellow" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 追踪中...\n\n动作：调整标题\n当前节点：T+1 等待数据\n预计明天自动更新状态')">追踪中</span></td></tr>
+          <tr><td>2026-08-18</td><td>TH-主店</td><td><strong>商品 ID 100091</strong></td><td>调整价格<br><span style="font-size:11px;color:#64748b;">测试组合装价格</span></td><td>运营A</td><td><span class="tag tag-red">验证无效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：调整价格\n追踪周期：T+1 → T+3 → T+7\n结果：无效，已证伪')">已追踪</span></td></tr>
+          <tr><td>2026-08-21</td><td>TH-主店</td><td><strong>商品 ID 100407</strong></td><td>更换广告落地页<br><span style="font-size:11px;color:#64748b;">测试新的商品承接页</span></td><td>运营B</td><td><span class="tag tag-red">验证无效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：更换落地页\n追踪周期：T+1 → T+3\n结果：无效，已证伪')">已追踪</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mobile-card-list">
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">2026-08-25 · 运营A</span><span class="tag tag-green">验证有效</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">US-旗舰店</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品</span><span class="mobile-data-card-value">100176</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">动作</span><span class="mobile-data-card-value">优化主图与详情页</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark">已追踪</span></div>
+      </div>
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">2026-08-23 · 运营A</span><span class="tag tag-green">验证有效</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">US-旗舰店</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品</span><span class="mobile-data-card-value">100314</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">动作</span><span class="mobile-data-card-value">调整价格</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark">已追踪</span></div>
+      </div>
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">2026-08-27 · 运营B</span><span class="tag tag-yellow">待验证</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">US-日用店</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品</span><span class="mobile-data-card-value">100238</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">动作</span><span class="mobile-data-card-value">调整标题</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-yellow">追踪中</span></div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#64748b;">执行清单来自运营回传或手动登记；"已执行"只说明动作发生过，效果结论仍以 T+1/T+3/T+7 的真实数据为准。Agent 自动追踪并更新状态。</div>
+  </div>
+</div>
+
+<!-- ========== 7. 运营知识库（双板块 + 搜索 + 上传） ========== -->
+<div id="page-knowledge" class="page">
+  <div class="page-header">
+    <div class="page-title">📚 运营知识库</div>
+    <div class="page-subtitle">知识沉淀交互样例 · 当前卡片尚未连接真实运营知识库</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">对内沉淀</div><div class="stat-value" style="color:#f59e0b;">8</div><div class="stat-trend">团队内部试错记录</div></div>
+    <div class="stat-card"><div class="stat-label">对外已审</div><div class="stat-value" style="color:#10b981;">12</div><div class="stat-trend">经过审核的标准化知识</div></div>
+    <div class="stat-card"><div class="stat-label">待审核</div><div class="stat-value" style="color:#3b82f6;">3</div><div class="stat-trend">Agent 推送待审</div></div>
+    <div class="stat-card"><div class="stat-label">团队复用次数</div><div class="stat-value">47</div><div class="stat-trend trend-up">↑ 本月 12 次</div></div>
+  </div>
+
+  <!-- Tab 切换：对内沉淀 / 对外已审 / 上传通道 -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchKbTab('internal', this)">📁 对内方法论沉淀</button>
+    <button class="tab-btn" onclick="switchKbTab('external', this)">✅ 对外已审知识库</button>
+    <button class="tab-btn" onclick="switchKbTab('upload', this)">⬆️ 上传通道</button>
+    <button class="tab-btn" onclick="switchKbTab('search', this)">🔍 高级搜索</button>
+  </div>
+
+  <!-- 对内方法论沉淀 -->
+  <div id="kb-internal" class="kb-tab-content" style="display:block;">
+    <div class="import-banner">
+      <div class="import-banner-text"><strong>🔄 Agent 自动沉淀队列</strong>2 条验证有效的动作等待审核入库</div>
+      <button class="import-btn" onclick="alert('🤖 知识审核Agent 启动中...\n\n正在审核 2 条待沉淀记录...\n检查字段完整性...\n✅ 审核完成，已推送至"对外已审知识库"')">一键审核入库</button>
+    </div>
+    <div class="toolbar">
+      <div class="search-box"><span class="search-icon">🔍</span><input type="text" placeholder="搜索问题、方法论、商品 ID、调整动作..."></div>
+      <button class="filter-btn active">全部</button>
+      <button class="filter-btn">主图优化</button>
+      <button class="filter-btn">价格策略</button>
+      <button class="filter-btn">标题优化</button>
+      <button class="filter-btn">广告投放</button>
+      <button class="filter-btn">达人合作</button>
+    </div>
+    <div class="kb-grid">
+      <div class="kb-card pending">
+        <div class="kb-header"><div class="kb-tags"><span class="tag tag-blue">主图优化</span><span class="tag tag-yellow">T+3 验证</span><span class="tag tag-yellow">待审核</span></div><span class="kb-date">2026-08-25</span></div>
+        <div class="kb-title">替换首图并增加使用场景图，CVR 提升 1.7%</div>
+        <div class="kb-desc">针对磁吸积木套装（商品 ID 100176），将首图从纯产品白底图替换为儿童实际玩耍场景图，并在第 2-3 张图增加收纳场景和亲子互动场景。</div>
+        <div class="kb-meta">
+          <div class="kb-meta-item"><span class="kb-meta-label">商品ID：</span><span class="kb-meta-value">100176</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">调整动作：</span><span class="kb-meta-value">替换首图+增加场景图</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">验证周期：</span><span class="kb-meta-value">T+3（3天）</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">时间段：</span><span class="kb-meta-value">08-22 至 08-25</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">负责人：</span><span class="kb-meta-value">运营A</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">来源：</span><span class="kb-meta-value">动作验证Agent推送</span></div>
+        </div>
+        <div class="kb-metrics">
+          <div class="metric"><div class="metric-value" style="color:#10b981;">+1.7%</div><div class="metric-label">CVR 提升</div></div>
+          <div class="metric"><div class="metric-value">¥42,680</div><div class="metric-label">验证期 GMV</div></div>
+          <div class="metric"><div class="metric-value">3 天</div><div class="metric-label">验证周期</div></div>
+        </div>
+        <div class="kb-footer">
+          <div class="kb-author"><div class="avatar" style="background:#38bdf8;">A</div><span>运营A · 已复用 5 次</span></div>
+          <div class="kb-actions"><span class="audit-badge">⏳ 待审核</span><span class="kb-action">📋 复制</span><span class="kb-action">🔗 应用</span></div>
+        </div>
+      </div>
+
+      <div class="kb-card pending">
+        <div class="kb-header"><div class="kb-tags"><span class="tag tag-blue">价格策略</span><span class="tag tag-yellow">T+7 验证</span><span class="tag tag-yellow">待审核</span></div><span class="kb-date">2026-08-23</span></div>
+        <div class="kb-title">组合装定价策略：单件→三件套装，GMV 提升 26%</div>
+        <div class="kb-desc">儿童绘画水彩笔（商品 ID 100314）从单件 $4.99 调整为三件套装 $11.99（单件折合 $3.99）。T+3 销量提升 18%，T+7 GMV 累计提升 26%。</div>
+        <div class="kb-meta">
+          <div class="kb-meta-item"><span class="kb-meta-label">商品ID：</span><span class="kb-meta-value">100314</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">调整动作：</span><span class="kb-meta-value">单件改三件套装</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">验证周期：</span><span class="kb-meta-value">T+7（7天）</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">时间段：</span><span class="kb-meta-value">08-16 至 08-23</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">负责人：</span><span class="kb-meta-value">运营A</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">来源：</span><span class="kb-meta-value">动作验证Agent推送</span></div>
+        </div>
+        <div class="kb-metrics">
+          <div class="metric"><div class="metric-value" style="color:#10b981;">+26%</div><div class="metric-label">GMV 提升</div></div>
+          <div class="metric"><div class="metric-value">+18%</div><div class="metric-label">销量提升</div></div>
+          <div class="metric"><div class="metric-value">7 天</div><div class="metric-label">验证周期</div></div>
+        </div>
+        <div class="kb-footer">
+          <div class="kb-author"><div class="avatar" style="background:#f59e0b;">A</div><span>运营A · 已复用 3 次</span></div>
+          <div class="kb-actions"><span class="audit-badge">⏳ 待审核</span><span class="kb-action">📋 复制</span><span class="kb-action">🔗 应用</span></div>
+        </div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-header"><div class="kb-tags"><span class="tag tag-blue">标题优化</span><span class="tag tag-green">T+7 验证</span><span class="tag tag-green">已沉淀</span></div><span class="kb-date">2026-08-20</span></div>
+        <div class="kb-title">标题前置核心卖点 + 年龄标签，CTR 提升 0.9%</div>
+        <div class="kb-desc">泡泡机标题从 "Bubble Machine for Kids" 调整为 "【3-8岁】全自动泡泡机 | 户外派对必备 | 无毒大泡泡"。核心卖点前置，增加年龄标签和使用场景。</div>
+        <div class="kb-meta">
+          <div class="kb-meta-item"><span class="kb-meta-label">商品ID：</span><span class="kb-meta-value">100238</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">调整动作：</span><span class="kb-meta-value">标题前置卖点+年龄标签</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">验证周期：</span><span class="kb-meta-value">T+7（7天）</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">时间段：</span><span class="kb-meta-value">08-13 至 08-20</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">负责人：</span><span class="kb-meta-value">运营B</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">来源：</span><span class="kb-meta-value">手动记录</span></div>
+        </div>
+        <div class="kb-metrics">
+          <div class="metric"><div class="metric-value" style="color:#10b981;">+0.9%</div><div class="metric-label">CTR 提升</div></div>
+          <div class="metric"><div class="metric-value">+12%</div><div class="metric-label">曝光转化</div></div>
+          <div class="metric"><div class="metric-value">7 天</div><div class="metric-label">验证周期</div></div>
+        </div>
+        <div class="kb-footer">
+          <div class="kb-author"><div class="avatar" style="background:#8b5cf6;">B</div><span>运营B · 已复用 8 次</span></div>
+          <div class="kb-actions"><span class="usage-badge">✓ 已沉淀</span><span class="kb-action">📋 复制</span><span class="kb-action">🔗 应用</span></div>
+        </div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-header"><div class="kb-tags"><span class="tag tag-blue">达人合作</span><span class="tag tag-green">T+7 验证</span><span class="tag tag-green">已沉淀</span></div><span class="kb-date">2026-08-15</span></div>
+        <div class="kb-title">寄样后 5 天内未回传视频，主动跟进可提升 40% 交付率</div>
+        <div class="kb-desc">建立"寄样后 D+3 提醒、D+5 确认排期、D+7 最后跟进"的三段式跟进节奏。对比无跟进组，达人视频交付率从 58% 提升至 82%。</div>
+        <div class="kb-meta">
+          <div class="kb-meta-item"><span class="kb-meta-label">商品ID：</span><span class="kb-meta-value">多商品</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">调整动作：</span><span class="kb-meta-value">三段式达人跟进节奏</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">验证周期：</span><span class="kb-meta-value">T+7（7天）</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">时间段：</span><span class="kb-meta-value">08-08 至 08-15</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">负责人：</span><span class="kb-meta-value">运营C</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">来源：</span><span class="kb-meta-value">手动记录</span></div>
+        </div>
+        <div class="kb-metrics">
+          <div class="metric"><div class="metric-value" style="color:#10b981;">+40%</div><div class="metric-label">交付率提升</div></div>
+          <div class="metric"><div class="metric-value">-2.3 天</div><div class="metric-label">周期缩短</div></div>
+          <div class="metric"><div class="metric-value">7 天</div><div class="metric-label">验证周期</div></div>
+        </div>
+        <div class="kb-footer">
+          <div class="kb-author"><div class="avatar" style="background:#ec4899;">C</div><span>运营C · 已复用 12 次</span></div>
+          <div class="kb-actions"><span class="usage-badge">✓ 已沉淀</span><span class="kb-action">📋 复制</span><span class="kb-action">🔗 应用</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 对外已审知识库 -->
+  <div id="kb-external" class="kb-tab-content" style="display:none;">
+    <div class="toolbar">
+      <div class="search-box"><span class="search-icon">🔍</span><input type="text" placeholder="搜索已审知识、问题、方法论、商品 ID..."></div>
+      <button class="filter-btn active">全部</button>
+      <button class="filter-btn">主图优化</button>
+      <button class="filter-btn">价格策略</button>
+      <button class="filter-btn">标题优化</button>
+      <button class="filter-btn">广告投放</button>
+      <button class="filter-btn">达人合作</button>
+    </div>
+    <div class="kb-grid">
+      <div class="kb-card">
+        <div class="kb-header"><div class="kb-tags"><span class="tag tag-blue">主图优化</span><span class="tag tag-green">T+3 验证</span><span class="tag tag-green">已审核</span></div><span class="kb-date">2026-08-25 · 审核通过</span></div>
+        <div class="kb-title">替换首图并增加使用场景图，CVR 提升 1.7%</div>
+        <div class="kb-desc">【已审核】针对磁吸积木套装（商品 ID 100176），将首图从纯产品白底图替换为儿童实际玩耍场景图。经过 T+3 验证，CVR 稳定提升 1.7%，已确认为可复用策略。</div>
+        <div class="kb-meta">
+          <div class="kb-meta-item"><span class="kb-meta-label">商品ID：</span><span class="kb-meta-value">100176</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">调整动作：</span><span class="kb-meta-value">替换首图+增加场景图</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">验证周期：</span><span class="kb-meta-value">T+3（3天）</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">时间段：</span><span class="kb-meta-value">08-22 至 08-25</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">审核人：</span><span class="kb-meta-value">主管 · 2026-08-26</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">复用范围：</span><span class="kb-meta-value">玩具类目</span></div>
+        </div>
+        <div class="kb-metrics">
+          <div class="metric"><div class="metric-value" style="color:#10b981;">+1.7%</div><div class="metric-label">CVR 提升</div></div>
+          <div class="metric"><div class="metric-value">¥42,680</div><div class="metric-label">验证期 GMV</div></div>
+          <div class="metric"><div class="metric-value">3 天</div><div class="metric-label">验证周期</div></div>
+        </div>
+        <div class="kb-footer">
+          <div class="kb-author"><div class="avatar" style="background:#38bdf8;">A</div><span>运营A · 已复用 5 次 · 审核通过</span></div>
+          <div class="kb-actions"><span class="usage-badge">✓ 已审核</span><span class="kb-action">📋 复制</span><span class="kb-action">🔗 应用</span></div>
+        </div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-header"><div class="kb-tags"><span class="tag tag-blue">价格策略</span><span class="tag tag-green">T+7 验证</span><span class="tag tag-green">已审核</span></div><span class="kb-date">2026-08-23 · 审核通过</span></div>
+        <div class="kb-title">组合装定价策略：单件→三件套装，GMV 提升 26%</div>
+        <div class="kb-desc">【已审核】儿童绘画水彩笔（商品 ID 100314）从单件 $4.99 调整为三件套装 $11.99。T+7 GMV 累计提升 26%，客单价提升同时 CVR 保持稳定。已审核通过，可全团队复用。</div>
+        <div class="kb-meta">
+          <div class="kb-meta-item"><span class="kb-meta-label">商品ID：</span><span class="kb-meta-value">100314</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">调整动作：</span><span class="kb-meta-value">单件改三件套装</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">验证周期：</span><span class="kb-meta-value">T+7（7天）</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">时间段：</span><span class="kb-meta-value">08-16 至 08-23</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">审核人：</span><span class="kb-meta-value">主管 · 2026-08-24</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">复用范围：</span><span class="kb-meta-value">文具/绘画类目</span></div>
+        </div>
+        <div class="kb-metrics">
+          <div class="metric"><div class="metric-value" style="color:#10b981;">+26%</div><div class="metric-label">GMV 提升</div></div>
+          <div class="metric"><div class="metric-value">+18%</div><div class="metric-label">销量提升</div></div>
+          <div class="metric"><div class="metric-value">7 天</div><div class="metric-label">验证周期</div></div>
+        </div>
+        <div class="kb-footer">
+          <div class="kb-author"><div class="avatar" style="background:#f59e0b;">A</div><span>运营A · 已复用 3 次 · 审核通过</span></div>
+          <div class="kb-actions"><span class="usage-badge">✓ 已审核</span><span class="kb-action">📋 复制</span><span class="kb-action">🔗 应用</span></div>
+        </div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-header"><div class="kb-tags"><span class="tag tag-blue">广告投放</span><span class="tag tag-green">T+7 验证</span><span class="tag tag-green">已审核</span></div><span class="kb-date">2026-08-10 · 审核通过</span></div>
+        <div class="kb-title">ROAS 低于 2.0 的计划，缩减预算 50% 并复制新建测试组</div>
+        <div class="kb-desc">【已审核】对连续 3 天 ROAS < 2.0 的广告计划，缩减原预算 50%，同时复制新建 2 组测试不同素材/受众。新计划平均 ROAS 提升至 2.8，整体账户 ROAS 提升 15%。</div>
+        <div class="kb-meta">
+          <div class="kb-meta-item"><span class="kb-meta-label">商品ID：</span><span class="kb-meta-value">多商品</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">调整动作：</span><span class="kb-meta-value">缩减预算+复制测试组</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">验证周期：</span><span class="kb-meta-value">T+7（7天）</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">时间段：</span><span class="kb-meta-value">08-03 至 08-10</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">审核人：</span><span class="kb-meta-value">主管 · 2026-08-11</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">复用范围：</span><span class="kb-meta-value">全品类广告投放</span></div>
+        </div>
+        <div class="kb-metrics">
+          <div class="metric"><div class="metric-value" style="color:#10b981;">+15%</div><div class="metric-label">账户 ROAS</div></div>
+          <div class="metric"><div class="metric-value">2.8</div><div class="metric-label">新计划 ROAS</div></div>
+          <div class="metric"><div class="metric-value">7 天</div><div class="metric-label">验证周期</div></div>
+        </div>
+        <div class="kb-footer">
+          <div class="kb-author"><div class="avatar" style="background:#10b981;">A</div><span>运营A · 已复用 6 次 · 审核通过</span></div>
+          <div class="kb-actions"><span class="usage-badge">✓ 已审核</span><span class="kb-action">📋 复制</span><span class="kb-action">🔗 应用</span></div>
+        </div>
+      </div>
+
+      <div class="kb-card">
+        <div class="kb-header"><div class="kb-tags"><span class="tag tag-blue">发布时间</span><span class="tag tag-green">T+7 验证</span><span class="tag tag-green">已审核</span></div><span class="kb-date">2026-08-05 · 审核通过</span></div>
+        <div class="kb-title">US 市场短视频发布黄金时段：当地时间 19:00-21:00</div>
+        <div class="kb-desc">【已审核】对比多时段发布数据，US 市场（EST）19:00-21:00 发布的视频平均播放量比 14:00-16:00 高出 34%，互动率高 1.2 个百分点。周末效果差异更大（+45%）。</div>
+        <div class="kb-meta">
+          <div class="kb-meta-item"><span class="kb-meta-label">商品ID：</span><span class="kb-meta-value">多商品</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">调整动作：</span><span class="kb-meta-value">调整发布时段至 19-21点</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">验证周期：</span><span class="kb-meta-value">T+7（7天）</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">时间段：</span><span class="kb-meta-value">07-29 至 08-05</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">审核人：</span><span class="kb-meta-value">主管 · 2026-08-06</span></div>
+          <div class="kb-meta-item"><span class="kb-meta-label">复用范围：</span><span class="kb-meta-value">US 市场全品类</span></div>
+        </div>
+        <div class="kb-metrics">
+          <div class="metric"><div class="metric-value" style="color:#10b981;">+34%</div><div class="metric-label">播放量提升</div></div>
+          <div class="metric"><div class="metric-value">+1.2%</div><div class="metric-label">互动率提升</div></div>
+          <div class="metric"><div class="metric-value">7 天</div><div class="metric-label">验证周期</div></div>
+        </div>
+        <div class="kb-footer">
+          <div class="kb-author"><div class="avatar" style="background:#6366f1;">B</div><span>运营B · 已复用 15 次 · 审核通过</span></div>
+          <div class="kb-actions"><span class="usage-badge">✓ 已审核</span><span class="kb-action">📋 复制</span><span class="kb-action">🔗 应用</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 上传通道 -->
+  <div id="kb-upload" class="kb-tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">⬆️ 上传新方法论 <span>填写完整信息，提交后进入审核队列</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="form-group">
+          <label class="form-label">方法论标题 *</label>
+          <input type="text" class="form-input" placeholder="例如：替换首图并增加使用场景图">
+        </div>
+        <div class="form-group">
+          <label class="form-label">商品 ID *</label>
+          <input type="text" class="form-input" placeholder="例如：100176">
+        </div>
+        <div class="form-group">
+          <label class="form-label">类目/场景 *</label>
+          <select class="form-select">
+            <option>玩具类目</option><option>文具/绘画</option><option>户外玩具</option>
+            <option>家居/收纳</option><option>全品类</option><option>US 市场</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">动作类型 *</label>
+          <select class="form-select">
+            <option>主图优化</option><option>价格策略</option><option>标题优化</option>
+            <option>广告投放</option><option>达人合作</option><option>发布时间</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">验证节点 *</label>
+          <select class="form-select">
+            <option>T+1</option><option>T+3</option><option>T+7</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">验证周期（天）*</label>
+          <input type="number" class="form-input" placeholder="例如：3">
+        </div>
+        <div class="form-group">
+          <label class="form-label">时间段 *</label>
+          <input type="text" class="form-input" placeholder="例如：08-22 至 08-25">
+        </div>
+        <div class="form-group">
+          <label class="form-label">负责人 *</label>
+          <input type="text" class="form-input" placeholder="例如：运营A">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label class="form-label">详细描述 *</label>
+        <textarea class="form-textarea" placeholder="详细描述调整动作、执行过程、观察到的变化..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">效果数据 *</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+          <input type="text" class="form-input" placeholder="指标1：例如 CVR +1.7%">
+          <input type="text" class="form-input" placeholder="指标2：例如 GMV ¥42,680">
+          <input type="text" class="form-input" placeholder="指标3：例如验证期 3天">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn btn-primary" onclick="alert('✅ 方法论已提交！\n\n状态：进入审核队列\n审核人：主管\n预计审核时间：1-2 个工作日\n\n审核通过后将进入"对外已审知识库"，团队可搜索复用。')">提交审核</button>
+        <button class="btn" onclick="alert('已保存为草稿')">保存草稿</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📤 批量导入 <span>支持 CSV 批量上传</span></div>
+      <div class="upload-zone" onclick="alert('📁 请选择 CSV 文件\n\n必填字段：标题、商品ID、类目、动作类型、验证节点、验证周期、时间段、负责人、描述、效果数据')">
+        <div class="upload-zone-icon">📁</div>
+        <div class="upload-zone-title">点击上传 CSV 文件</div>
+        <div class="upload-zone-desc">支持批量导入多条方法论记录，导入后进入审核队列</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 高级搜索 -->
+  <div id="kb-search" class="kb-tab-content" style="display:none;">
+    <div class="card">
+      <div class="card-title">🔍 高级搜索 <span>按多维度精确检索方法论</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="form-group">
+          <label class="form-label">关键词</label>
+          <input type="text" class="form-input" placeholder="搜索问题、方法论、动作描述...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">商品 ID</label>
+          <input type="text" class="form-input" placeholder="例如：100176">
+        </div>
+        <div class="form-group">
+          <label class="form-label">动作类型</label>
+          <select class="form-select"><option>全部</option><option>主图优化</option><option>价格策略</option><option>标题优化</option><option>广告投放</option><option>达人合作</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">类目/场景</label>
+          <select class="form-select"><option>全部</option><option>玩具类目</option><option>文具/绘画</option><option>户外玩具</option><option>家居/收纳</option><option>全品类</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">验证节点</label>
+          <select class="form-select"><option>全部</option><option>T+1</option><option>T+3</option><option>T+7</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">状态</label>
+          <select class="form-select"><option>全部</option><option>已审核</option><option>待审核</option><option>已沉淀</option></select>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-primary" onclick="alert('🔍 搜索结果：\n\n找到 4 条匹配记录：\n1. 替换首图并增加使用场景图，CVR 提升 1.7%（商品ID：100176）\n2. 组合装定价策略，GMV 提升 26%（商品ID：100314）\n3. 标题前置核心卖点，CTR 提升 0.9%（商品ID：100238）\n4. ROAS 低于 2.0 的计划优化策略（全品类）')">开始搜索</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 8. Agent 调度中心 ========== -->
+<div id="page-agents" class="page">
+  <div class="page-header">
+    <div class="page-title">🤖 Agent 调度中心</div>
+    <div class="page-subtitle">Agent 调度交互样例 · 当前按钮只演示流程，不会执行外部任务</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">运行中 Agent</div><div class="stat-value" style="color:#10b981;">4</div><div class="stat-trend">正在执行任务</div></div>
+    <div class="stat-card"><div class="stat-label">待执行队列</div><div class="stat-value" style="color:#f59e0b;">2</div><div class="stat-trend">等待调度</div></div>
+    <div class="stat-card"><div class="stat-label">今日完成任务</div><div class="stat-value">18</div><div class="stat-trend trend-up">↑ 较昨日 +5</div></div>
+    <div class="stat-card"><div class="stat-label">Agent 总数</div><div class="stat-value">12</div><div class="stat-trend">8 个已激活</div></div>
+  </div>
+
+  <div class="two-col">
+    <div class="agent-panel">
+      <div class="agent-panel-header">
+        <div class="agent-panel-title">🤖 已激活 Agent 列表</div>
+        <span class="tag tag-green">8 / 12 激活</span>
+      </div>
+      <div class="agent-list">
+        <div class="agent-row">
+          <div class="agent-row-icon">📰</div>
+          <div class="agent-row-body"><div class="agent-row-name">AI 日报生成 Agent</div><div class="agent-row-desc">自动读取数据 → 分析异常 → 生成结构化日报</div></div>
+          <div class="agent-row-status"><span class="agent-row-status-dot" style="background:#10b981;"></span>空闲</div>
+        </div>
+        <div class="agent-row">
+          <div class="agent-row-icon">🔍</div>
+          <div class="agent-row-body"><div class="agent-row-name">智能诊断 Agent</div><div class="agent-row-desc">扫描全店数据 → 识别异常 → 输出诊断建议</div></div>
+          <div class="agent-row-status"><span class="agent-row-status-dot" style="background:#f59e0b;"></span>运行中</div>
+        </div>
+        <div class="agent-row">
+          <div class="agent-row-icon">📊</div>
+          <div class="agent-row-body"><div class="agent-row-name">效果追踪 Agent</div><div class="agent-row-desc">自动对比基线 → 追踪指标变化 → 判定有效/无效</div></div>
+          <div class="agent-row-status"><span class="agent-row-status-dot" style="background:#f59e0b;"></span>运行中</div>
+        </div>
+        <div class="agent-row">
+          <div class="agent-row-icon">📚</div>
+          <div class="agent-row-body"><div class="agent-row-name">知识沉淀 Agent</div><div class="agent-row-desc">提取有效动作要素 → 生成知识卡片 → 推送审核</div></div>
+          <div class="agent-row-status"><span class="agent-row-status-dot" style="background:#10b981;"></span>空闲</div>
+        </div>
+        <div class="agent-row">
+          <div class="agent-row-icon">💰</div>
+          <div class="agent-row-body"><div class="agent-row-name">智能调价 Agent</div><div class="agent-row-desc">分析计划表现 → 识别低效计划 → 输出调价建议</div></div>
+          <div class="agent-row-status"><span class="agent-row-status-dot" style="background:#10b981;"></span>空闲</div>
+        </div>
+        <div class="agent-row">
+          <div class="agent-row-icon">🎨</div>
+          <div class="agent-row-body"><div class="agent-row-name">素材测试 Agent</div><div class="agent-row-desc">分析素材表现 → 生成测试方案 → 追踪测试结果</div></div>
+          <div class="agent-row-status"><span class="agent-row-status-dot" style="background:#10b981;"></span>空闲</div>
+        </div>
+        <div class="agent-row">
+          <div class="agent-row-icon">📬</div>
+          <div class="agent-row-body"><div class="agent-row-name">达人跟进 Agent</div><div class="agent-row-desc">扫描合作状态 → 识别待跟进 → 生成跟进话术</div></div>
+          <div class="agent-row-status"><span class="agent-row-status-dot" style="background:#10b981;"></span>空闲</div>
+        </div>
+        <div class="agent-row">
+          <div class="agent-row-icon">✍️</div>
+          <div class="agent-row-body"><div class="agent-row-name">内容生成 Agent</div><div class="agent-row-desc">分析爆款特征 → 生成脚本/文案 → 推荐发布时间</div></div>
+          <div class="agent-row-status"><span class="agent-row-status-dot" style="background:#10b981;"></span>空闲</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="agent-panel">
+      <div class="agent-panel-header">
+        <div class="agent-panel-title">📋 任务执行队列</div>
+        <span class="tag tag-yellow">2 个待执行</span>
+      </div>
+      <div class="task-queue">
+        <div class="task-item">
+          <span class="task-item-status" style="background:#f59e0b;"></span>
+          <span class="task-item-name">效果追踪：商品 ID 100238 标题调整 T+1 验证</span>
+          <span class="task-item-time">预计 08-29 09:00</span>
+        </div>
+        <div class="task-item">
+          <span class="task-item-status" style="background:#f59e0b;"></span>
+          <span class="task-item-name">知识沉淀：审核并入库 2 条有效方法论</span>
+          <span class="task-item-time">等待人工审核</span>
+        </div>
+        <div class="task-item">
+          <span class="task-item-status" style="background:#10b981;"></span>
+          <span class="task-item-name">智能诊断：全店商品异常扫描</span>
+          <span class="task-item-time">08-28 20:30 完成</span>
+        </div>
+        <div class="task-item">
+          <span class="task-item-status" style="background:#10b981;"></span>
+          <span class="task-item-name">效果追踪：商品 ID 100176 主图优化 T+3 验证</span>
+          <span class="task-item-time">08-28 18:00 完成</span>
+        </div>
+        <div class="task-item">
+          <span class="task-item-status" style="background:#10b981;"></span>
+          <span class="task-item-name">AI日报：生成今日经营日报</span>
+          <span class="task-item-time">08-28 17:30 完成</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔄 数据闭环：执行 → 记录 → 追踪 → 验证 → 沉淀 → 复用</div>
+    <div class="step-flow">
+      <div class="step-item" style="background:#f0fdf4;border-color:#bbf7d0;"><div class="step-num" style="background:#10b981;">1</div><div class="step-title" style="color:#166534;">Agent 执行</div><div class="step-desc" style="color:#15803d;">调用Agent干活</div></div>
+      <div class="step-item" style="background:#eff6ff;border-color:#bfdbfe;"><div class="step-num" style="background:#3b82f6;">2</div><div class="step-title" style="color:#1e40af;">自动记录</div><div class="step-desc" style="color:#1e3a8a;">记录动作到系统</div></div>
+      <div class="step-item" style="background:#fefce8;border-color:#fde68a;"><div class="step-num" style="background:#eab308;">3</div><div class="step-title" style="color:#854d0e;">数据追踪</div><div class="step-desc" style="color:#a16207;">T+1/T+3/T+7</div></div>
+      <div class="step-item" style="background:#fef3c7;border-color:#fde68a;"><div class="step-num" style="background:#f59e0b;">4</div><div class="step-title" style="color:#92400e;">效果验证</div><div class="step-desc" style="color:#a16207;">判定有效/无效</div></div>
+      <div class="step-item" style="background:#f0fdf4;border-color:#bbf7d0;"><div class="step-num" style="background:#10b981;">5</div><div class="step-title" style="color:#166534;">知识沉淀</div><div class="step-desc" style="color:#15803d;">入库知识库</div></div>
+      <div class="step-item" style="background:#f8fafc;border-color:#e2e8f0;"><div class="step-num" style="background:#0f172a;">6</div><div class="step-title" style="color:#0f172a;">智能复用</div><div class="step-desc" style="color:#475569;">下次Agent调用</div></div>
+    </div>
+    <div style="margin-top:14px;padding:12px;background:#f8fafc;border-radius:8px;font-size:13px;color:#475569;line-height:1.7;">
+      <strong>当前阶段：</strong>第二阶段 → 第三阶段过渡中<br>
+      人工数据接入 + AI Agent 执行 + 自动追踪验证 + 知识库沉淀。Agent 执行的动作自动记录，数据持续追踪，有效动作沉淀到知识库，无效动作标记为"已证伪"。系统随时间越来越强。<br><br>
+      <strong>第四阶段愿景：</strong>Agent 集群自主调度，基于知识库自动决策，人工只需审核关键节点。组织架构围绕 AI 能力重新设计。
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📈 Agent 执行历史 <span>最近 5 条</span></div>
+    <div class="desktop-table-wrap">
+      <table class="desktop-table">
+        <thead><tr><th>时间</th><th>Agent</th><th>任务</th><th>输入</th><th>输出</th><th>结果</th></tr></thead>
+        <tbody>
+          <tr><td>08-28 20:30</td><td><span class="tag tag-blue">智能诊断</span></td><td>全店异常扫描</td><td>11 个商品数据</td><td>3 高风险 + 5 中风险</td><td><span class="tag tag-green">完成</span></td></tr>
+          <tr><td>08-28 18:00</td><td><span class="tag tag-blue">效果追踪</span></td><td>100176 T+3 验证</td><td>基线 vs 今日数据</td><td>CVR +1.7%，判定有效</td><td><span class="tag tag-green">有效</span></td></tr>
+          <tr><td>08-28 17:30</td><td><span class="tag tag-blue">AI日报</span></td><td>生成经营日报</td><td>今日全量数据</td><td>结构化日报草稿</td><td><span class="tag tag-green">完成</span></td></tr>
+          <tr><td>08-28 15:00</td><td><span class="tag tag-blue">达人跟进</span></td><td>跟进 @lina_home</td><td>寄样 5 天未回传</td><td>生成跟进话术</td><td><span class="tag tag-yellow">待执行</span></td></tr>
+          <tr><td>08-28 14:00</td><td><span class="tag tag-blue">智能调价</span></td><td>分析 AD-24076</td><td>计划表现数据</td><td>缩减预算+复制测试</td><td><span class="tag tag-green">完成</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mobile-card-list">
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">08-28 20:30</span><span class="tag tag-green">完成</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="mobile-data-card-value">智能诊断</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">任务</span><span class="mobile-data-card-value">全店异常扫描</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">输出</span><span class="mobile-data-card-value">3 高风险 + 5 中风险</span></div>
+      </div>
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">08-28 18:00</span><span class="tag tag-green">有效</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="mobile-data-card-value">效果追踪</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">任务</span><span class="mobile-data-card-value">100176 T+3 验证</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">输出</span><span class="mobile-data-card-value">CVR +1.7%，判定有效</span></div>
+      </div>
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">08-28 17:30</span><span class="tag tag-green">完成</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="mobile-data-card-value">AI日报</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">任务</span><span class="mobile-data-card-value">生成经营日报</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">输出</span><span class="mobile-data-card-value">结构化日报草稿</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 9. 数据接入 ========== -->
+<div id="page-data" class="page">
+  <div class="page-header">
+    <div class="page-title">⚙️ 数据接入</div>
+    <div class="page-subtitle">Control Plane 数据源 · Agent 执行需要真实数据支撑 · 不以推算替代缺失</div>
+  </div>
+  <div class="alert alert-info" style="margin-bottom:18px;"><span>ℹ️</span><span>文件只在本机浏览器内解析和保存，不会自动上传。正式网站部署前，需要主管确认数据源、账号权限、同步频率和敏感字段处理方式。</span></div>
+  <div id="real-data-summary"></div>
+  <div id="import-mapping-panel"></div>
+  <div id="import-report-panel"></div>
+  <div class="card" style="margin-bottom:18px;border-left:4px solid #10b981;">
+    <div class="card-title">🧩 数据上传自适应 <span>核心原则：中控台适应店铺数据，不要求固定模板</span></div>
+    <div style="font-size:13px;line-height:1.8;color:#475569;">
+      店铺后台能导出什么表，就直接上传什么表，<strong>不需要手工改成指定格式</strong>。系统会自动做四件事：
+      ① <strong>智能识别表头</strong>——中英文列名、同义写法、带单位/空格的列名都能认；
+      ② <strong>自动推断店铺和日期</strong>——优先读表内字段，其次读文件名，都读不到才会问你；
+      ③ <strong>粒度自适应</strong>——有什么字段算什么指标，缺字段的模块显示"待导入"，不会卡住其他模块；
+      ④ <strong>导入报告 + 映射记忆</strong>——每次导入生成报告（识别行数、匹配字段、未识别列），没认出的列手动指认一次，系统永久记住。
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:18px;border-left:4px solid #38bdf8;">
+    <div class="card-title">☁️ WPS / Kdocs 云文档 <span>统一填报源 · 适配当前 v3 模块</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div style="font-size:13px;line-height:1.7;color:#475569;max-width:760px;">
+        运营先在云文档填写店铺、商品、五组排行、预警、运营动作、知识库和 Agent 任务；再按字段说明导出 CSV 或交给后端 API 接入。当前公开 GitHub Pages 仍是静态演示版，不会直接读取私有 WPS/Kdocs 文档。
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a class="btn btn-primary" href="./data/tiktok-ai-operations-center-wps-kdocs-template.xlsx" download>下载 WPS/Kdocs 模板</a>
+        <a class="btn" href="./data/README.md" target="_blank" rel="noopener">查看字段说明</a>
+      </div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">📤 商品 / 店铺经营数据</div>
+      <div class="upload-zone" id="real-store-upload-zone" onclick="document.getElementById('real-store-file-input').click()">
+        <div class="upload-zone-icon">📁</div>
+        <div class="upload-zone-title">选择店铺导出文件（Excel / CSV，可多选）</div>
+        <div class="upload-zone-desc">店铺后台导出什么格式就直接传：列名差异自动识别，店铺和日期自动推断，认不出的列可指认一次永久记住</div>
+      </div>
+      <input id="real-store-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px;">
+        <span id="real-data-upload-status" class="tag tag-green">已加载公开快照</span>
+        <button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📤 运营调整记录</div>
+      <div class="upload-zone" onclick="alert('📁 请选择动作记录 CSV\n\n建议字段：日期、商品ID、维度、动作类型、动作说明、负责人、验证节点')">
+        <div class="upload-zone-icon">📁</div>
+        <div class="upload-zone-title">选择动作记录 CSV</div>
+        <div class="upload-zone-desc">建议字段：日期、商品ID、维度、动作类型、动作说明、负责人、验证节点</div>
+      </div>
+      <div style="text-align:center;margin-top:10px;"><span class="tag tag-green">本地可用</span></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title">📋 字段与来源登记 <span>Agent 执行依赖真实字段</span></div>
+    <div class="desktop-table-wrap">
+      <table class="desktop-table">
+        <thead><tr><th>模块</th><th>推荐来源</th><th>关键字段</th><th>Agent 依赖</th><th>当前状态</th></tr></thead>
+        <tbody>
+          <tr><td><strong>商品经营</strong></td><td>TikTok Shop CSV</td><td>商品 ID、曝光、点击、成交、GMV</td><td>诊断Agent、预警Agent</td><td><span class="tag tag-yellow">待接入</span></td></tr>
+          <tr><td><strong>达人合作</strong></td><td>达人团队 / 后台导出表</td><td>日期、达人、状态、GMV、视频数</td><td>达人跟进Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td></tr>
+          <tr><td><strong>广告投放</strong></td><td>广告后台导出表</td><td>日期、计划、消耗、曝光、CTR、ROAS</td><td>调价Agent、素材Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td></tr>
+          <tr><td><strong>自营短视频</strong></td><td>TikTok Studio / Seller Center</td><td>日期、账号、视频 ID、播放量、GMV</td><td>内容Agent、排期Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td></tr>
+          <tr><td><strong>优质素材库</strong></td><td>素材数据表 + mp4 视频</td><td>达人、视频链接、GMV、ROAS、标签</td><td>素材测试Agent</td><td><span class="tag tag-yellow">可导入 · 双通道</span></td></tr>
+          <tr><td><strong>发布数量</strong></td><td>Kdocs / 运营回传表</td><td>日期、账号、商品 ID、数量</td><td>内容Agent、排期Agent</td><td><span class="tag tag-green">可导入</span></td></tr>
+          <tr><td><strong>运营动作</strong></td><td>动作记录表</td><td>日期、商品 ID、动作、验证节点</td><td>追踪Agent、沉淀Agent</td><td><span class="tag tag-green">本地可用</span></td></tr>
+          <tr><td><strong>公开视频</strong></td><td>TikTok 主页快照</td><td>视频 ID、当前播放、snapshot_time</td><td>内容Agent</td><td><span class="tag tag-gray">快照性质</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mobile-card-list">
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">商品经营</span><span class="tag tag-yellow">待接入</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">来源</span><span class="mobile-data-card-value">TikTok Shop CSV</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="mobile-data-card-value">诊断Agent、预警Agent</span></div>
+      </div>
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">发布数量</span><span class="tag tag-green">可导入</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">来源</span><span class="mobile-data-card-value">Kdocs / 运营回传表</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="mobile-data-card-value">内容Agent、排期Agent</span></div>
+      </div>
+      <div class="mobile-data-card">
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">运营动作</span><span class="tag tag-green">本地可用</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">来源</span><span class="mobile-data-card-value">动作记录表</span></div>
+        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="mobile-data-card-value">追踪Agent、沉淀Agent</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title">🔄 日报闭环 <span>每天导出"昨日 + 今日"数据，Agent 自动执行后续流程</span></div>
+    <div class="step-flow">
+      <div class="step-item" style="background:#f0fdf4;border-color:#bbf7d0;"><div class="step-num" style="background:#10b981;">1</div><div class="step-title" style="color:#166534;">导出双日数据</div><div class="step-desc" style="color:#15803d;">人工/定时导出</div></div>
+      <div class="step-item" style="background:#eff6ff;border-color:#bfdbfe;"><div class="step-num" style="background:#3b82f6;">2</div><div class="step-title" style="color:#1e40af;">AI日报Agent</div><div class="step-desc" style="color:#1e3a8a;">自动生成日报</div></div>
+      <div class="step-item" style="background:#fefce8;border-color:#fde68a;"><div class="step-num" style="background:#eab308;">3</div><div class="step-title" style="color:#854d0e;">记录运营动作</div><div class="step-desc" style="color:#a16207;">人工/Agent记录</div></div>
+      <div class="step-item" style="background:#fef3c7;border-color:#fde68a;"><div class="step-num" style="background:#f59e0b;">4</div><div class="step-title" style="color:#92400e;">效果追踪Agent</div><div class="step-desc" style="color:#a16207;">T+1/T+3/T+7</div></div>
+      <div class="step-item" style="background:#f0fdf4;border-color:#bbf7d0;"><div class="step-num" style="background:#10b981;">5</div><div class="step-title" style="color:#166534;">知识沉淀Agent</div><div class="step-desc" style="color:#15803d;">有效动作入库</div></div>
+      <div class="step-item" style="background:#f8fafc;border-color:#e2e8f0;"><div class="step-num" style="background:#0f172a;">6</div><div class="step-title" style="color:#0f172a;">智能复用</div><div class="step-desc" style="color:#475569;">Agent自主调用</div></div>
+    </div>
+    <div style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;color:#475569;"><strong>当前阶段：</strong>人工数据接入 + AI Agent 执行 &nbsp;|&nbsp; T+1/T+3/T+7 是验证节点，不是预填结论。没有对应日期的真实数据时，状态必须保持"待验证"。</div>
+  </div>
+</div>
+
+</div>
+
+<script src="./data/real-store-data.js"></script>
+<script src="./data/real-store-dashboard.js?v=ops-ext-1"></script>
+<script src="./data/ops-extensions.js?v=ops-ext-1"></script>
+<script>
+const FILTERED_DATA_PAGES = new Set(['overview', 'data']);
+const DEMO_PAGE_NOTICES = {
+  alert: '预警卡片、风险数量和商品案例仍是流程演示；只有导入同店铺多日期快照后，才能生成真实上涨、下降与预警结论。',
+  bd: '达人数量、待办与履约趋势为界面样例，尚未接入真实达人合作表。',
+  ads: '广告消耗、计划与 Agent 建议为界面样例，尚未接入真实广告后台及归因字段。',
+  videos: '发布数量、视频表现与商品案例为界面样例，尚未接入真实发布记录和视频归因表。',
+  validation: '动作、负责人和验证结论为界面样例，尚未接入真实运营已执行清单及验证证据。',
+  knowledge: '知识卡片、复用次数和审核状态为界面样例，尚未连接团队真实知识库。',
+  agents: 'Agent 数量、任务队列和执行历史为交互样例；页面按钮只展示流程，不会实际执行外部任务。'
+};
+
+function updateDataContextVisibility(pageId) {
+  const contextBar = document.querySelector('.data-context-bar');
+  if (contextBar) contextBar.hidden = !FILTERED_DATA_PAGES.has(pageId);
+}
+
+function addDataBoundaryNotices() {
+  Object.entries(DEMO_PAGE_NOTICES).forEach(([pageId, message]) => {
+    const page = document.getElementById('page-' + pageId);
+    const header = page && page.querySelector('.page-header');
+    if (!header || page.querySelector('.data-boundary-notice')) return;
+    const notice = document.createElement('div');
+    notice.className = 'data-boundary-notice';
+    notice.innerHTML = '<span>⚠️</span><span><strong>数据边界：</strong>' + message + ' 顶部真实店铺与日期筛选不作用于本页。</span>';
+    header.insertAdjacentElement('afterend', notice);
+  });
+}
+
+function bindOperationDateRecords() {
+  const form = document.getElementById('operation-date-record-form');
+  const list = document.getElementById('operation-date-record-list');
+  const dateInput = document.getElementById('operation-record-date');
+  if (!form || !list || !dateInput) return;
+  const storageKey = 'tiktok-ai-operation-date-records';
+  let records = JSON.parse(localStorage.getItem(storageKey) || '[]');
+  dateInput.value = new Date().toISOString().slice(0, 10);
+  const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+  const render = () => {
+    if (!records.length) {
+      list.innerHTML = '<div style="padding:12px;background:#f8fafc;border-radius:7px;color:#64748b;font-size:12px;">暂无新增记录。保存后，执行日期会保存在当前浏览器，并显示在这里。</div>';
+      return;
+    }
+    list.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + records.map((record, index) => '<div class="operation-record-row"><strong style="color:#0f172a;">' + escapeHtml(record.date) + '</strong><span>' + escapeHtml(record.store) + '</span><span>' + escapeHtml(record.object) + '</span><span>' + escapeHtml(record.action) + '</span><button type="button" data-record-index="' + index + '" style="border:0;background:transparent;color:#ef4444;cursor:pointer;">删除</button></div>').join('') + '</div>';
+    list.querySelectorAll('[data-record-index]').forEach((button) => button.addEventListener('click', () => { records.splice(Number(button.dataset.recordIndex), 1); localStorage.setItem(storageKey, JSON.stringify(records)); render(); }));
+  };
+  form.addEventListener('submit', (event) => { event.preventDefault(); records.unshift({ date: dateInput.value, store: document.getElementById('operation-record-store').value.trim(), object: document.getElementById('operation-record-object').value.trim(), action: document.getElementById('operation-record-action').value.trim() }); localStorage.setItem(storageKey, JSON.stringify(records)); form.reset(); dateInput.value = new Date().toISOString().slice(0, 10); render(); });
+  render();
+}
+// 页面切换
+function showPage(pageId, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  document.querySelectorAll('.sidebar .nav-item').forEach(n => n.classList.remove('active'));
+  if (el && el.classList.contains('nav-item')) {
+    el.classList.add('active');
+  } else {
+    const navMap = { 'overview': 0, 'alert': 1, 'bd': 2, 'ads': 3, 'videos': 4, 'validation': 5, 'knowledge': 6, 'agents': 7, 'data': 8 };
+    const sidebarItems = document.querySelectorAll('.sidebar .nav-item');
+    if (sidebarItems[navMap[pageId]]) sidebarItems[navMap[pageId]].classList.add('active');
+  }
+  const mobileItems = document.querySelectorAll('.mobile-bottom-item');
+  const mobileMap = { 'overview': 0, 'alert': 1, 'agents': 2, 'knowledge': 3, 'videos': 4 };
+  mobileItems.forEach(item => item.classList.remove('active'));
+  if (mobileItems[mobileMap[pageId]]) mobileItems[mobileMap[pageId]].classList.add('active');
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mobileOverlay').classList.remove('open');
+  updateDataContextVisibility(pageId);
+  window.scrollTo(0, 0);
+}
+
+// 移动端菜单切换
+function toggleMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mobileOverlay').classList.toggle('open');
+}
+
+// 移动端底部导航更新
+function updateMobileNav(el) {
+  document.querySelectorAll('.mobile-bottom-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// 知识库 Tab 切换
+function switchKbTab(tabId, btn) {
+  document.querySelectorAll('.kb-tab-content').forEach(t => t.style.display = 'none');
+  document.getElementById('kb-' + tabId).style.display = 'block';
+  document.querySelectorAll('.tab-bar .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function bindAlertFilters() {
+  const page = document.getElementById('page-alert');
+  if (!page) return;
+  const input = page.querySelector('.search-box input');
+  const buttons = [...page.querySelectorAll('.filter-btn')];
+  const cards = [...page.querySelectorAll('.alert-card')];
+  let selectedRisk = 'all';
+  const riskMap = new Map(buttons.map((button) => {
+    const text = button.textContent;
+    return [button, text.includes('高风险') ? 'high' : text.includes('中风险') ? 'medium' : text.includes('低风险') ? 'low' : 'all'];
+  }));
+  const apply = () => {
+    const query = (input?.value || '').trim().toLowerCase();
+    cards.forEach((card) => {
+      const matchesRisk = selectedRisk === 'all' || card.classList.contains(selectedRisk);
+      const matchesQuery = !query || card.textContent.toLowerCase().includes(query);
+      card.hidden = !(matchesRisk && matchesQuery);
+    });
+  };
+  buttons.forEach((button) => button.addEventListener('click', () => {
+    buttons.forEach((item) => item.classList.remove('active'));
+    button.classList.add('active');
+    selectedRisk = riskMap.get(button);
+    apply();
+  }));
+  if (input) input.addEventListener('input', apply);
+}
+
+function bindKnowledgeFilters() {
+  document.querySelectorAll('#page-knowledge .kb-tab-content').forEach((panel) => {
+    const cards = [...panel.querySelectorAll('.kb-card')];
+    const buttons = [...panel.querySelectorAll('.filter-btn')];
+    const input = panel.querySelector('.search-box input');
+    if (!cards.length || (!buttons.length && !input)) return;
+    let selectedCategory = '全部';
+    const apply = () => {
+      const query = (input?.value || '').trim().toLowerCase();
+      cards.forEach((card) => {
+        const matchesCategory = selectedCategory === '全部' || card.textContent.includes(selectedCategory);
+        const matchesQuery = !query || card.textContent.toLowerCase().includes(query);
+        card.hidden = !(matchesCategory && matchesQuery);
+      });
+    };
+    buttons.forEach((button) => button.addEventListener('click', () => {
+      buttons.forEach((item) => item.classList.remove('active'));
+      button.classList.add('active');
+      selectedCategory = button.textContent.trim();
+      apply();
+    }));
+    if (input) input.addEventListener('input', apply);
+  });
+}
+
+// 响应式检测
+function checkResponsive() {
+  if (window.innerWidth > 768) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('mobileOverlay').classList.remove('open');
+  }
+}
+window.addEventListener('resize', checkResponsive);
+addDataBoundaryNotices();
+bindAlertFilters();
+bindKnowledgeFilters();
+
+bindOperationDateRecords();
+updateDataContextVisibility('overview');
+</script>
+
+</body>
+</html>
