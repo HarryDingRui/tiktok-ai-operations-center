@@ -1384,16 +1384,24 @@ body {
     </div>
   </div>
   <div class="card">
-    <div class="card-title">📋 运营已执行清单 <span>全部店铺 · 已执行 · Agent 自动记录</span></div>
+    <div class="card-title">📋 运营已执行清单 <span>按执行日期定位具体动作 · Agent 自动记录</span></div>
+    <div class="operation-log-filter" style="display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+      <label style="font-size:12px;color:#475569;">查询执行日期
+        <input id="operation-log-date-filter" type="date" style="display:block;width:190px;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;">
+      </label>
+      <button id="operation-log-search" class="btn btn-primary" type="button" style="min-height:38px;">🔎 定位当天动作</button>
+      <button id="operation-log-reset" class="btn" type="button" style="min-height:38px;">显示全部</button>
+      <span id="operation-log-status" style="font-size:12px;color:#64748b;"></span>
+    </div>
     <div class="desktop-table-wrap">
       <table class="desktop-table">
         <thead><tr><th>执行时间戳</th><th>店铺</th><th>对象</th><th>已执行动作</th><th>负责人</th><th>验证状态</th><th>Agent</th></tr></thead>
         <tbody>
-          <tr><td><strong class="execution-timestamp">2026-08-25 10:30</strong></td><td>US-旗舰店</td><td><strong>商品 ID 100176</strong></td><td>优化主图与详情页<br><span style="font-size:11px;color:#64748b;">替换首图并增加使用场景</span></td><td>运营A</td><td><span class="tag tag-green">验证有效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：优化主图\n追踪周期：T+1 → T+3\n结果：有效，CVR +1.7%')">已追踪</span></td></tr>
-          <tr><td><strong class="execution-timestamp">2026-08-23 14:15</strong></td><td>US-旗舰店</td><td><strong>商品 ID 100314</strong></td><td>调整价格<br><span style="font-size:11px;color:#64748b;">测试组合装价格</span></td><td>运营A</td><td><span class="tag tag-green">验证有效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：调整价格\n追踪周期：T+1 → T+3 → T+7\n结果：有效，GMV +26%')">已追踪</span></td></tr>
-          <tr><td><strong class="execution-timestamp">2026-08-27 09:20</strong></td><td>US-日用店</td><td><strong>商品 ID 100238</strong></td><td>调整标题<br><span style="font-size:11px;color:#64748b;">前置核心卖点</span></td><td>运营B</td><td><span class="tag tag-yellow">待验证</span></td><td><span class="tag tag-yellow" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 追踪中...\n\n动作：调整标题\n当前节点：T+1 等待数据\n预计明天自动更新状态')">追踪中</span></td></tr>
-          <tr><td><strong class="execution-timestamp">2026-08-18 16:45</strong></td><td>TH-主店</td><td><strong>商品 ID 100091</strong></td><td>调整价格<br><span style="font-size:11px;color:#64748b;">测试组合装价格</span></td><td>运营A</td><td><span class="tag tag-red">验证无效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：调整价格\n追踪周期：T+1 → T+3 → T+7\n结果：无效，已证伪')">已追踪</span></td></tr>
-          <tr><td><strong class="execution-timestamp">2026-08-21 11:05</strong></td><td>TH-主店</td><td><strong>商品 ID 100407</strong></td><td>更换广告落地页<br><span style="font-size:11px;color:#64748b;">测试新的商品承接页</span></td><td>运营B</td><td><span class="tag tag-red">验证无效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：更换落地页\n追踪周期：T+1 → T+3\n结果：无效，已证伪')">已追踪</span></td></tr>
+          <tr data-operation-date="2026-08-25"><td><strong class="execution-timestamp">2026-08-25 10:30</strong></td><td>US-旗舰店</td><td><strong>商品 ID 100176</strong></td><td>优化主图与详情页<br><span style="font-size:11px;color:#64748b;">替换首图并增加使用场景</span></td><td>运营A</td><td><span class="tag tag-green">验证有效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：优化主图\n追踪周期：T+1 → T+3\n结果：有效，CVR +1.7%')">已追踪</span></td></tr>
+          <tr data-operation-date="2026-08-23"><td><strong class="execution-timestamp">2026-08-23 14:15</strong></td><td>US-旗舰店</td><td><strong>商品 ID 100314</strong></td><td>调整价格<br><span style="font-size:11px;color:#64748b;">测试组合装价格</span></td><td>运营A</td><td><span class="tag tag-green">验证有效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：调整价格\n追踪周期：T+1 → T+3 → T+7\n结果：有效，GMV +26%')">已追踪</span></td></tr>
+          <tr data-operation-date="2026-08-27"><td><strong class="execution-timestamp">2026-08-27 09:20</strong></td><td>US-日用店</td><td><strong>商品 ID 100238</strong></td><td>调整标题<br><span style="font-size:11px;color:#64748b;">前置核心卖点</span></td><td>运营B</td><td><span class="tag tag-yellow">待验证</span></td><td><span class="tag tag-yellow" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 追踪中...\n\n动作：调整标题\n当前节点：T+1 等待数据\n预计明天自动更新状态')">追踪中</span></td></tr>
+          <tr data-operation-date="2026-08-18"><td><strong class="execution-timestamp">2026-08-18 16:45</strong></td><td>TH-主店</td><td><strong>商品 ID 100091</strong></td><td>调整价格<br><span style="font-size:11px;color:#64748b;">测试组合装价格</span></td><td>运营A</td><td><span class="tag tag-red">验证无效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：调整价格\n追踪周期：T+1 → T+3 → T+7\n结果：无效，已证伪')">已追踪</span></td></tr>
+          <tr data-operation-date="2026-08-21"><td><strong class="execution-timestamp">2026-08-21 11:05</strong></td><td>TH-主店</td><td><strong>商品 ID 100407</strong></td><td>更换广告落地页<br><span style="font-size:11px;color:#64748b;">测试新的商品承接页</span></td><td>运营B</td><td><span class="tag tag-red">验证无效</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 效果追踪Agent 记录\n\n动作：更换落地页\n追踪周期：T+1 → T+3\n结果：无效，已证伪')">已追踪</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -2251,6 +2259,27 @@ function bindKnowledgeFilters() {
   });
 }
 
+function bindOperationLogFilter() {
+  const page = document.getElementById('page-validation');
+  const input = document.getElementById('operation-log-date-filter');
+  const search = document.getElementById('operation-log-search');
+  const reset = document.getElementById('operation-log-reset');
+  const status = document.getElementById('operation-log-status');
+  const tableRows = [...(page?.querySelectorAll('table tbody tr[data-operation-date]') || [])];
+  const mobileRows = [...(page?.querySelectorAll('.mobile-card-list .mobile-data-card') || [])];
+  if (!input || !search || !reset || !status || !tableRows.length) return;
+  const apply = (date = '') => {
+    tableRows.forEach((row) => { row.hidden = Boolean(date && row.dataset.operationDate !== date); });
+    mobileRows.forEach((row) => { row.hidden = Boolean(date && !row.textContent.includes(date)); });
+    const count = tableRows.filter((row) => !row.hidden).length;
+    status.textContent = date ? `已定位 ${date} · ${count} 条动作记录` : `共 ${count} 条动作记录`;
+  };
+  search.addEventListener('click', () => apply(input.value));
+  reset.addEventListener('click', () => { input.value = ''; apply(); });
+  input.addEventListener('change', () => apply(input.value));
+  apply();
+}
+
 // 响应式检测
 function checkResponsive() {
   if (window.innerWidth > 768) {
@@ -2262,6 +2291,7 @@ window.addEventListener('resize', checkResponsive);
 addDataBoundaryNotices();
 bindAlertFilters();
 bindKnowledgeFilters();
+bindOperationLogFilter();
 
 bindOperationDateRecords();
 updateDataContextVisibility('overview');
