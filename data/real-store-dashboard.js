@@ -1224,6 +1224,7 @@
       });
       currentData = { ...currentData, version: 2, importedAt: new Date().toISOString().slice(0, 10), stores: [...storeMap.values()] };
       await saveCurrentData();
+      window.dispatchEvent(new CustomEvent("real-data-imported"));
       selectedStore = "all";
       selectedDatePreset = "all";
       customStartDate = "";

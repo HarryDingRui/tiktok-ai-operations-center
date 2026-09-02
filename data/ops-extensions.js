@@ -376,6 +376,7 @@
       });
       extraData[datasetKey] = [...merged.values()];
       await saveExtraData();
+      window.dispatchEvent(new CustomEvent("real-data-imported"));
       renderDatasetMappingPanel();
       setStatus(`已导入 ${added} 条 · 累计 ${extraData[datasetKey].length} 条`, "success");
       window.alert(`✅ ${DATASET_SPECS[datasetKey].label}导入完成\n\n${results.map((result) => `${result.fileName}：${result.rowCount} 行`).join("\n")}\n\n${pendingMappings.length ? "有未识别的列，请到「数据接入」页顶部黄色面板指认一次。" : "字段全部自动识别。"}`);
@@ -1154,7 +1155,7 @@
     bindAssetSortChips();
   }
 
-  window.OPS_EXT = { render: renderAllExtensions };
+  window.OPS_EXT = { render: renderAllExtensions, hasImportedData: () => Boolean(extraData.creators.length || extraData.ads.length || extraData.videos.length || extraData.assets.length) };
 
   loadExtraData().then(() => {
     bindInputs();
