@@ -597,7 +597,6 @@ body {
   <div class="nav-item" onclick="showPage('knowledge', this)"><span class="nav-icon">📚</span> <span>运营知识库</span></div>
   <div class="nav-item" onclick="showPage('agents', this)"><span class="nav-icon">🤖</span> <span>Agent 调度中心</span><span class="nav-badge">2</span></div>
   <div class="nav-item" onclick="showPage('data', this)"><span class="nav-icon">⚙️</span> <span>数据接入</span></div>
-  <div class="nav-item" onclick="openOperationRecords(this)"><span class="nav-icon">🗓️</span> <span>运营执行记录</span></div>
 </div>
 
 <!-- 移动端底部导航 -->
@@ -642,13 +641,7 @@ body {
 
 </div>
 
-<div class="card" id="overview-operation-record-entry" style="margin-top:24px;margin-bottom:18px;border-left:4px solid #38bdf8;background:#fff;">
-  <div class="card-title">🗓️ 运营执行记录（按日期查询） <span>主管可直接定位具体某一天的执行动作</span></div>
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-    <div style="font-size:13px;color:#475569;line-height:1.6;">记录执行日期、店铺、商品 / 对象和具体动作，并按日期快速筛选。</div>
-    <button class="btn btn-primary" type="button" onclick="openOperationRecords()">打开日期记录与查询 →</button>
-  </div>
-</div>
+
 
 <!-- ========== 1. 经营总览 ========== -->
 <div id="page-overview" class="page active">
@@ -2228,11 +2221,6 @@ function bindOperationDateRecords() {
   form.addEventListener('submit', (event) => { event.preventDefault(); records.unshift({ date: dateInput.value, store: document.getElementById('operation-record-store').value.trim(), object: document.getElementById('operation-record-object').value.trim(), action: document.getElementById('operation-record-action').value.trim() }); localStorage.setItem(storageKey, JSON.stringify(records)); form.reset(); dateInput.value = new Date().toISOString().slice(0, 10); render(); });
   render();
 }
-function openOperationRecords(el) {
-  showPage('validation', el);
-  window.setTimeout(() => document.getElementById('operation-date-record-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
-}
-
 // 页面切换
 function showPage(pageId, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
