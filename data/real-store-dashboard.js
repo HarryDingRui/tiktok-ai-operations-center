@@ -1359,6 +1359,7 @@
         renderAll();
         updateUploadStatus("已恢复当前浏览器历史快照");
       }
+      window.dispatchEvent(new CustomEvent("real-store-ready"));
     })
     .catch((error) => {
       console.warn("Unable to restore local store data", error);

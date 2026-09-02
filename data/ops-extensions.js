@@ -1157,11 +1157,12 @@
     bindAssetSortChips();
   }
 
-  window.OPS_EXT = { render: renderAllExtensions, hasImportedData: () => Boolean(extraData.creators.length || extraData.ads.length || extraData.videos.length || extraData.assets.length) };
+  window.OPS_EXT = { render: renderAllExtensions, hasImportedData: (datasetKey) => datasetKey ? Boolean((extraData[datasetKey] || []).length) : Boolean(extraData.creators.length || extraData.ads.length || extraData.videos.length || extraData.assets.length) };
 
   loadExtraData().then(() => {
     bindInputs();
     renderAllExtensions();
+    window.dispatchEvent(new CustomEvent("real-data-ready"));
     bridge.renderPriorityPanel();
   });
 })();
