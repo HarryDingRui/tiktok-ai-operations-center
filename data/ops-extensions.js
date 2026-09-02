@@ -1157,7 +1157,7 @@
     bindAssetSortChips();
   }
 
-  window.OPS_EXT = { render: renderAllExtensions, hasImportedData: (datasetKey) => datasetKey ? Boolean((extraData[datasetKey] || []).length) : Boolean(extraData.creators.length || extraData.ads.length || extraData.videos.length || extraData.assets.length), clearDataset: async (datasetKey) => { if (!Object.prototype.hasOwnProperty.call(extraData, datasetKey)) return; extraData[datasetKey] = []; await saveExtraData(); renderAllExtensions(); bridge.renderPriorityPanel(); } };
+  window.OPS_EXT = { render: renderAllExtensions, hasImportedData: (datasetKey) => datasetKey ? Boolean((extraData[datasetKey] || []).length) : Boolean(extraData.creators.length || extraData.ads.length || extraData.videos.length || extraData.assets.length), clearDataset: async (datasetKey) => { if (!Object.prototype.hasOwnProperty.call(extraData, datasetKey)) return; extraData[datasetKey] = []; await saveExtraData(); renderAllExtensions(); bridge.renderPriorityPanel(); }, clearAll: async () => { extraData = { creators: [], ads: [], videos: [], assets: [] }; await saveExtraData(); try { indexedDB.deleteDatabase(VIDEO_DB_NAME); } catch (_) {} renderAllExtensions(); bridge.renderPriorityPanel(); } };
 
   loadExtraData().then(() => {
     bindInputs();
