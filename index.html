@@ -584,6 +584,7 @@ body {
 .real-data-empty .data-empty-shell{display:block!important;margin-top:16px;}
 .real-data-empty .data-empty-shell .card-title{color:#475569;}
 .data-empty-shell{display:none;}
+.real-data-empty .real-data-empty-page > :not(.page-header):not(.stats-row):not(.data-empty-shell):not(.real-data-empty-banner){display:none!important;}
 </style>
 </head>
 <body>
@@ -2392,7 +2393,7 @@ updateDataContextVisibility('overview');
 (function(){
   const pageIds=['overview','alert','bd','ads','videos','validation','knowledge','agents'];
   const message='\u6682\u65e0\u771f\u5b9e\u6570\u636e\uff0c\u8bf7\u5148\u5230\u201c\u6570\u636e\u63a5\u5165\u201d\u5bfc\u5165\u6570\u636e';
-  function storeReady(){const d=window.REAL_STORE_DATA;return localStorage.getItem('tiktok-real-data-state-v3')!=='cleared'&&d&&Array.isArray(d.stores)&&d.stores.some(s=>Array.isArray(s.snapshots)&&s.snapshots.length);}
+  function storeReady(){const d=window.REAL_STORE_DATA;return localStorage.getItem('tiktok-real-data-state-v4')!=='cleared'&&d&&Array.isArray(d.stores)&&d.stores.some(s=>Array.isArray(s.snapshots)&&s.snapshots.length);}
   function extReady(key){return window.OPS_EXT&&typeof window.OPS_EXT.hasImportedData==='function'&&window.OPS_EXT.hasImportedData(key);}
   function pageReady(id){return id==='overview'||id==='alert'?storeReady():id==='bd'?extReady('creators'):id==='ads'?extReady('ads'):id==='videos'?Boolean(extReady('videos')||extReady('assets')):false;}
   function emptyCard(){const el=document.createElement('div');el.className='card data-empty-shell';el.innerHTML='<div class="card-title">\u2139\ufe0f \u6570\u636e\u72b6\u6001</div><div class="alert alert-info"><span>'+message+'\u3002</span><span>\u5bfc\u5165\u540e\u6b64\u9875\u9762\u4f1a\u81ea\u52a8\u663e\u793a\u5bf9\u5e94\u6307\u6807\u3001\u660e\u7ec6\u548c\u8d8b\u52bf\u3002</span></div>';return el;}
@@ -2400,9 +2401,10 @@ updateDataContextVisibility('overview');
     pageIds.forEach(id=>{
       const page=document.getElementById('page-'+id);if(!page)return;
       const ready=pageReady(id);
+      page.classList.toggle('real-data-empty-page',!ready);
       page.querySelectorAll('[data-real-empty-hidden="1"]').forEach(n=>{if(ready)n.hidden=false;});
       const banner=page.querySelector('.real-data-empty-banner');
-      if(ready){if(banner)banner.remove();const shell=page.querySelector('.data-empty-shell');if(shell)shell.remove();return;}
+      if(ready){if(banner)banner.remove();const shell=page.querySelector('.data-empty-shell');if(shell)shell.remove();page.querySelectorAll('[data-real-empty-hidden=\"1\"]').forEach(n=>{n.hidden=false;n.removeAttribute('data-real-empty-hidden');});return;}
       document.documentElement.classList.add('real-data-empty');
       const header=page.querySelector('.page-header');
       if(header&&!header.nextElementSibling?.classList.contains('real-data-empty-banner')){const x=document.createElement('div');x.className='real-data-empty-banner alert alert-info';x.innerHTML='<span>\u2139\ufe0f</span><span><strong>'+message+'</strong>\u3002\u5bfc\u5165\u540e\u6b64\u9875\u9762\u4f1a\u81ea\u52a8\u663e\u793a\u5bf9\u5e94\u6307\u6807\u3001\u660e\u7ec6\u548c\u8d8b\u52bf\u3002</span>';header.insertAdjacentElement('afterend',x);}
@@ -2411,7 +2413,7 @@ updateDataContextVisibility('overview');
       if(!page.querySelector('.data-empty-shell'))page.appendChild(emptyCard());
     });
   }
-  if(!localStorage.getItem('tiktok-real-data-state-v3')){['tiktok-real-store-data-v1','tiktok-real-store-data-v2','tiktok-manual-entry-records'].forEach(k=>localStorage.removeItem(k));['tiktok-header-mapping-creators','tiktok-header-mapping-ads','tiktok-header-mapping-videos','tiktok-header-mapping-assets'].forEach(k=>localStorage.removeItem(k));try{indexedDB.deleteDatabase('tiktok-ai-operations-center');indexedDB.deleteDatabase('tiktok-ops-assets');}catch(_){ }localStorage.setItem('tiktok-real-data-state-v3','cleared');}
+  if(!localStorage.getItem('tiktok-real-data-state-v4')){['tiktok-real-store-data-v1','tiktok-real-store-data-v2','tiktok-manual-entry-records'].forEach(k=>localStorage.removeItem(k));['tiktok-header-mapping-creators','tiktok-header-mapping-ads','tiktok-header-mapping-videos','tiktok-header-mapping-assets'].forEach(k=>localStorage.removeItem(k));try{indexedDB.deleteDatabase('tiktok-ai-operations-center');indexedDB.deleteDatabase('tiktok-ops-assets');}catch(_){ }localStorage.setItem('tiktok-real-data-state-v4','cleared');}
   apply();
   ['real-data-ready','real-store-ready','real-data-imported'].forEach(e=>window.addEventListener(e,apply));
 })();

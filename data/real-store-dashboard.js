@@ -1224,7 +1224,7 @@
       });
       currentData = { ...currentData, version: 2, importedAt: new Date().toISOString().slice(0, 10), stores: [...storeMap.values()] };
       await saveCurrentData();
-      window.localStorage.setItem("tiktok-real-data-state-v3", "imported");
+      window.localStorage.setItem("tiktok-real-data-state-v4", "imported");
       window.dispatchEvent(new CustomEvent("real-data-imported"));
       selectedStore = "all";
       selectedDatePreset = "all";
@@ -1253,7 +1253,7 @@
     try {
       await dataReadyPromise;
       await clearIndexedData();
-      window.localStorage.setItem("tiktok-real-data-state-v3", "cleared");
+      window.localStorage.setItem("tiktok-real-data-state-v4", "cleared");
       window.localStorage.removeItem(STORAGE_KEY);
       window.localStorage.removeItem(LEGACY_STORAGE_KEY);
       currentData = normalizeData(sourceData);
