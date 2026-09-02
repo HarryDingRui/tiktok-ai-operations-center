@@ -547,6 +547,10 @@ body {
 .manual-add-btn { position:absolute; right:0; border:1px solid #bae6fd; border-radius:7px; padding:5px 9px; background:#eff6ff; color:#0369a1; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; }
 .manual-add-btn:hover { background:#dbeafe; border-color:#7dd3fc; }
 .field-manual-add { position:static; margin-left:0; display:inline-block; }
+.manual-entry-hub-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.manual-hub-btn { position:static; margin:0; min-height:40px; font-size:12px; }
+@media (max-width: 768px) { .manual-entry-hub-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
 .manual-entry-modal { position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(15,23,42,.48); }
 .manual-entry-modal.open { display:flex; }
 .manual-entry-dialog { width:min(560px,100%); max-height:90vh; overflow:auto; padding:20px; border-radius:12px; background:#fff; box-shadow:0 18px 50px rgba(15,23,42,.25); }
@@ -2093,6 +2097,12 @@ body {
       </div>
     </div>
   </div>
+  <div class="card manual-entry-hub" style="margin-top:14px;border-left:4px solid #38bdf8;">
+    <div class="card-title">✍️ 手动添加数据 <span>不上传文件也可以直接录入</span></div>
+    <div class="manual-entry-hub-grid"><button class="manual-add-btn manual-hub-btn" type="button" data-manual-type="商品 / 店铺经营数据">＋ 添加商品经营</button><button class="manual-add-btn manual-hub-btn" type="button" data-manual-type="达人合作数据">＋ 添加达人合作</button><button class="manual-add-btn manual-hub-btn" type="button" data-manual-type="广告投放数据">＋ 添加广告投放</button><button class="manual-add-btn manual-hub-btn" type="button" data-manual-type="自营短视频数据">＋ 添加自营短视频</button><button class="manual-add-btn manual-hub-btn" type="button" data-manual-type="优质达人素材库">＋ 添加优质素材</button><button class="manual-add-btn manual-hub-btn" type="button" data-manual-type="发布数量">＋ 添加发布数量</button><button class="manual-add-btn manual-hub-btn" type="button" data-manual-type="运营调整记录">＋ 添加运营动作</button><button class="manual-add-btn manual-hub-btn" type="button" data-manual-type="运营知识库数据">＋ 添加知识库</button><button class="manual-add-btn manual-hub-btn" type="button" data-manual-type="公开视频">＋ 添加公开视频</button></div>
+    <div style="margin-top:10px;font-size:12px;color:#64748b;">选择对应模块后，填写日期、对象、数值、状态和说明。手动记录仅保存在当前浏览器，不影响原有上传入口。</div>
+  </div>
+
   <div class="card" style="margin-top:14px;">
     <div class="card-title">📋 字段与来源登记 <span>Agent 执行依赖真实字段</span></div>
     <div class="desktop-table-wrap">
