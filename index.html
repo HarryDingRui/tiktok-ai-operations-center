@@ -611,7 +611,6 @@ body {
   <div class="nav-item" onclick="showPage('knowledge', this)"><span class="nav-icon">📚</span> <span>运营知识库</span></div>
   <div class="nav-item" onclick="showPage('agents', this)"><span class="nav-icon">🤖</span> <span>Agent 调度中心</span><span class="nav-badge" hidden>0</span></div>
   <div class="nav-item" onclick="showPage('data', this)"><span class="nav-icon">⚙️</span> <span>数据接入</span></div>
-  <div style="padding:12px 14px 0;"><button id="sidebar-delete-data" class="btn data-delete-btn" type="button" style="width:100%;">🗑️ 数据清理</button></div>
 </div>
 
 <!-- 移动端底部导航 -->
@@ -1966,7 +1965,6 @@ body {
   <div class="page-header">
     <div class="page-title">⚙️ 数据接入</div>
     <div class="page-subtitle">Control Plane 数据源 · Agent 执行需要真实数据支撑 · 不以推算替代缺失</div>
-    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;"><button id="delete-all-store-data-top" class="btn data-delete-btn" type="button">🗑️ 删除全部店铺数据</button><button id="delete-all-extension-data-top" class="btn data-delete-btn" type="button">🗑️ 删除全部扩展数据</button></div>
   </div>
   <div class="alert alert-info" style="margin-bottom:18px;"><span>ℹ️</span><span>文件只在本机浏览器内解析和保存，不会自动上传。正式网站部署前，需要主管确认数据源、账号权限、同步频率和敏感字段处理方式。</span></div>
   <div id="real-data-summary"></div>
@@ -2009,7 +2007,7 @@ body {
         <input id="real-store-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
           <span id="real-data-upload-status" class="tag tag-green">已加载公开快照</span>
-          <button id="delete-all-store-data" class="btn data-delete-btn" type="button">删除全部店铺数据</button><button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button>
+          <button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button><button id="delete-all-store-data" class="btn data-delete-btn" type="button">删除全部店铺数据</button>
           <a class="upload-module-link" onclick="showPage('overview', null)">查看版块 →</a>
         </div>
       </div>
@@ -2089,7 +2087,7 @@ body {
           <div class="upload-zone-desc">建议字段：日期、商品ID、维度、动作类型、动作说明、负责人</div>
         </div>
         <div class="upload-module-foot">
-          <span class="tag tag-green">本地可用</span>
+          <span class="tag tag-green">本地可用</span><button class="btn data-delete-btn" type="button" data-delete-dataset="actions" data-status-target="action-upload-status">删除动作记录</button>
           <a class="upload-module-link" onclick="showPage('validation', null)">查看版块 →</a>
         </div>
       </div>
@@ -2103,18 +2101,10 @@ body {
           <div class="upload-zone-desc">在知识库版块的"上传"页签中提交文档与知识卡片</div>
         </div>
         <div class="upload-module-foot">
-          <span class="tag tag-green">可上传</span>
+          <span class="tag tag-green">可上传</span><button class="btn data-delete-btn" type="button" data-delete-dataset="knowledge" data-status-target="knowledge-upload-status">删除知识库记录</button>
           <a class="upload-module-link" onclick="showPage('knowledge', null)">查看版块 →</a>
         </div>
       </div>
-    </div>
-  </div>
-  <div class="card" style="margin-top:14px;border-left:4px solid #ef4444;">
-    <div class="card-title">🗑️ 数据管理 <span>删除当前浏览器保存的数据，不影响页面样式与上传模板</span></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <button class="btn data-delete-btn" type="button" id="delete-manual-records">删除手动记录</button>
-      <button class="btn data-delete-btn" type="button" id="delete-local-assets">删除本地视频素材</button>
-      <span style="font-size:12px;color:#64748b;">删除前会二次确认，删除后需要重新导入。</span>
     </div>
   </div>
   <div class="card manual-entry-hub" style="margin-top:14px;border-left:4px solid #38bdf8;">
@@ -2403,9 +2393,6 @@ updateDataContextVisibility('overview');
 <script>
 (function(){
   function confirmDelete(label){return window.confirm('确认删除“'+label+'”？\n\n删除后需要重新导入，页面样式不会受到影响。');}
-  document.getElementById('sidebar-delete-data')?.addEventListener('click',()=>{showPage('data',null);document.getElementById('delete-all-store-data-top')?.scrollIntoView({behavior:'smooth',block:'center'});});
-  document.getElementById('delete-all-store-data-top')?.addEventListener('click',()=>document.getElementById('delete-all-store-data')?.click());
-  document.getElementById('delete-all-extension-data-top')?.addEventListener('click',async()=>{if(!confirmDelete('全部扩展数据'))return;if(window.OPS_EXT&&typeof window.OPS_EXT.clearAll==='function'){await window.OPS_EXT.clearAll();window.alert('全部扩展数据已删除。');}});
   document.getElementById('delete-all-store-data')?.addEventListener('click',async()=>{if(!confirmDelete('全部店铺数据'))return;if(window.OPS_BRIDGE&&typeof window.OPS_BRIDGE.clearStoreData==='function'){await window.OPS_BRIDGE.clearStoreData();window.alert('全部店铺数据已删除。');}});
   document.querySelectorAll('[data-delete-dataset]').forEach(btn=>btn.addEventListener('click',async()=>{
     const key=btn.dataset.deleteDataset;const labels={creators:'达人数据',ads:'广告数据',videos:'视频数据',assets:'素材数据'};if(!confirmDelete(labels[key]||key))return;
