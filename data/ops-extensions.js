@@ -43,6 +43,7 @@
   }
 
   async function loadExtraData() {
+    if (window.localStorage.getItem("tiktok-real-data-state-v3") === "cleared") return;
     try {
       const db = await openDb(DATABASE_NAME, DATABASE_STORE);
       const row = await new Promise((resolve, reject) => {
@@ -376,6 +377,7 @@
       });
       extraData[datasetKey] = [...merged.values()];
       await saveExtraData();
+      window.localStorage.setItem("tiktok-real-data-state-v3", "imported");
       window.dispatchEvent(new CustomEvent("real-data-imported"));
       renderDatasetMappingPanel();
       setStatus(`已导入 ${added} 条 · 累计 ${extraData[datasetKey].length} 条`, "success");
