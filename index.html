@@ -584,7 +584,7 @@ body {
 .real-data-empty .data-empty-shell{display:block!important;margin-top:16px;}
 .real-data-empty .data-empty-shell .card-title{color:#475569;}
 .data-empty-shell{display:none;}
-.real-data-empty .real-data-empty-page > :not(.page-header):not(.stats-row):not(.data-empty-shell):not(.real-data-empty-banner){display:none!important;}
+.real-empty-card-body{padding:14px;background:#f8fafc;border-radius:8px;color:#64748b;font-size:13px;line-height:1.7;}
 </style>
 </head>
 <body>
@@ -2396,26 +2396,16 @@ updateDataContextVisibility('overview');
   function storeReady(){const d=window.REAL_STORE_DATA;return localStorage.getItem('tiktok-real-data-state-v4')!=='cleared'&&d&&Array.isArray(d.stores)&&d.stores.some(s=>Array.isArray(s.snapshots)&&s.snapshots.length);}
   function extReady(key){return window.OPS_EXT&&typeof window.OPS_EXT.hasImportedData==='function'&&window.OPS_EXT.hasImportedData(key);}
   function pageReady(id){return id==='overview'||id==='alert'?storeReady():id==='bd'?extReady('creators'):id==='ads'?extReady('ads'):id==='videos'?Boolean(extReady('videos')||extReady('assets')):false;}
-  function emptyCard(){const el=document.createElement('div');el.className='card data-empty-shell';el.innerHTML='<div class="card-title">\u2139\ufe0f \u6570\u636e\u72b6\u6001</div><div class="alert alert-info"><span>'+message+'\u3002</span><span>\u5bfc\u5165\u540e\u6b64\u9875\u9762\u4f1a\u81ea\u52a8\u663e\u793a\u5bf9\u5e94\u6307\u6807\u3001\u660e\u7ec6\u548c\u8d8b\u52bf\u3002</span></div>';return el;}
-  function apply(){
-    pageIds.forEach(id=>{
-      const page=document.getElementById('page-'+id);if(!page)return;
-      const ready=pageReady(id);
-      page.classList.toggle('real-data-empty-page',!ready);
-      page.querySelectorAll('[data-real-empty-hidden="1"]').forEach(n=>{if(ready)n.hidden=false;});
-      const banner=page.querySelector('.real-data-empty-banner');
-      if(ready){if(banner)banner.remove();const shell=page.querySelector('.data-empty-shell');if(shell)shell.remove();page.querySelectorAll('[data-real-empty-hidden=\"1\"]').forEach(n=>{n.hidden=false;n.removeAttribute('data-real-empty-hidden');});return;}
-      document.documentElement.classList.add('real-data-empty');
-      const header=page.querySelector('.page-header');
-      if(header&&!header.nextElementSibling?.classList.contains('real-data-empty-banner')){const x=document.createElement('div');x.className='real-data-empty-banner alert alert-info';x.innerHTML='<span>\u2139\ufe0f</span><span><strong>'+message+'</strong>\u3002\u5bfc\u5165\u540e\u6b64\u9875\u9762\u4f1a\u81ea\u52a8\u663e\u793a\u5bf9\u5e94\u6307\u6807\u3001\u660e\u7ec6\u548c\u8d8b\u52bf\u3002</span>';header.insertAdjacentElement('afterend',x);}
-      page.querySelectorAll('.stats-row .stat-value').forEach(n=>n.textContent='0');page.querySelectorAll('.stats-row .stat-trend').forEach(n=>n.textContent='\u6682\u65e0\u771f\u5b9e\u6570\u636e');
-      [...page.children].forEach(c=>{if(!c.classList.contains('page-header')&&!c.classList.contains('real-data-empty-banner')&&!c.classList.contains('stats-row')&&!c.classList.contains('data-empty-shell')){c.hidden=true;c.setAttribute('data-real-empty-hidden','1');}});
-      if(!page.querySelector('.data-empty-shell'))page.appendChild(emptyCard());
-    });
+  function body(){const el=document.createElement('div');el.className='real-empty-card-body';el.textContent=message+'。导入后显示真实数据。';return el;}
+  function sanitize(page){
+    const dynamic=['priority-hub','overview-ranking-grid','real-data-summary','bd-daily-panel','bd-top10-panel','ads-daily-panel','ads-actions-panel','asset-library-panel','video-leaderboard-panel'];
+    page.querySelectorAll('.card').forEach(card=>{if(card.dataset.realSanitized||dynamic.some(id=>card.querySelector('#'+id))||card.querySelector('.upload-zone'))return;const title=card.querySelector(':scope > .card-title');if(!title)return;[...card.children].filter(n=>n!==title).forEach(n=>n.remove());card.appendChild(body());card.dataset.realSanitized='1';});
+    page.querySelectorAll('.kb-card,.alert-card').forEach(card=>{if(card.dataset.realSanitized)return;card.innerHTML='<div class="'+(card.classList.contains('kb-card')?'kb-title':'alert-card-title')+'">'+message+'</div><div class="real-empty-card-body">导入对应真实数据后显示。</div>';card.dataset.realSanitized='1';});
+    page.querySelectorAll('.agent-panel').forEach(panel=>{if(panel.dataset.realSanitized)return;const header=panel.querySelector('.agent-panel-header');[...panel.children].filter(n=>n!==header).forEach(n=>n.remove());panel.appendChild(body());panel.dataset.realSanitized='1';});
   }
+  function apply(){pageIds.forEach(id=>{const page=document.getElementById('page-'+id);if(!page)return;sanitize(page);const ready=pageReady(id);page.classList.toggle('real-data-empty-page',!ready);const banner=page.querySelector('.real-data-empty-banner');if(ready){if(banner)banner.remove();const shell=page.querySelector('.data-empty-shell');if(shell)shell.remove();}else{const header=page.querySelector('.page-header');if(header&&!header.nextElementSibling?.classList.contains('real-data-empty-banner')){const x=document.createElement('div');x.className='real-data-empty-banner alert alert-info';x.innerHTML='<span>\u2139\ufe0f</span><span><strong>'+message+'</strong>。导入后此板块才会显示真实内容。</span>';header.insertAdjacentElement('afterend',x);}page.querySelectorAll('.stats-row .stat-value').forEach(n=>n.textContent='0');page.querySelectorAll('.stats-row .stat-trend').forEach(n=>n.textContent='\u6682\u65e0\u771f\u5b9e\u6570\u636e');}});}
   if(!localStorage.getItem('tiktok-real-data-state-v4')){['tiktok-real-store-data-v1','tiktok-real-store-data-v2','tiktok-manual-entry-records'].forEach(k=>localStorage.removeItem(k));['tiktok-header-mapping-creators','tiktok-header-mapping-ads','tiktok-header-mapping-videos','tiktok-header-mapping-assets'].forEach(k=>localStorage.removeItem(k));try{indexedDB.deleteDatabase('tiktok-ai-operations-center');indexedDB.deleteDatabase('tiktok-ops-assets');}catch(_){ }localStorage.setItem('tiktok-real-data-state-v4','cleared');}
-  apply();
-  ['real-data-ready','real-store-ready','real-data-imported'].forEach(e=>window.addEventListener(e,apply));
+  apply();['real-data-ready','real-store-ready','real-data-imported'].forEach(e=>window.addEventListener(e,apply));
 })();
 </script>
 </body>
