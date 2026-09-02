@@ -543,7 +543,18 @@ body {
 /* ========== v3.2 统一数据接入中心 ========== */
 .upload-hub-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
 .upload-module { border:1px solid #e2e8f0; border-radius:10px; padding:14px; background:#fff; display:flex; flex-direction:column; gap:9px; }
-.upload-module-head { font-size:13px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px; }
+.upload-module-head { font-size:13px; font-weight:700; color:#0f172a; display:flex; align-items:center; justify-content:center; gap:6px; position:relative; min-height:30px; }
+.manual-add-btn { position:absolute; right:0; border:1px solid #bae6fd; border-radius:7px; padding:5px 9px; background:#eff6ff; color:#0369a1; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.manual-add-btn:hover { background:#dbeafe; border-color:#7dd3fc; }
+.manual-entry-modal { position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(15,23,42,.48); }
+.manual-entry-modal.open { display:flex; }
+.manual-entry-dialog { width:min(560px,100%); max-height:90vh; overflow:auto; padding:20px; border-radius:12px; background:#fff; box-shadow:0 18px 50px rgba(15,23,42,.25); }
+.manual-entry-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.manual-entry-grid label { color:#475569; font-size:12px; }
+.manual-entry-grid input, .manual-entry-grid select, .manual-entry-grid textarea { display:block; width:100%; margin-top:5px; padding:9px; border:1px solid #cbd5e1; border-radius:7px; background:#fff; color:#0f172a; font:inherit; }
+.manual-entry-grid textarea { min-height:72px; resize:vertical; }
+@media (max-width: 600px) { .manual-entry-grid { grid-template-columns:1fr; } }
+
 .upload-module-desc { font-size:11px; color:#64748b; line-height:1.65; }
 .upload-module-foot { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:auto; }
 .upload-module .upload-zone { margin:0; }
@@ -1971,7 +1982,7 @@ body {
     <div class="card-title">🛰️ 统一数据接入中心 <span>所有版块的数据都从这里进 · 自适应列识别 · 认不出的列指认一次永久记住</span></div>
     <div class="upload-hub-grid">
       <div class="upload-module">
-        <div class="upload-module-head">🛍️ 商品 / 店铺经营数据</div>
+        <div class="upload-module-head">🛍️ 商品 / 店铺经营数据<button class="manual-add-btn" type="button" data-manual-type="商品 / 店铺经营数据">＋ 手动添加</button></div>
         <div class="upload-module-desc">店铺后台 product_list 导出表直接传。驱动：经营总览、排行榜、数据预警、近7天趋势图。</div>
         <div class="upload-zone small" id="real-store-upload-zone" onclick="document.getElementById('real-store-file-input').click()">
           <div class="upload-zone-icon">📁</div>
@@ -1987,7 +1998,7 @@ body {
       </div>
 
       <div class="upload-module">
-        <div class="upload-module-head">🤝 达人合作数据</div>
+        <div class="upload-module-head">🤝 达人合作数据<button class="manual-add-btn" type="button" data-manual-type="达人合作数据">＋ 手动添加</button></div>
         <div class="upload-module-desc">达人团队或后台导出的合作表直接传。驱动：达人每日时间轴、近7天 TOP10、达人优先处理。</div>
         <div class="upload-zone small" onclick="document.getElementById('bd-file-input').click()">
           <div class="upload-zone-icon">📁</div>
@@ -2002,7 +2013,7 @@ body {
       </div>
 
       <div class="upload-module">
-        <div class="upload-module-head">🎯 广告投放数据</div>
+        <div class="upload-module-head">🎯 广告投放数据<button class="manual-add-btn" type="button" data-manual-type="广告投放数据">＋ 手动添加</button></div>
         <div class="upload-module-desc">广告后台导出表直接传。驱动：每日广告时间轴、智能分析·调整事项、广告优先处理。</div>
         <div class="upload-zone small" onclick="document.getElementById('ads-file-input').click()">
           <div class="upload-zone-icon">📁</div>
@@ -2017,7 +2028,7 @@ body {
       </div>
 
       <div class="upload-module">
-        <div class="upload-module-head">🎬 自营短视频数据</div>
+        <div class="upload-module-head">🎬 自营短视频数据<button class="manual-add-btn" type="button" data-manual-type="自营短视频数据">＋ 手动添加</button></div>
         <div class="upload-module-desc">TikTok Studio / Seller Center 视频明细直接传。驱动：三个排行榜、短视频优先处理。</div>
         <div class="upload-zone small" onclick="document.getElementById('videos-file-input').click()">
           <div class="upload-zone-icon">📁</div>
@@ -2032,7 +2043,7 @@ body {
       </div>
 
       <div class="upload-module">
-        <div class="upload-module-head">⭐ 优质达人素材库</div>
+        <div class="upload-module-head">⭐ 优质达人素材库<button class="manual-add-btn" type="button" data-manual-type="优质达人素材库">＋ 手动添加</button></div>
         <div class="upload-module-desc">素材数据表 + mp4 视频双通道；视频只存本机浏览器，按文件名自动关联。</div>
         <div class="upload-zone small" onclick="document.getElementById('asset-file-input').click()">
           <div class="upload-zone-icon">📊</div>
@@ -2053,7 +2064,7 @@ body {
       </div>
 
       <div class="upload-module">
-        <div class="upload-module-head">📝 运营调整记录</div>
+        <div class="upload-module-head">📝 运营调整记录<button class="manual-add-btn" type="button" data-manual-type="运营调整记录">＋ 手动添加</button></div>
         <div class="upload-module-desc">运营动作回传表。驱动：动作验证、T+1/T+3/T+7 效果追踪。</div>
         <div class="upload-zone small" onclick="alert('📁 请选择动作记录 CSV\n\n建议字段：日期、商品ID、维度、动作类型、动作说明、负责人、验证节点')">
           <div class="upload-zone-icon">📁</div>
@@ -2067,7 +2078,7 @@ body {
       </div>
 
       <div class="upload-module">
-        <div class="upload-module-head">📚 运营知识库数据</div>
+        <div class="upload-module-head">📚 运营知识库数据<button class="manual-add-btn" type="button" data-manual-type="运营知识库数据">＋ 手动添加</button></div>
         <div class="upload-module-desc">团队方法论、SOP、案例文档，用于知识沉淀与 Agent 复用。</div>
         <div class="upload-zone small" onclick="showPage('knowledge', null); const tabs = document.querySelectorAll('#page-knowledge .tab-bar .tab-btn'); if (tabs[2]) tabs[2].click();">
           <div class="upload-zone-icon">📚</div>
@@ -2132,6 +2143,25 @@ body {
 
 </div>
 
+
+<div class="manual-entry-modal" id="manual-entry-modal" role="dialog" aria-modal="true" aria-labelledby="manual-entry-title">
+  <div class="manual-entry-dialog">
+    <div class="card-title"><span id="manual-entry-title">手动添加数据</span><button id="manual-entry-close" class="btn" type="button">关闭</button></div>
+    <p id="manual-entry-hint" style="margin-bottom:14px;color:#64748b;font-size:12px;line-height:1.6;"></p>
+    <form id="manual-entry-form">
+      <div class="manual-entry-grid">
+        <label>日期<input id="manual-entry-date" type="date" required></label>
+        <label>名称 / 对象<input id="manual-entry-name" type="text" placeholder="如商品、达人、广告计划或知识标题" required></label>
+        <label>数量 / 金额<input id="manual-entry-value" type="text" placeholder="可填写数量、GMV、消耗或其他值"></label>
+        <label>状态<select id="manual-entry-status"><option>待处理</option><option>进行中</option><option>已完成</option><option>待验证</option></select></label>
+        <label style="grid-column:1 / -1;">说明 / 动作<textarea id="manual-entry-detail" placeholder="填写具体动作、备注或数据说明"></textarea></label>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;"><button id="manual-entry-cancel" class="btn" type="button">取消</button><button class="btn btn-primary" type="submit">保存手动记录</button></div>
+    </form>
+    <div id="manual-entry-result" style="margin-top:14px;"></div>
+  </div>
+</div>
+
 <script src="./data/real-store-data.js"></script>
 <script src="./data/real-store-dashboard.js?v=ops-ext-2"></script>
 <script src="./data/ops-extensions.js?v=ops-ext-2"></script>
@@ -2161,6 +2191,41 @@ function addDataBoundaryNotices() {
     notice.className = 'data-boundary-notice';
     notice.innerHTML = '<span>⚠️</span><span><strong>数据边界：</strong>' + message + ' 顶部真实店铺与日期筛选不作用于本页。</span>';
     header.insertAdjacentElement('afterend', notice);
+  });
+}
+
+function bindManualEntryButtons() {
+  const modal = document.getElementById('manual-entry-modal');
+  const form = document.getElementById('manual-entry-form');
+  const title = document.getElementById('manual-entry-title');
+  const hint = document.getElementById('manual-entry-hint');
+  const result = document.getElementById('manual-entry-result');
+  if (!modal || !form) return;
+  let activeType = '';
+  const key = 'tiktok-manual-entry-records';
+  const close = () => modal.classList.remove('open');
+  document.querySelectorAll('.manual-add-btn').forEach((button) => button.addEventListener('click', () => {
+    activeType = button.dataset.manualType || '通用数据';
+    title.textContent = '手动添加 · ' + activeType;
+    hint.textContent = '这里可以直接录入一条记录，不影响原有文件上传功能；记录仅保存在当前浏览器。';
+    document.getElementById('manual-entry-date').value = new Date().toISOString().slice(0, 10);
+    form.reset();
+    document.getElementById('manual-entry-date').value = new Date().toISOString().slice(0, 10);
+    result.innerHTML = '';
+    modal.classList.add('open');
+    document.getElementById('manual-entry-name').focus();
+  }));
+  document.getElementById('manual-entry-close')?.addEventListener('click', close);
+  document.getElementById('manual-entry-cancel')?.addEventListener('click', close);
+  modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const records = JSON.parse(localStorage.getItem(key) || '[]');
+    records.unshift({ type: activeType, date: document.getElementById('manual-entry-date').value, name: document.getElementById('manual-entry-name').value.trim(), value: document.getElementById('manual-entry-value').value.trim(), status: document.getElementById('manual-entry-status').value, detail: document.getElementById('manual-entry-detail').value.trim(), savedAt: new Date().toISOString() });
+    localStorage.setItem(key, JSON.stringify(records));
+    result.innerHTML = '<div class="alert alert-info"><span>✅</span><span>已保存 1 条“' + activeType + '”手动记录。后续可以在对应版块继续查看或导入。</span></div>';
+    form.reset();
+    document.getElementById('manual-entry-date').value = new Date().toISOString().slice(0, 10);
   });
 }
 
@@ -2289,6 +2354,7 @@ function checkResponsive() {
 }
 window.addEventListener('resize', checkResponsive);
 addDataBoundaryNotices();
+bindManualEntryButtons();
 bindAlertFilters();
 bindKnowledgeFilters();
 bindOperationLogFilter();
