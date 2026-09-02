@@ -2399,7 +2399,19 @@ updateDataContextVisibility('overview');
   function body(){const el=document.createElement('div');el.className='real-empty-card-body';el.textContent=message+'。导入后显示真实数据。';return el;}
   function sanitize(page){
     const dynamic=['priority-hub','overview-ranking-grid','real-data-summary','bd-daily-panel','bd-top10-panel','ads-daily-panel','ads-actions-panel','asset-library-panel','video-leaderboard-panel'];
-    page.querySelectorAll('.card').forEach(card=>{if(card.dataset.realSanitized||dynamic.some(id=>card.querySelector('#'+id))||card.querySelector('.upload-zone'))return;const title=card.querySelector(':scope > .card-title');if(!title)return;[...card.children].filter(n=>n!==title).forEach(n=>n.remove());card.appendChild(body());card.dataset.realSanitized='1';});
+    page.querySelectorAll('.card').forEach(card=>{
+      if(card.dataset.realSanitized||dynamic.some(id=>card.querySelector('#'+id))||card.querySelector('.upload-zone'))return;
+      const title=card.querySelector(':scope > .card-title');if(!title)return;
+      const validationTable=page.id==='page-validation'&&card.querySelector('table');
+      if(validationTable){
+        const table=card.querySelector('table');
+        const tbody=table.querySelector('tbody');
+        if(tbody){const count=table.querySelectorAll('thead th').length||7;tbody.innerHTML='<tr><td><strong class="execution-timestamp">待导入</strong></td><td colspan="'+(count-1)+'" class="real-empty-cell">暂无真实动作验证记录</td></tr>';}
+        card.querySelectorAll('.mobile-card-list').forEach(list=>{list.innerHTML='<div class="mobile-data-card"><div class="mobile-data-card-header"><span class="mobile-data-card-title">待导入</span><span class="tag tag-gray">暂无记录</span></div><div class="mobile-data-card-row"><span class="mobile-data-card-label">执行时间戳</span><span class="mobile-data-card-value">待导入</span></div></div>';});
+        card.dataset.realSanitized='1';return;
+      }
+      [...card.children].filter(n=>n!==title).forEach(n=>n.remove());card.appendChild(body());card.dataset.realSanitized='1';
+    });
     page.querySelectorAll('.kb-card,.alert-card').forEach(card=>{if(card.dataset.realSanitized)return;card.innerHTML='<div class="'+(card.classList.contains('kb-card')?'kb-title':'alert-card-title')+'">'+message+'</div><div class="real-empty-card-body">导入对应真实数据后显示。</div>';card.dataset.realSanitized='1';});
     page.querySelectorAll('.agent-panel').forEach(panel=>{if(panel.dataset.realSanitized)return;const header=panel.querySelector('.agent-panel-header');[...panel.children].filter(n=>n!==header).forEach(n=>n.remove());panel.appendChild(body());panel.dataset.realSanitized='1';});
   }
