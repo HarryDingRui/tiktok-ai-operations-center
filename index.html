@@ -585,6 +585,7 @@ body {
 .real-data-empty .data-empty-shell .card-title{color:#475569;}
 .data-empty-shell{display:none;}
 .real-empty-card-body{padding:14px;background:#f8fafc;border-radius:8px;color:#64748b;font-size:13px;line-height:1.7;}
+.data-delete-btn{color:#b91c1c;border-color:#fecaca;background:#fff7f7;font-size:12px;padding:7px 10px;white-space:nowrap;} .data-delete-btn:hover{background:#fee2e2;border-color:#fca5a5;}
 </style>
 </head>
 <body>
@@ -2006,7 +2007,7 @@ body {
         <input id="real-store-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
           <span id="real-data-upload-status" class="tag tag-green">已加载公开快照</span>
-          <button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button>
+          <button id="delete-all-store-data" class="btn data-delete-btn" type="button">删除全部店铺数据</button><button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button>
           <a class="upload-module-link" onclick="showPage('overview', null)">查看版块 →</a>
         </div>
       </div>
@@ -2021,7 +2022,7 @@ body {
         </div>
         <input id="bd-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
-          <span id="bd-upload-status" class="tag tag-yellow">待导入</span>
+          <span id="bd-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="creators" data-status-target="bd-upload-status">删除达人数据</button>
           <a class="upload-module-link" onclick="showPage('bd', null)">查看版块 →</a>
         </div>
       </div>
@@ -2036,7 +2037,7 @@ body {
         </div>
         <input id="ads-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
-          <span id="ads-upload-status" class="tag tag-yellow">待导入</span>
+          <span id="ads-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="ads" data-status-target="ads-upload-status">删除广告数据</button>
           <a class="upload-module-link" onclick="showPage('ads', null)">查看版块 →</a>
         </div>
       </div>
@@ -2051,7 +2052,7 @@ body {
         </div>
         <input id="videos-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
-          <span id="videos-upload-status" class="tag tag-yellow">待导入</span>
+          <span id="videos-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="videos" data-status-target="videos-upload-status">删除视频数据</button>
           <a class="upload-module-link" onclick="showPage('videos', null)">查看版块 →</a>
         </div>
       </div>
@@ -2072,7 +2073,7 @@ body {
         <input id="asset-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <input id="asset-video-input" type="file" accept="video/mp4,video/quicktime" multiple style="display:none;">
         <div class="upload-module-foot">
-          <span id="asset-upload-status" class="tag tag-yellow">待导入</span>
+          <span id="asset-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="assets" data-status-target="asset-upload-status">删除素材数据</button>
           <a class="upload-module-link" onclick="showPage('ads', null)">查看素材库 →</a>
         </div>
       </div>
@@ -2104,6 +2105,14 @@ body {
           <a class="upload-module-link" onclick="showPage('knowledge', null)">查看版块 →</a>
         </div>
       </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px;border-left:4px solid #ef4444;">
+    <div class="card-title">🗑️ 数据管理 <span>删除当前浏览器保存的数据，不影响页面样式与上传模板</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button class="btn data-delete-btn" type="button" id="delete-manual-records">删除手动记录</button>
+      <button class="btn data-delete-btn" type="button" id="delete-local-assets">删除本地视频素材</button>
+      <span style="font-size:12px;color:#64748b;">删除前会二次确认，删除后需要重新导入。</span>
     </div>
   </div>
   <div class="card manual-entry-hub" style="margin-top:14px;border-left:4px solid #38bdf8;">
@@ -2389,6 +2398,18 @@ bindOperationDateRecords();
 updateDataContextVisibility('overview');
 </script>
 
+<script>
+(function(){
+  function confirmDelete(label){return window.confirm('确认删除“'+label+'”？\n\n删除后需要重新导入，页面样式不会受到影响。');}
+  document.getElementById('delete-all-store-data')?.addEventListener('click',async()=>{if(!confirmDelete('全部店铺数据'))return;if(window.OPS_BRIDGE&&typeof window.OPS_BRIDGE.clearStoreData==='function'){await window.OPS_BRIDGE.clearStoreData();window.alert('全部店铺数据已删除。');}});
+  document.querySelectorAll('[data-delete-dataset]').forEach(btn=>btn.addEventListener('click',async()=>{
+    const key=btn.dataset.deleteDataset;const labels={creators:'达人数据',ads:'广告数据',videos:'视频数据',assets:'素材数据'};if(!confirmDelete(labels[key]||key))return;
+    if(window.OPS_EXT&&typeof window.OPS_EXT.clearDataset==='function'){await window.OPS_EXT.clearDataset(key);const target=document.getElementById(btn.dataset.statusTarget);if(target){target.textContent='已删除，待导入';target.className='tag tag-yellow';}window.dispatchEvent(new CustomEvent('real-data-deleted'));}
+  }));
+  document.getElementById('delete-manual-records')?.addEventListener('click',()=>{if(!confirmDelete('手动记录'))return;localStorage.removeItem('tiktok-manual-entry-records');window.alert('手动记录已删除。');});
+  document.getElementById('delete-local-assets')?.addEventListener('click',async()=>{if(!confirmDelete('本地视频素材'))return;try{indexedDB.deleteDatabase('tiktok-ops-assets');}catch(_){}window.alert('本地视频素材已删除。');});
+})();
+</script>
 <script>
 (function(){
   const pageIds=['overview','alert','bd','ads','videos','validation','knowledge','agents'];

@@ -1319,6 +1319,7 @@
     normalizeData,
     setData: (data) => { currentData = data; },
     saveCurrentData,
+    clearStoreData: async () => { await clearIndexedData(); window.localStorage.removeItem(STORAGE_KEY); window.localStorage.removeItem(LEGACY_STORAGE_KEY); currentData = normalizeData(sourceData); window.localStorage.setItem("tiktok-real-data-state-v4", "cleared"); renderAll(); },
     ensureXlsxLibrary,
     productsInScope,
     storesInScope,
