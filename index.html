@@ -550,6 +550,9 @@ body {
 .operation-log-filter { justify-content:center; }
 .operation-log-add { position:static; margin-left:0; min-height:38px; font-size:12px; }
 .operation-log-status { display:inline-flex; align-items:center; min-height:38px; }
+.operation-inline-manual { display:inline-flex; align-items:center; gap:6px; min-height:38px; font-size:12px; color:#475569; }
+.operation-inline-manual input { width:180px; padding:9px; border:1px solid #cbd5e1; border-radius:7px; background:#fff; color:#0f172a; font:inherit; }
+@media (max-width:768px) { .operation-inline-manual input { width:140px; } }
 .manual-entry-hub-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 .manual-hub-btn { position:static; margin:0; min-height:40px; font-size:12px; }
 @media (max-width: 768px) { .manual-entry-hub-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
@@ -1412,6 +1415,8 @@ body {
       <button id="operation-log-reset" class="btn" type="button" style="min-height:38px;">显示全部</button>
       <button id="operation-log-add" class="manual-add-btn operation-log-add" data-manual-type="运营执行清单" type="button">＋ 手动添加执行记录</button>
       <span id="operation-log-status" class="operation-log-status" style="font-size:12px;color:#64748b;"></span>
+      <label class="operation-inline-manual">手动输入<input id="operation-log-manual-input" type="text" placeholder="动作 / 记录" aria-label="手动输入动作或记录"></label>
+      <button id="operation-log-inline-add" class="btn btn-primary" type="button" style="min-height:38px;">添加记录</button>
     </div>
     <div class="desktop-table-wrap">
       <table class="desktop-table">
@@ -2230,6 +2235,12 @@ function bindManualEntryButtons() {
     modal.classList.add('open');
     document.getElementById('manual-entry-name').focus();
   }));
+  document.getElementById('operation-log-inline-add')?.addEventListener('click', () => {
+    const value = document.getElementById('operation-log-manual-input')?.value.trim();
+    const opener = document.getElementById('operation-log-add');
+    if (opener) opener.click();
+    if (value) { document.getElementById('manual-entry-name').value = value; document.getElementById('manual-entry-detail').value = value; }
+  });
   document.getElementById('manual-entry-close')?.addEventListener('click', close);
   document.getElementById('manual-entry-cancel')?.addEventListener('click', close);
   modal.addEventListener('click', (event) => { if (event.target === modal) close(); });
