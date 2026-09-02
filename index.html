@@ -546,6 +546,7 @@ body {
 .upload-module-head { font-size:13px; font-weight:700; color:#0f172a; display:flex; align-items:center; justify-content:center; gap:6px; position:relative; min-height:30px; }
 .manual-add-btn { position:absolute; right:0; border:1px solid #bae6fd; border-radius:7px; padding:5px 9px; background:#eff6ff; color:#0369a1; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; }
 .manual-add-btn:hover { background:#dbeafe; border-color:#7dd3fc; }
+.field-manual-add { position:static; margin-left:0; display:inline-block; }
 .manual-entry-modal { position:fixed; inset:0; z-index:500; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(15,23,42,.48); }
 .manual-entry-modal.open { display:flex; }
 .manual-entry-dialog { width:min(560px,100%); max-height:90vh; overflow:auto; padding:20px; border-radius:12px; background:#fff; box-shadow:0 18px 50px rgba(15,23,42,.25); }
@@ -2096,32 +2097,32 @@ body {
     <div class="card-title">📋 字段与来源登记 <span>Agent 执行依赖真实字段</span></div>
     <div class="desktop-table-wrap">
       <table class="desktop-table">
-        <thead><tr><th>模块</th><th>推荐来源</th><th>关键字段</th><th>Agent 依赖</th><th>当前状态</th></tr></thead>
+        <thead><tr><th>模块</th><th>推荐来源</th><th>关键字段</th><th>Agent 依赖</th><th>当前状态</th><th>手动添加</th></tr></thead>
         <tbody>
-          <tr><td><strong>商品经营</strong></td><td>TikTok Shop CSV</td><td>商品 ID、曝光、点击、成交、GMV</td><td>诊断Agent、预警Agent</td><td><span class="tag tag-yellow">待接入</span></td></tr>
-          <tr><td><strong>达人合作</strong></td><td>达人团队 / 后台导出表</td><td>日期、达人、状态、GMV、视频数</td><td>达人跟进Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td></tr>
-          <tr><td><strong>广告投放</strong></td><td>广告后台导出表</td><td>日期、计划、消耗、曝光、CTR、ROAS</td><td>调价Agent、素材Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td></tr>
-          <tr><td><strong>自营短视频</strong></td><td>TikTok Studio / Seller Center</td><td>日期、账号、视频 ID、播放量、GMV</td><td>内容Agent、排期Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td></tr>
-          <tr><td><strong>优质素材库</strong></td><td>素材数据表 + mp4 视频</td><td>达人、视频链接、GMV、ROAS、标签</td><td>素材测试Agent</td><td><span class="tag tag-yellow">可导入 · 双通道</span></td></tr>
-          <tr><td><strong>发布数量</strong></td><td>Kdocs / 运营回传表</td><td>日期、账号、商品 ID、数量</td><td>内容Agent、排期Agent</td><td><span class="tag tag-green">可导入</span></td></tr>
-          <tr><td><strong>运营动作</strong></td><td>动作记录表</td><td>日期、商品 ID、动作、验证节点</td><td>追踪Agent、沉淀Agent</td><td><span class="tag tag-green">本地可用</span></td></tr>
-          <tr><td><strong>公开视频</strong></td><td>TikTok 主页快照</td><td>视频 ID、当前播放、snapshot_time</td><td>内容Agent</td><td><span class="tag tag-gray">快照性质</span></td></tr>
+          <tr><td><strong>商品经营</strong></td><td>TikTok Shop CSV</td><td>商品 ID、曝光、点击、成交、GMV</td><td>诊断Agent、预警Agent</td><td><span class="tag tag-yellow">待接入</span></td><td><button class="manual-add-btn field-manual-add" type="button" data-manual-type="商品 / 店铺经营数据">＋ 添加</button></td></tr>
+          <tr><td><strong>达人合作</strong></td><td>达人团队 / 后台导出表</td><td>日期、达人、状态、GMV、视频数</td><td>达人跟进Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td><td><button class="manual-add-btn field-manual-add" type="button" data-manual-type="达人合作数据">＋ 添加</button></td></tr>
+          <tr><td><strong>广告投放</strong></td><td>广告后台导出表</td><td>日期、计划、消耗、曝光、CTR、ROAS</td><td>调价Agent、素材Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td><td><button class="manual-add-btn field-manual-add" type="button" data-manual-type="广告投放数据">＋ 添加</button></td></tr>
+          <tr><td><strong>自营短视频</strong></td><td>TikTok Studio / Seller Center</td><td>日期、账号、视频 ID、播放量、GMV</td><td>内容Agent、排期Agent</td><td><span class="tag tag-yellow">可导入 · 自适应列</span></td><td><button class="manual-add-btn field-manual-add" type="button" data-manual-type="自营短视频数据">＋ 添加</button></td></tr>
+          <tr><td><strong>优质素材库</strong></td><td>素材数据表 + mp4 视频</td><td>达人、视频链接、GMV、ROAS、标签</td><td>素材测试Agent</td><td><span class="tag tag-yellow">可导入 · 双通道</span></td><td><button class="manual-add-btn field-manual-add" type="button" data-manual-type="优质达人素材库">＋ 添加</button></td></tr>
+          <tr><td><strong>发布数量</strong></td><td>Kdocs / 运营回传表</td><td>日期、账号、商品 ID、数量</td><td>内容Agent、排期Agent</td><td><span class="tag tag-green">可导入</span></td><td><button class="manual-add-btn field-manual-add" type="button" data-manual-type="发布数量">＋ 添加</button></td></tr>
+          <tr><td><strong>运营动作</strong></td><td>动作记录表</td><td>日期、商品 ID、动作、验证节点</td><td>追踪Agent、沉淀Agent</td><td><span class="tag tag-green">本地可用</span></td><td><button class="manual-add-btn field-manual-add" type="button" data-manual-type="运营调整记录">＋ 添加</button></td></tr>
+          <tr><td><strong>公开视频</strong></td><td>TikTok 主页快照</td><td>视频 ID、当前播放、snapshot_time</td><td>内容Agent</td><td><span class="tag tag-gray">快照性质</span></td><td><button class="manual-add-btn field-manual-add" type="button" data-manual-type="公开视频">＋ 添加</button></td></tr>
         </tbody>
       </table>
     </div>
     <div class="mobile-card-list">
       <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">商品经营</span><span class="tag tag-yellow">待接入</span></div>
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">商品经营</span><span class="tag tag-yellow">待接入</span><button class="manual-add-btn field-manual-add" type="button" data-manual-type="商品 / 店铺经营数据">＋ 添加</button></div>
         <div class="mobile-data-card-row"><span class="mobile-data-card-label">来源</span><span class="mobile-data-card-value">TikTok Shop CSV</span></div>
         <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="mobile-data-card-value">诊断Agent、预警Agent</span></div>
       </div>
       <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">发布数量</span><span class="tag tag-green">可导入</span></div>
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">发布数量</span><span class="tag tag-green">可导入</span><button class="manual-add-btn field-manual-add" type="button" data-manual-type="发布数量">＋ 添加</button></div>
         <div class="mobile-data-card-row"><span class="mobile-data-card-label">来源</span><span class="mobile-data-card-value">Kdocs / 运营回传表</span></div>
         <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="mobile-data-card-value">内容Agent、排期Agent</span></div>
       </div>
       <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">运营动作</span><span class="tag tag-green">本地可用</span></div>
+        <div class="mobile-data-card-header"><span class="mobile-data-card-title">运营动作</span><span class="tag tag-green">本地可用</span><button class="manual-add-btn field-manual-add" type="button" data-manual-type="运营调整记录">＋ 添加</button></div>
         <div class="mobile-data-card-row"><span class="mobile-data-card-label">来源</span><span class="mobile-data-card-value">动作记录表</span></div>
         <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="mobile-data-card-value">追踪Agent、沉淀Agent</span></div>
       </div>
