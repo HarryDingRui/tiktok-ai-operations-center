@@ -549,6 +549,7 @@ body {
 .field-manual-add { position:static; margin-left:0; display:inline-block; }
 .operation-log-filter { justify-content:center; }
 .operation-log-add { position:static; margin-left:0; min-height:38px; font-size:12px; }
+.operation-log-status { display:inline-flex; align-items:center; min-height:38px; }
 .manual-entry-hub-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 .manual-hub-btn { position:static; margin:0; min-height:40px; font-size:12px; }
 @media (max-width: 768px) { .manual-entry-hub-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
@@ -1410,7 +1411,7 @@ body {
       <button id="operation-log-search" class="btn btn-primary" type="button" style="min-height:38px;">🔎 定位当天动作</button>
       <button id="operation-log-reset" class="btn" type="button" style="min-height:38px;">显示全部</button>
       <button id="operation-log-add" class="manual-add-btn operation-log-add" data-manual-type="运营执行清单" type="button">＋ 手动添加执行记录</button>
-      <span id="operation-log-status" style="font-size:12px;color:#64748b;"></span>
+      <span id="operation-log-status" class="operation-log-status" style="font-size:12px;color:#64748b;"></span>
     </div>
     <div class="desktop-table-wrap">
       <table class="desktop-table">
