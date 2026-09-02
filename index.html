@@ -473,22 +473,6 @@ body {
 @media (max-width: 480px) {
   .stats-row { grid-template-columns: 1fr 1fr; }
 }
-#operation-date-record-card {
-  margin-top: 56px !important;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-#operation-date-record-card .card-title { color: #0f172a; }
-#operation-date-record-card .card-title span { color: #64748b; }
-#operation-date-record-form { grid-template-columns: repeat(5, minmax(120px, 1fr)); }
-.operation-record-row { display:grid; grid-template-columns:120px 130px 1fr 1fr auto; gap:10px; align-items:center; padding:9px 10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:7px; font-size:12px; }
-@media (max-width: 768px) {
-  #operation-date-record-form { grid-template-columns: 1fr 1fr !important; }
-  #operation-date-record-form button { grid-column: 1 / -1; }
-  .operation-record-row { grid-template-columns: 1fr 1fr; }
-  .operation-record-row button { justify-self: start; }
-}
 
 /* ========== v3.1 新增：优先处理四版块 / 趋势图 / 时间轴 / 排行榜 / 素材库 / 字段映射 ========== */
 .priority-hub-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }
@@ -1308,27 +1292,6 @@ body {
     </div>
   </div>
 </div>
-
-  <div aria-hidden="true" style="height:24px;"></div>
-  <div class="card" id="operation-date-record-card">
-    <div class="card-title">🗓️ 运营执行日期记录 <span>记录实际执行日期，便于后续 T+1 / T+3 / T+7 追踪</span></div>
-    <form id="operation-date-record-form" style="display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;align-items:end;">
-      <label style="font-size:12px;color:#475569;">执行日期<input id="operation-record-date" type="date" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
-      <label style="font-size:12px;color:#475569;">店铺<input id="operation-record-store" type="text" placeholder="如 US-旗舰店" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
-      <label style="font-size:12px;color:#475569;">商品 / 对象<input id="operation-record-object" type="text" placeholder="如 商品 ID 100176" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
-      <label style="font-size:12px;color:#475569;">执行动作<input id="operation-record-action" type="text" placeholder="如 优化主图" required style="display:block;width:100%;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;"></label>
-      <button class="btn btn-primary" type="submit" style="min-height:38px;">＋ 保存执行日期</button>
-    </form>
-    <div class="operation-date-search" style="display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-top:16px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-      <label style="font-size:12px;color:#475569;">按具体日期定位
-        <input id="operation-record-query-date" type="date" style="display:block;width:190px;margin-top:5px;padding:9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;">
-      </label>
-      <button id="operation-record-query-btn" class="btn btn-primary" type="button" style="min-height:38px;">🔎 查询当天记录</button>
-      <button id="operation-record-clear-btn" class="btn" type="button" style="min-height:38px;">显示全部</button>
-      <span id="operation-record-query-status" style="font-size:12px;color:#64748b;"></span>
-    </div>
-    <div id="operation-date-record-list" style="margin-top:12px;"></div>
-  </div>
 
 <!-- ========== 6. 动作验证 ========== -->
 <div id="page-validation" class="page">
@@ -2192,35 +2155,6 @@ function addDataBoundaryNotices() {
   });
 }
 
-function bindOperationDateRecords() {
-  const form = document.getElementById('operation-date-record-form');
-  const list = document.getElementById('operation-date-record-list');
-  const dateInput = document.getElementById('operation-record-date');
-  const queryDate = document.getElementById('operation-record-query-date');
-  const queryBtn = document.getElementById('operation-record-query-btn');
-  const clearBtn = document.getElementById('operation-record-clear-btn');
-  const queryStatus = document.getElementById('operation-record-query-status');
-  if (!form || !list || !dateInput) return;
-  const storageKey = 'tiktok-ai-operation-date-records';
-  let records = JSON.parse(localStorage.getItem(storageKey) || '[]');
-  let activeQueryDate = '';
-  dateInput.value = new Date().toISOString().slice(0, 10);
-  const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-  const render = () => {
-    const visibleRecords = activeQueryDate ? records.filter((record) => record.date === activeQueryDate) : records;
-    if (!visibleRecords.length) {
-      list.innerHTML = '<div style="padding:12px;background:#f8fafc;border-radius:7px;color:#64748b;font-size:12px;">暂无匹配记录。请先保存执行记录，或更换查询日期。</div>';
-      return;
-    }
-    list.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + visibleRecords.map((record) => '<div class="operation-record-row"><strong style="color:#0f172a;">' + escapeHtml(record.date) + '</strong><span>' + escapeHtml(record.store) + '</span><span>' + escapeHtml(record.object) + '</span><span>' + escapeHtml(record.action) + '</span><button type="button" data-record-index="' + records.indexOf(record) + '" style="border:0;background:transparent;color:#ef4444;cursor:pointer;">删除</button></div>').join('') + '</div>';
-    list.querySelectorAll('[data-record-index]').forEach((button) => button.addEventListener('click', () => { records.splice(Number(button.dataset.recordIndex), 1); localStorage.setItem(storageKey, JSON.stringify(records)); render(); }));
-    if (queryStatus) queryStatus.textContent = activeQueryDate ? ('已定位 ' + activeQueryDate + ' · ' + visibleRecords.length + ' 条记录') : ('共 ' + records.length + ' 条记录');
-  };
-  queryBtn?.addEventListener('click', () => { activeQueryDate = queryDate?.value || ''; render(); });
-  clearBtn?.addEventListener('click', () => { activeQueryDate = ''; if (queryDate) queryDate.value = ''; render(); });
-  form.addEventListener('submit', (event) => { event.preventDefault(); records.unshift({ date: dateInput.value, store: document.getElementById('operation-record-store').value.trim(), object: document.getElementById('operation-record-object').value.trim(), action: document.getElementById('operation-record-action').value.trim() }); localStorage.setItem(storageKey, JSON.stringify(records)); form.reset(); dateInput.value = new Date().toISOString().slice(0, 10); render(); });
-  render();
-}
 // 页面切换
 function showPage(pageId, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
