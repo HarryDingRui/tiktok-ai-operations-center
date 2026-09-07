@@ -1314,6 +1314,95 @@
     return `<div class="stat-card"><div class="stat-label">${label}</div><div class="stat-value" ${color ? `style="color:${color};"` : ""}>${value}</div><div class="stat-trend">${sub || ""}</div></div>`;
   }
 
+  /* ================= GMVMax Product ID 核心分析（原生模块） ================= */
+  function renderGmvmaxProductIdPanelV33(inputRows) {
+    const panel = document.getElementById("gmvmax-product-id-panel");
+    if (!panel) return;
+    const rows = (Array.isArray(inputRows) ? inputRows : []).filter((row) => row && typeof row === "object");
+    const waiting = "待导入";
+    const money = (value, available = true) => available && Number.isFinite(Number(value)) ? fmtUsd(Number(value)) : waiting;
+    const count = (value, available = true) => available && Number.isFinite(Number(value)) ? formatCompact(Number(value)) : waiting;
+    const kpi = (label, value, color) => `<div class="gmvmax-product-kpi"><div class="gmvmax-product-kpi-label">${label}</div><div class="gmvmax-product-kpi-value ${color || ""}">${value}</div></div>`;
+    const typeOf = (row) => /video|视频|短视频|素材|creative/i.test(String(row.creativeType || "")) ? "video" : "card";
+    const structure = (title, spend, orders, gmv, color, hasRows, totalGmv) => {
+      const spendValue = hasRows ? money(spend) : waiting;
+      const orderValue = hasRows ? `${count(orders)}单` : waiting;
+      const gmvValue = hasRows ? money(gmv) : waiting;
+      const roi = hasRows && spend > 0 ? `${(gmv / spend).toFixed(2)}x` : waiting;
+      const share = hasRows && totalGmv > 0 ? `${(gmv / totalGmv * 100).toFixed(1)}%` : waiting;
+      return `<div class="gmvmax-product-structure-card"><div class="gmvmax-product-structure-title">${title}</div><div class="gmvmax-product-structure-value ${color}">${spendValue}</div><div class="gmvmax-product-structure-detail">消耗 · ${orderValue} · GMV ${gmvValue}<br>ROI <strong>${roi}</strong> · 成交占比 <strong>${share}</strong></div></div>`;
+    };
+    const emptyKpis = [
+      kpi("总消耗", waiting, "gmvmax-product-blue"), kpi("总GMV", waiting, "gmvmax-product-green"),
+      kpi("整体ROI", waiting, "gmvmax-product-green"), kpi("总订单", waiting, "gmvmax-product-orange"),
+      kpi("有消耗商品", waiting, "gmvmax-product-blue"), kpi("优质Video素材", waiting, "gmvmax-product-red"),
+      kpi("0单烧钱素材", waiting, "gmvmax-product-orange"), kpi("出单达人", waiting, "gmvmax-product-blue"),
+    ].join("");
+    if (!rows.length) {
+      panel.innerHTML = `<div class="gmvmax-view-section"><div class="gmvmax-view-section-title">一、Product ID 核心视角 <small>按商品 Product ID 聚合</small></div><div class="gmvmax-product-kpis">${emptyKpis}</div><div class="gmvmax-product-empty" style="margin-top:10px;">暂无广告数据。到「数据接入」导入 GMVMax creative data 后，这里会自动生成 Product ID 级汇总。</div></div><div class="gmvmax-view-section"><div class="gmvmax-view-section-title">二、Video vs Product card 核心结构 <small>成交来源拆分</small></div><div class="gmvmax-product-structure">${structure("Video 素材", 0, 0, 0, "gmvmax-product-blue", false, 0)}${structure("Product card 商品卡", 0, 0, 0, "gmvmax-product-green", false, 0)}</div><div class="gmvmax-product-empty">导入素材类型、订单、消耗和 GMV 字段后，自动比较 Video 素材与 Product card 商品卡的消耗、订单、GMV、ROI 和成交占比。</div></div><div class="gmvmax-view-section"><div class="gmvmax-view-section-title">三、核心发现 <small>由当前广告数据生成</small></div><div class="gmvmax-product-findings"><ol><li><span class="gmvmax-product-tag gmvmax-product-tag-yellow">等待数据</span>当前没有可分析的广告记录。</li><li><span class="gmvmax-product-tag gmvmax-product-tag-blue">导入后生成</span>系统会识别 Product ID、Video ID、达人账号和素材类型。</li><li><span class="gmvmax-product-tag gmvmax-product-tag-green">不编数据</span>缺失字段会显示“待导入”，不会使用固定测试数字。</li></ol></div></div>`;
+      return;
+    }
+    const totalSpend = rows.reduce((sum, row) => sum + (Number(row.spend) || 0), 0);
+    const totalGmv = rows.reduce((sum, row) => sum + (Number(row.revenue) || 0), 0);
+    const totalOrders = rows.reduce((sum, row) => sum + (Number(row.orders) || 0), 0);
+    const totalRoi = totalSpend > 0 ? totalGmv / totalSpend : null;
+    const videoRows = rows.filter((row) => typeOf(row) === "video");
+    const cardRows = rows.filter((row) => typeOf(row) === "card");
+    const aggregate = (list, field) => list.reduce((sum, row) => sum + (Number(row[field]) || 0), 0);
+    const videoSpend = aggregate(videoRows, "spend");
+    const cardSpend = aggregate(cardRows, "spend");
+    const videoGmv = aggregate(videoRows, "revenue");
+    const cardGmv = aggregate(cardRows, "revenue");
+    const videoOrders = aggregate(videoRows, "orders");
+    const cardOrders = aggregate(cardRows, "orders");
+    const productRows = rows.filter((row) => row.productId);
+    const productMap = new Map();
+    rows.forEach((row) => {
+      const id = String(row.productId || "未标注商品");
+      const item = productMap.get(id) || { id, spend: 0, gmv: 0, orders: 0, records: 0, zeroSpend: 0 };
+      item.spend += Number(row.spend) || 0;
+      item.gmv += Number(row.revenue) || 0;
+      item.orders += Number(row.orders) || 0;
+      item.records += 1;
+      if ((Number(row.orders) || 0) === 0 && (Number(row.spend) || 0) > 0) item.zeroSpend += Number(row.spend) || 0;
+      productMap.set(id, item);
+    });
+    const products = [...productMap.values()].sort((a, b) => b.spend - a.spend);
+    const T = getThresholds();
+    const qualityVideoRows = videoRows.filter((row) => {
+      const spend = Number(row.spend) || 0;
+      const gmv = Number(row.revenue) || 0;
+      const orders = Number(row.orders) || 0;
+      return spend >= T.qualityMinSpend && orders > 0 && spend > 0 && gmv / spend >= T.qualityRoi;
+    }).sort((a, b) => (Number(b.orders) || 0) - (Number(a.orders) || 0));
+    const qualityVideoCount = new Set(qualityVideoRows.map((row) => row.videoId).filter(Boolean)).size || qualityVideoRows.length;
+    const zeroOrderRows = rows.filter((row) => (Number(row.spend) || 0) > 0 && (Number(row.orders) || 0) === 0);
+    const creatorMap = new Map();
+    rows.filter((row) => row.account && ((Number(row.orders) || 0) > 0 || (Number(row.revenue) || 0) > 0)).forEach((row) => {
+      const name = String(row.account);
+      const item = creatorMap.get(name) || { account: name, gmv: 0, orders: 0 };
+      item.gmv += Number(row.revenue) || 0;
+      item.orders += Number(row.orders) || 0;
+      creatorMap.set(name, item);
+    });
+    const creators = [...creatorMap.values()].sort((a, b) => b.gmv - a.gmv);
+    const productSummary = products.slice(0, 10).map((item, index) => `<tr><td>${index + 1}</td><td class="l"><strong>${escapeHtml(item.id)}</strong></td><td>${money(item.spend)}</td><td>${count(item.orders)}</td><td>${money(item.gmv)}</td><td>${item.spend > 0 ? `${(item.gmv / item.spend).toFixed(2)}x` : waiting}</td><td>${item.records}</td></tr>`).join("");
+    const rankRows = (items, title, value) => `<div class="gmvmax-product-rank"><div class="gmvmax-product-rank-title">${title}</div>${items.length ? items.slice(0, 5).map((item, index) => `<div class="gmvmax-product-rank-row"><span class="gmvmax-product-rank-name">${index + 1}. ${escapeHtml(String(item.label))}</span><span class="gmvmax-product-rank-value">${value(item)}</span></div>`).join("") : `<div class="gmvmax-product-empty">暂无可展示记录</div>`}</div>`;
+    const findings = [];
+    const bestProduct = products.find((item) => item.gmv > 0) || products[0];
+    if (bestProduct) findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-green">Product ID</span>${escapeHtml(bestProduct.id)} 当前消耗 ${money(bestProduct.spend)}、GMV ${money(bestProduct.gmv)}，ROI ${bestProduct.spend > 0 ? `${(bestProduct.gmv / bestProduct.spend).toFixed(2)}x` : waiting}。</li>`);
+    if (videoGmv + cardGmv > 0) {
+      const leader = videoGmv >= cardGmv ? "Video 素材" : "Product card 商品卡";
+      findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-blue">结构</span>${leader}贡献的 GMV 更高；Video ${money(videoGmv)}，商品卡 ${money(cardGmv)}，可据此安排素材与商品卡的预算复核。</li>`);
+    }
+    if (zeroOrderRows.length) findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-red">止损</span>发现 ${zeroOrderRows.length} 条有消耗 0 单记录，累计消耗 ${money(aggregate(zeroOrderRows, "spend"))}，建议优先核查。</li>`);
+    if (!productRows.length) findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-yellow">字段提示</span>当前广告记录没有可识别的 Product ID，商品级分析暂时只能显示未标注商品。</li>`);
+    if (!findings.length) findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-yellow">字段提示</span>已导入广告记录，但暂未形成可解释的 Product ID、素材或成交结论。</li>`);
+    const qualityItems = qualityVideoRows.map((row) => ({ label: row.videoId || row.title || row.productId || "未标注素材", orders: Number(row.orders) || 0 }));
+    const burnItems = products.filter((item) => item.zeroSpend > 0).map((item) => ({ label: item.id, spend: item.zeroSpend }));
+    const creatorItems = creators.map((item) => ({ label: item.account, gmv: item.gmv }));
+    panel.innerHTML = `<div class="gmvmax-view-section"><div class="gmvmax-view-section-title">一、Product ID 核心视角 <small>按商品 Product ID 聚合 · 已导入广告数据</small></div><div class="gmvmax-product-kpis">${kpi("总消耗", money(totalSpend), "gmvmax-product-blue")}${kpi("总GMV", money(totalGmv), "gmvmax-product-green")}${kpi("整体ROI", totalRoi != null ? `${totalRoi.toFixed(2)}x` : waiting, "gmvmax-product-green")}${kpi("总订单", count(totalOrders), "gmvmax-product-orange")}${kpi("有消耗商品", `${new Set(productRows.map((row) => row.productId).filter(Boolean)).size}个`, "gmvmax-product-blue")}${kpi("优质Video素材", `${qualityVideoCount}条`, "gmvmax-product-red")}${kpi("0单烧钱素材", `${zeroOrderRows.length}条`, "gmvmax-product-orange")}${kpi("出单达人", `${creators.length}个`, "gmvmax-product-blue")}</div><div class="gmvmax-product-table"><div class="gmvmax-product-table-title">Product ID 级汇总 <span class="gmvmax-product-table-note">按消耗降序 · 展示前10条</span></div><div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>#</th><th>Product ID</th><th>消耗</th><th>订单</th><th>GMV</th><th>ROI</th><th>记录数</th></tr></thead><tbody>${productSummary || `<tr><td colspan="7" class="real-empty-cell">暂无可识别的 Product ID</td></tr>`}</tbody></table></div></div></div><div class="gmvmax-view-section"><div class="gmvmax-view-section-title">二、Video vs Product card 核心结构 <small>成交来源拆分</small></div><div class="gmvmax-product-structure">${structure("Video 素材", videoSpend, videoOrders, videoGmv, "gmvmax-product-blue", videoRows.length > 0, totalGmv)}${structure("Product card 商品卡", cardSpend, cardOrders, cardGmv, "gmvmax-product-green", cardRows.length > 0, totalGmv)}</div><div class="gmvmax-product-ranks">${rankRows(qualityItems, "① 优质Video素材", (item) => `${count(item.orders)}单`)}${rankRows(burnItems, "② 0单烧钱排行", (item) => money(item.spend))}${rankRows(creatorItems, "③ 达人成交排行", (item) => money(item.gmv))}</div></div><div class="gmvmax-view-section"><div class="gmvmax-view-section-title">三、核心发现 <small>由当前广告数据生成</small></div><div class="gmvmax-product-findings"><ol>${findings.join("")}</ol></div></div>`;
+  }
   /* ================= 渲染：广告页 ================= */
   function renderAdsPageV33() {
     const kpiEl = document.getElementById("ads-kpi-row");
@@ -1321,7 +1410,8 @@
     const seqEl = document.getElementById("ads-action-seq-panel");
     const healthEl = document.getElementById("ads-product-health-panel");
     const boardsEl = document.getElementById("ads-creative-boards");
-    if (!kpiEl && !lifeEl && !boardsEl) return;
+    const gmvmaxEl = document.getElementById("gmvmax-product-id-panel");
+    if (!kpiEl && !lifeEl && !boardsEl && !gmvmaxEl) return;
     if (!v33.adCreatives.length) {
       const guide = emptyBlock(`<b>广告数据待导入。</b>到「数据接入」页上传 GMVMax creative data 导出表（原样直传，系统自动滤掉零消耗素材池行）。导入后这里出现：计划生命周期、素材四分层、商品健康表、今日动作清单。`);
       if (kpiEl) kpiEl.innerHTML = "";
@@ -1329,8 +1419,10 @@
       if (seqEl) seqEl.innerHTML = "";
       if (healthEl) healthEl.innerHTML = "";
       if (boardsEl) boardsEl.innerHTML = "";
+      if (gmvmaxEl) renderGmvmaxProductIdPanelV33([]);
       return;
     }
+    if (gmvmaxEl) renderGmvmaxProductIdPanelV33(v33.adCreatives);
     const T = getThresholds();
     const latest = latestAdsDate();
     const rows = rowsOnDate("adCreatives", latest);
