@@ -801,6 +801,7 @@
     { key: "creator", icon: "🤝", label: "达人" },
     { key: "ads", icon: "🎯", label: "广告" },
     { key: "video", icon: "🎬", label: "短视频" },
+    { key: "profit", icon: "💰", label: "利润" },
   ];
   let activePriorityCategory = "product";
 
@@ -1216,6 +1217,7 @@
       }
       const storeMap = new Map(currentData.stores.map((store) => [store.name, normalizeStore(store)]));
       importedSnapshots.forEach((snapshot) => {
+        snapshot.imported = true;
         const storeName = snapshot.inferredStore;
         const store = storeMap.get(storeName) || { name: storeName, snapshots: [] };
         store.snapshots = [...store.snapshots.filter((item) => item.reportDate !== snapshot.reportDate), snapshot]

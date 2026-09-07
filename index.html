@@ -606,7 +606,8 @@ body {
   <div class="nav-item" onclick="showPage('alert', this)"><span class="nav-icon">🚨</span> <span>商品数据预警</span><span class="nav-badge" hidden>0</span></div>
   <div class="nav-item" onclick="showPage('bd', this)"><span class="nav-icon">🤝</span> <span>BD / 达人</span></div>
   <div class="nav-item" onclick="showPage('ads', this)"><span class="nav-icon">🎯</span> <span>广告投放</span></div>
-  <div class="nav-item" onclick="showPage('videos', this)"><span class="nav-icon">🎬</span> <span>自营短视频</span></div>
+  <div class="nav-item" onclick="showPage('videos', this)"><span class="nav-icon">🎬</span> <span>视频</span></div>
+  <div class="nav-item" onclick="showPage('profit', this)"><span class="nav-icon">💰</span> <span>价格利润</span></div>
   <div class="nav-item" onclick="showPage('validation', this)"><span class="nav-icon">✅</span> <span>动作验证</span></div>
   <div class="nav-item" onclick="showPage('knowledge', this)"><span class="nav-icon">📚</span> <span>运营知识库</span></div>
   <div class="nav-item" onclick="showPage('agents', this)"><span class="nav-icon">🤖</span> <span>Agent 调度中心</span><span class="nav-badge" hidden>0</span></div>
@@ -699,14 +700,10 @@ body {
       </div>
     </div>
     <div class="card">
-      <div class="card-title">📈 成交来源占比 <span>全部店铺 · 成交订单</span></div>
-      <div style="display:flex;flex-direction:column;gap:12px;padding-top:6px;">
-        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;"><span>🎬 短视频</span><span style="font-weight:700;">待导入</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:#38bdf8;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;"><span>📺 直播</span><span style="font-weight:700;">待导入</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:#8b5cf6;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;"><span>🛒 商品卡</span><span style="font-weight:700;">待导入</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:#10b981;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;"><span>📦 其他</span><span style="font-weight:700;">待导入</span></div><div class="progress-bar"><div class="progress-fill" style="width:0%;background:#94a3b8;"></div></div></div>
+      <div class="card-title">📈 成交来源占比 <span>联盟口径 · 达人订单驱动</span></div>
+      <div id="source-split-panel">
+        <div class="ops-empty">导入达人订单后，这里展示 视频 / 直播 / 商品卡 成交占比。</div>
       </div>
-      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:#64748b;">成交占比需要店铺后台字段支持；无字段时保持"待导入"。</div>
     </div>
   </div>
 
@@ -849,6 +846,16 @@ body {
 
   <div id="product-trend-panel" style="display:none;"></div>
 
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-title">🧭 商品四象限 <span>曝光 × 转化 中位数分割 · 高曝高转加码 / 高曝低转优化承接 / 低曝高转加流量 / 双低收缩</span></div>
+    <div id="product-quadrant-panel"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-title">🔬 交叉诊断 <span>商品 ID 主轴 · 异常自动跨模块取证（商品/广告/视频/达人）· 相关性 ≠ 因果</span></div>
+    <div id="cross-diagnosis-panel"></div>
+  </div>
+
   <div class="alert-grid">
     <div class="alert-card high">
       <div class="alert-card-header">
@@ -958,7 +965,7 @@ body {
 <div id="page-bd" class="page">
   <div class="page-header">
     <div class="page-title">🤝 BD / 达人</div>
-    <div class="page-subtitle">达人合作流程样例 · 尚未接入真实达人表与交付记录</div>
+    <div class="page-subtitle">每日三清单管流动 · 动销达人数是北极星 · 数据来自联盟后台按天导出</div>
   </div>
 
   <div class="agent-grid" style="margin-bottom: 16px;">
@@ -980,114 +987,38 @@ body {
     </div>
   </div>
 
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-label">合作中达人</div><div class="stat-value">28</div><div class="stat-trend">来源：达人表</div></div>
-    <div class="stat-card"><div class="stat-label">待跟进</div><div class="stat-value" style="color:#f59e0b;">6</div><div class="stat-trend">需要今日处理</div></div>
-    <div class="stat-card"><div class="stat-label">本周交付视频</div><div class="stat-value">43</div><div class="stat-trend">完成率 78%</div></div>
-    <div class="stat-card"><div class="stat-label">合作 GMV</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">没有后台字段不推算</div></div>
+  <div class="stats-row" id="bd-kpi-row"></div>
+
+  <div class="card">
+    <div class="card-title">📋 每日三清单 <span>新增动销 → 当天建联锁定向 · 流失预警 → 查原因唤醒 · 连续动销 → 维护</span></div>
+    <div id="bd-lists-panel"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">🗓️ 达人每日情况 <span>时间轴自定义查看 · 真实达人合作表驱动</span></div>
-    <div class="ops-timeline" id="bd-timeline">
-      <span class="tl-label">时间轴</span>
-      <button class="ops-chip active" data-bd-range="7">近7天</button>
-      <button class="ops-chip" data-bd-range="14">近14天</button>
-      <button class="ops-chip" data-bd-range="all">全部</button>
-      <button class="ops-chip" data-bd-range="custom">自定义</button>
-      <input type="date" id="bd-date-start" aria-label="达人统计开始日期">
-      <span style="font-size:12px;color:#94a3b8;">至</span>
-      <input type="date" id="bd-date-end" aria-label="达人统计结束日期">
-    </div>
-    <div id="bd-daily-panel"></div>
+    <div class="card-title">📈 动销达人数趋势 <span>BD 北极星指标 · 定向合作 GMV 占比看质量</span></div>
+    <div id="bd-trend-panel"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">🏆 近7天 TOP10 达人 <span>跟随上方时间轴范围 · 默认按合作 GMV 排序</span></div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-      <button class="ops-chip active" data-bd-sort="gmv">按 GMV</button>
-      <button class="ops-chip" data-bd-sort="videos">按交付视频数</button>
-      <button class="ops-chip" data-bd-sort="views">按播放量</button>
-    </div>
-    <div id="bd-top10-panel"></div>
+    <div class="card-title">📦 SKU 寄样台账 <span>Seller SKU 当日 / 累计寄样数 · 样品订单驱动</span></div>
+    <div id="bd-ledger-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🧾 联盟订单明细 <span>订单级下钻 · 佣金 · 内容形式归因</span></div>
+    <div id="bd-orders-panel"></div>
   </div>
 
   <div class="card" style="border-left:4px solid #38bdf8;">
-    <div style="font-size:12px;color:#475569;line-height:1.7;">📤 达人合作表已统一到 <a class="upload-module-link" onclick="showPage('data', null)">「数据接入」页 · 达人合作数据入口</a> 上传，列名差异自动识别。</div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📋 今日 BD 待办 <span>Agent 已扫描 · 点击调用Agent执行</span></div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <div style="padding:12px;background:#fef3c7;border-radius:8px;border-left:3px solid #f59e0b;display:flex;align-items:center;gap:12px;">
-        <div style="width:28px;height:28px;background:#f59e0b;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">1</div>
-        <div style="flex:1;"><div style="font-weight:600;color:#92400e;">跟进达人 @lina_home</div><div style="font-size:12px;color:#a16207;">已寄样 5 天，尚未回传视频；确认收货和发布时间。</div></div>
-        <span class="tag tag-yellow">今日</span>
-        <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 达人跟进Agent 已接单\n\n达人：@lina_home\n动作：生成跟进话术 → 发送消息 → 记录到系统')">▶ Agent</span>
-      </div>
-      <div style="padding:12px;background:#fef3c7;border-radius:8px;border-left:3px solid #f59e0b;display:flex;align-items:center;gap:12px;">
-        <div style="width:28px;height:28px;background:#f59e0b;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">2</div>
-        <div style="flex:1;"><div style="font-weight:600;color:#92400e;">复核 @momo_deals 的视频挂车</div><div style="font-size:12px;color:#a16207;">视频已交付，商品 ID 100176 链接需要确认。</div></div>
-        <span class="tag tag-yellow">今日</span>
-        <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 内容审核Agent 已接单\n\n视频：@momo_deals 交付\n动作：检查挂车链接 → 确认商品ID → 记录审核结果')">▶ Agent</span>
-      </div>
-      <div style="padding:12px;background:#fef3c7;border-radius:8px;border-left:3px solid #f59e0b;display:flex;align-items:center;gap:12px;">
-        <div style="width:28px;height:28px;background:#f59e0b;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">3</div>
-        <div style="flex:1;"><div style="font-weight:600;color:#92400e;">重新激活低响应合作</div><div style="font-size:12px;color:#a16207;">连续两次未回复，按团队 SOP 做一次最后跟进。</div></div>
-        <span class="tag tag-yellow">今日</span>
-        <span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 达人跟进Agent 已接单\n\n动作：生成最后跟进话术 → 发送 → 标记为"最后跟进"')">▶ Agent</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="two-col">
-    <div class="card">
-      <div class="card-title">📊 合作状态 <span>演示数据</span></div>
-      <div class="desktop-table-wrap">
-        <table class="desktop-table">
-          <thead><tr><th>状态</th><th>达人数</th><th>占比</th></tr></thead>
-          <tbody>
-            <tr><td><span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;margin-right:6px;"></span>正常交付</td><td>22</td><td><strong>78%</strong></td></tr>
-            <tr><td><span style="display:inline-block;width:8px;height:8px;background:#f59e0b;border-radius:50%;margin-right:6px;"></span>待跟进</td><td>4</td><td><strong>14%</strong></td></tr>
-            <tr><td><span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-right:6px;"></span>异常</td><td>2</td><td><strong>8%</strong></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="mobile-card-list">
-        <div class="mobile-data-card">
-          <div class="mobile-data-card-row"><span class="mobile-data-card-label">状态</span><span class="mobile-data-card-value" style="color:#10b981;">● 正常交付</span></div>
-          <div class="mobile-data-card-row"><span class="mobile-data-card-label">达人数</span><span class="mobile-data-card-value">22</span></div>
-          <div class="mobile-data-card-row"><span class="mobile-data-card-label">占比</span><span class="mobile-data-card-value">78%</span></div>
-        </div>
-        <div class="mobile-data-card">
-          <div class="mobile-data-card-row"><span class="mobile-data-card-label">状态</span><span class="mobile-data-card-value" style="color:#f59e0b;">● 待跟进</span></div>
-          <div class="mobile-data-card-row"><span class="mobile-data-card-label">达人数</span><span class="mobile-data-card-value">4</span></div>
-          <div class="mobile-data-card-row"><span class="mobile-data-card-label">占比</span><span class="mobile-data-card-value">14%</span></div>
-        </div>
-        <div class="mobile-data-card">
-          <div class="mobile-data-card-row"><span class="mobile-data-card-label">状态</span><span class="mobile-data-card-value" style="color:#ef4444;">● 异常</span></div>
-          <div class="mobile-data-card-row"><span class="mobile-data-card-label">达人数</span><span class="mobile-data-card-value">2</span></div>
-          <div class="mobile-data-card-row"><span class="mobile-data-card-label">占比</span><span class="mobile-data-card-value">8%</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">🎯 履约率趋势</div>
-      <div style="display:flex;align-items:flex-end;gap:8px;height:140px;padding:10px 0;">
-        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;">72%</div><div style="height:90px;background:#e2e8f0;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">W1</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;">75%</div><div style="height:100px;background:#e2e8f0;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">W2</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;">74%</div><div style="height:96px;background:#e2e8f0;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">W3</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:11px;font-weight:600;margin-bottom:4px;color:#0f172a;">78%</div><div style="height:115px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:4px 4px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:600;">本周</div></div>
-      </div>
-    </div>
+    <div style="font-size:12px;color:#475569;line-height:1.7;">📤 达人订单 / 联盟订单 / 样品订单统一到 <a class="upload-module-link" onclick="showPage('data', null)">「数据接入」页</a> 上传，列名差异自动识别，同日重复上传自动覆盖、不双计。</div>
   </div>
 </div>
 
 <!-- ========== 4. 广告投放 ========== -->
 <div id="page-ads" class="page">
   <div class="page-header">
-    <div class="page-title">🎯 广告投放</div>
-    <div class="page-subtitle">广告投放流程样例 · 尚未接入真实广告计划和归因数据</div>
+    <div class="page-title">🎯 广告投放（GMVMax）</div>
+    <div class="page-subtitle">计划是消耗品，素材是资产 · 动作序列化：止血 → 重建 → 放量 · creative data 按天导入</div>
   </div>
 
   <div class="agent-grid" style="margin-bottom: 16px;">
@@ -1109,95 +1040,39 @@ body {
     </div>
   </div>
 
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-label">广告消耗</div><div class="stat-value">¥18,640</div><div class="stat-trend trend-up">↑ 6.2%</div></div>
-    <div class="stat-card"><div class="stat-label">广告曝光</div><div class="stat-value">486,200</div><div class="stat-trend trend-up">↑ 14.7%</div></div>
-    <div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">需 GMV 归因</div></div>
-    <div class="stat-card"><div class="stat-label">运行中计划</div><div class="stat-value">3</div><div class="stat-trend">1 个需观察</div></div>
+  <div class="stats-row" id="ads-kpi-row" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));"></div>
+
+  <div class="card">
+    <div class="card-title">🧭 计划生命周期 <span>新计划观察期不动 · 老计划消耗&amp;ROI 连降预警/关停 · 命名规范自动解析</span></div>
+    <div id="ads-lifecycle-panel"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">🗓️ 每日广告 <span>时间轴自定义查看 · 真实广告数据驱动</span></div>
-    <div class="ops-timeline" id="ads-timeline">
-      <span class="tl-label">时间轴</span>
-      <button class="ops-chip active" data-ads-range="7">近7天</button>
-      <button class="ops-chip" data-ads-range="14">近14天</button>
-      <button class="ops-chip" data-ads-range="all">全部</button>
-      <button class="ops-chip" data-ads-range="custom">自定义</button>
-      <input type="date" id="ads-date-start" aria-label="广告统计开始日期">
-      <span style="font-size:12px;color:#94a3b8;">至</span>
-      <input type="date" id="ads-date-end" aria-label="广告统计结束日期">
-    </div>
-    <div id="ads-daily-panel"></div>
+    <div class="card-title">🎬 今日动作清单 <span>序列化执行：先止血 → 再重建 → 后放量 · 宁少勿多</span></div>
+    <div id="ads-action-seq-panel"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">🤖 广告智能分析 · 调整事项 <span>按规则从真实广告数据生成 · 缺字段不硬算</span></div>
-    <div id="ads-actions-panel"></div>
+    <div class="card-title">🛍️ 商品健康表 <span>按消耗降序 · 0单烧钱占比 · Video / 商品卡结构</span></div>
+    <div id="ads-product-health-panel"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">⭐ 广告优质达人素材库 <span>上传统一在「数据接入」页 · 仅保存在本机浏览器</span></div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
-      <span class="tl-label">排序</span>
-      <button class="ops-chip active" data-asset-sort="roas">按 ROAS</button>
-      <button class="ops-chip" data-asset-sort="gmv">按 GMV</button>
-      <button class="ops-chip" data-asset-sort="views">按播放量</button>
-      <a class="upload-module-link" style="margin-left:auto;" onclick="showPage('data', null)">📤 去「数据接入」上传素材 →</a>
-    </div>
+    <div class="card-title">🏆 素材双榜 + 广告优质达人 <span>优质榜 / 烧钱榜 · 达人榜供 BD 建联</span></div>
+    <div id="ads-creative-boards"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⭐ 广告优质素材库 <span>自动入库 · 以商品 ID 为核心 · 一键复制活跃素材 ID 粘贴进 GMVMax 手动计划</span></div>
     <div id="asset-library-panel"></div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📋 广告计划 <span>计划 → 商品 ID → 产出 · 点击调用Agent优化</span></div>
-    <div class="desktop-table-wrap">
-      <table class="desktop-table">
-        <thead><tr><th>计划 ID</th><th>广告组</th><th>商品 ID</th><th>花费</th><th>曝光</th><th>CTR</th><th>CVR</th><th>状态</th><th>Agent</th></tr></thead>
-        <tbody>
-          <tr><td><strong>AD-24081</strong></td><td>US_Top_Summer</td><td>100176</td><td style="font-weight:600;">¥8,420</td><td>221,400</td><td>2.8%</td><td><span style="color:#94a3b8;">待导入</span></td><td><span class="tag tag-green">运行中</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n\n计划：AD-24081\n结论：表现正常，建议保持当前预算')">分析</span></td></tr>
-          <tr><td><strong>AD-24076</strong></td><td>US_Test_A</td><td>100238</td><td style="font-weight:600;">¥5,180</td><td>140,600</td><td>1.6%</td><td><span style="color:#94a3b8;">待导入</span></td><td><span class="tag tag-yellow">需观察</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n\n计划：AD-24076\n结论：CTR 1.6% 偏低，建议：\n1. 缩减预算 50%\n2. 复制新建 2 组测试不同素材\n3. 原素材更换首图')">优化</span></td></tr>
-          <tr><td><strong>AD-24069</strong></td><td>TH_Retarget</td><td>100091</td><td style="font-weight:600;">¥5,040</td><td>124,200</td><td>3.1%</td><td><span style="color:#94a3b8;">待导入</span></td><td><span class="tag tag-blue">待归因</span></td><td><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 归因分析Agent 分析中...\n\n计划：AD-24069\n任务：建立商品级 GMV 归因...\n状态：需要导入归因字段')">归因</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="mobile-card-list">
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">AD-24081</span><span class="tag tag-green">运行中</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">广告组</span><span class="mobile-data-card-value">US_Top_Summer</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品 ID</span><span class="mobile-data-card-value">100176</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">花费</span><span class="mobile-data-card-value" style="font-weight:600;">¥8,420</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">221,400</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">CTR</span><span class="mobile-data-card-value">2.8%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n计划：AD-24081\n结论：表现正常，建议保持当前预算')">分析</span></div>
-      </div>
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">AD-24076</span><span class="tag tag-yellow">需观察</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">广告组</span><span class="mobile-data-card-value">US_Test_A</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品 ID</span><span class="mobile-data-card-value">100238</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">花费</span><span class="mobile-data-card-value" style="font-weight:600;">¥5,180</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">140,600</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">CTR</span><span class="mobile-data-card-value">1.6%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 智能调价Agent 分析中...\n计划：AD-24076\n结论：CTR 偏低，建议缩减预算+复制测试')">优化</span></div>
-      </div>
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">AD-24069</span><span class="tag tag-blue">待归因</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">广告组</span><span class="mobile-data-card-value">TH_Retarget</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">商品 ID</span><span class="mobile-data-card-value">100091</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">花费</span><span class="mobile-data-card-value" style="font-weight:600;">¥5,040</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">124,200</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">CTR</span><span class="mobile-data-card-value">3.1%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">Agent</span><span class="tag tag-dark" style="cursor:pointer;" onclick="alert('🤖 归因分析Agent 分析中...\n计划：AD-24069\n状态：需要导入归因字段')">归因</span></div>
-      </div>
-    </div>
-    <div style="margin-top:10px;font-size:12px;color:#64748b;">CVR 与 ROAS 需要商品级 GMV 归因字段支持；缺少字段时显示"待导入"，不以 0 代替未知。</div>
   </div>
 </div>
 
 <!-- ========== 5. 自营短视频（合并商品与发布） ========== -->
 <div id="page-videos" class="page">
   <div class="page-header">
-    <div class="page-title">🎬 自营短视频 + 商品发布</div>
-    <div class="page-subtitle">内容发布流程样例 · 尚未接入真实发布记录与视频归因数据</div>
+    <div class="page-title">🎬 视频</div>
+    <div class="page-subtitle">出单视频榜 + 广告联动 · 自营账号 GMV 从联盟视频订单按 Video ID 归因</div>
   </div>
 
   <div class="agent-grid" style="margin-bottom: 16px;">
@@ -1219,101 +1094,55 @@ body {
     </div>
   </div>
 
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-label">今日自营发布</div><div class="stat-value">32</div><div class="stat-trend">全部店铺</div></div>
-    <div class="stat-card"><div class="stat-label">有发布记录商品</div><div class="stat-value">11</div><div class="stat-trend">当前窗口</div></div>
-    <div class="stat-card"><div class="stat-label">近7天播放</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">后台历史字段缺失</div></div>
-    <div class="stat-card"><div class="stat-label">近7天内容GMV</div><div class="stat-value" style="color:#94a3b8;font-size:20px;">待导入</div><div class="stat-trend">需商品归因</div></div>
+  <div class="stats-row" id="videos-kpi-row"></div>
+
+  <div class="card">
+    <div class="card-title">🏆 出单视频榜 <span>联盟全部视频订单驱动 · GMV / GPM 双序</span></div>
+    <div id="video-gmv-board"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">🏆 自营账号 / 视频排行榜 <span>时间轴自定义选时间 · 真实视频数据驱动</span></div>
-    <div class="ops-timeline" id="videos-timeline">
-      <span class="tl-label">时间轴</span>
-      <button class="ops-chip active" data-videos-range="7">近7天</button>
-      <button class="ops-chip" data-videos-range="14">近14天</button>
-      <button class="ops-chip" data-videos-range="all">全部</button>
-      <button class="ops-chip" data-videos-range="custom">自定义</button>
-      <input type="date" id="videos-date-start" aria-label="视频统计开始日期">
-      <span style="font-size:12px;color:#94a3b8;">至</span>
-      <input type="date" id="videos-date-end" aria-label="视频统计结束日期">
-    </div>
-    <div id="video-leaderboard-panel"></div>
+    <div class="card-title">🔗 出单但未被广告利用 <span>拿去投 GMVMax · 与广告 creative data 按 Video ID 联动</span></div>
+    <div id="video-ads-gap-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📱 自营账号明细 <span>前台数据 + 联盟订单拼接归因 GMV · 无归因 = 真 0</span></div>
+    <div id="self-video-panel"></div>
   </div>
 
   <div class="card" style="border-left:4px solid #38bdf8;">
-    <div style="font-size:12px;color:#475569;line-height:1.7;">📤 视频数据表已统一到 <a class="upload-module-link" onclick="showPage('data', null)">「数据接入」页 · 自营短视频数据入口</a> 上传，TikTok Studio / Seller Center 导出直接传。</div>
+    <div style="font-size:12px;color:#475569;line-height:1.7;">📤 联盟视频（全部视频订单）与自营账号数据统一到 <a class="upload-module-link" onclick="showPage('data', null)">「数据接入」页</a> 上传。完播率只用于"选"素材，不用于"改"——达人素材内容不可干预。</div>
+  </div>
+</div>
+
+<!-- ========== 5.5 价格利润（成交价扫码 + 亏损预警） ========== -->
+<div id="page-profit" class="page">
+  <div class="page-header">
+    <div class="page-title">💰 价格利润</div>
+    <div class="page-subtitle">成交价扫码 · 亏损订单立即预警 · 价格利润核算表 + 每日订单明细双驱动</div>
+  </div>
+
+  <div class="stats-row" id="profit-kpi-row" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));"></div>
+
+  <div class="card">
+    <div class="card-title">🚨 亏损预警 <span>最新日亏损订单 + 全周期亏损价 SKU · 净利润 = 成交价 − 平台费 − 广告分摊 − 成本 − 人员成本</span></div>
+    <div id="profit-loss-panel"></div>
   </div>
 
   <div class="card">
-    <div class="card-title">📋 商品发布数据明细 <span>商品 ID 是分析与动作跟踪主键</span></div>
-    <div class="desktop-table-wrap">
-      <table class="desktop-table">
-        <thead><tr><th>商品 ID</th><th>商品 / 店铺</th><th>发布数量</th><th>曝光</th><th>点击率</th><th>成交转化</th><th>GMV</th><th>状态</th></tr></thead>
-        <tbody>
-          <tr><td><strong>100176</strong></td><td>3D磁吸积木套装<br><span style="font-size:11px;color:#64748b;">US-旗舰店</span></td><td>26</td><td>486,200</td><td>4.82%</td><td>4.80%</td><td style="font-weight:600;">¥42,680</td><td><span class="tag tag-green">表现良好</span></td></tr>
-          <tr><td><strong>100238</strong></td><td>儿童户外泡泡机<br><span style="font-size:11px;color:#64748b;">US-日用店</span></td><td>18</td><td>312,600</td><td>3.91%</td><td>1.72%</td><td style="font-weight:600;">¥18,420</td><td><span class="tag tag-red">需处理</span></td></tr>
-          <tr><td><strong>100091</strong></td><td>益智拼图礼盒<br><span style="font-size:11px;color:#64748b;">TH-主店</span></td><td>15</td><td>284,100</td><td>2.84%</td><td>2.20%</td><td style="font-weight:600;">¥15,760</td><td><span class="tag tag-yellow">需观察</span></td></tr>
-          <tr><td><strong>100314</strong></td><td>儿童绘画水彩笔<br><span style="font-size:11px;color:#64748b;">US-旗舰店</span></td><td>13</td><td>198,400</td><td>3.48%</td><td>3.90%</td><td style="font-weight:600;">¥12,360</td><td><span class="tag tag-green">表现良好</span></td></tr>
-          <tr><td><strong>100407</strong></td><td>磁力迷宫玩具<br><span style="font-size:11px;color:#64748b;">TH-主店</span></td><td>9</td><td>166,800</td><td>2.19%</td><td>1.48%</td><td style="font-weight:600;">¥8,120</td><td><span class="tag tag-red">需处理</span></td></tr>
-          <tr><td><strong>100512</strong></td><td>折叠儿童画板<br><span style="font-size:11px;color:#64748b;">US-日用店</span></td><td>11</td><td>143,200</td><td>3.02%</td><td>2.64%</td><td style="font-weight:600;">¥7,680</td><td><span class="tag tag-yellow">需观察</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="mobile-card-list">
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">100176 · 3D磁吸积木套装</span><span class="tag tag-green">表现良好</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">US-旗舰店</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">发布数量</span><span class="mobile-data-card-value">26</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">486,200</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">点击率</span><span class="mobile-data-card-value">4.82%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">成交转化</span><span class="mobile-data-card-value">4.80%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">GMV</span><span class="mobile-data-card-value" style="font-weight:600;">¥42,680</span></div>
-      </div>
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">100238 · 儿童户外泡泡机</span><span class="tag tag-red">需处理</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">US-日用店</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">发布数量</span><span class="mobile-data-card-value">18</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">312,600</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">点击率</span><span class="mobile-data-card-value">3.91%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">成交转化</span><span class="mobile-data-card-value">1.72%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">GMV</span><span class="mobile-data-card-value" style="font-weight:600;">¥18,420</span></div>
-      </div>
-      <div class="mobile-data-card">
-        <div class="mobile-data-card-header"><span class="mobile-data-card-title">100091 · 益智拼图礼盒</span><span class="tag tag-yellow">需观察</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">店铺</span><span class="mobile-data-card-value">TH-主店</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">发布数量</span><span class="mobile-data-card-value">15</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">曝光</span><span class="mobile-data-card-value">284,100</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">点击率</span><span class="mobile-data-card-value">2.84%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">成交转化</span><span class="mobile-data-card-value">2.20%</span></div>
-        <div class="mobile-data-card-row"><span class="mobile-data-card-label">GMV</span><span class="mobile-data-card-value" style="font-weight:600;">¥15,760</span></div>
-      </div>
-    </div>
-    <div style="margin-top:10px;font-size:12px;color:#64748b;">发布数量按日期、商品 ID 汇总。公开主页播放量只能标记为"当前快照"，不能反推近 7 天后台播放。</div>
+    <div class="card-title">🩺 SKU 价格体检 <span>平均成交价 vs 活动价 vs 保本价 · 低于保本价立即标红</span></div>
+    <div id="profit-sku-panel"></div>
   </div>
 
-  <div class="two-col">
-    <div class="card">
-      <div class="card-title">📈 每日发布趋势 <span>近 7 天</span></div>
-      <div class="daily-publish-bars" style="display:flex;align-items:flex-end;gap:8px;height:140px;padding:14px 0;position:relative;top:72px;margin-bottom:72px;">
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">18</div><div style="height:70px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-22</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">25</div><div style="height:100px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-23</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">22</div><div style="height:85px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-24</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">31</div><div style="height:125px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-25</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">27</div><div style="height:108px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-26</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;">20</div><div style="height:76px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-27</div></div>
-        <div style="flex:1;text-align:center;"><div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#0f172a;">32</div><div style="height:130px;background:linear-gradient(to top,#38bdf8,#7dd3fc);border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#64748b;margin-top:6px;">08-28</div></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">⚠️ 内容数据边界</div>
-      <div class="alert alert-info" style="margin-bottom:10px;"><span>ℹ️</span><span>一次公开主页读取到的播放量，只能显示为"公开当前快照合计"。没有重复快照，不能画播放增长曲线。</span></div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <div style="padding:10px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;"><div style="font-weight:600;color:#166534;font-size:13px;">1. 后台播放历史</div><div style="font-size:12px;color:#15803d;margin-top:2px;">导入 TikTok Studio / Seller Center CSV 后显示。</div></div>
-        <div style="padding:10px;background:#fefce8;border-radius:8px;border:1px solid #fde68a;"><div style="font-weight:600;color:#854d0e;font-size:13px;">2. 发布数量</div><div style="font-size:12px;color:#a16207;margin-top:2px;">按日期与账号的发布记录汇总。</div></div>
-        <div style="padding:10px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;"><div style="font-weight:600;color:#1e40af;font-size:13px;">3. GMV 归因</div><div style="font-size:12px;color:#1e3a8a;margin-top:2px;">必须有视频或商品归因字段，否则保持待导入。</div></div>
-      </div>
-    </div>
+  <div class="card">
+    <div class="card-title">🧩 未匹配 SKU · 手动补成本 <span>补一次永久记住（存本机浏览器）· 按成交额排序</span></div>
+    <div id="profit-unmatched-panel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚙️ 判定口径与场景设置 <span>费率来自价格利润核算表 · 场景调整立即重算</span></div>
+    <div id="profit-rate-panel"></div>
   </div>
 </div>
 
@@ -2010,71 +1839,190 @@ body {
           <button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button><button id="delete-all-store-data" class="btn data-delete-btn" type="button">删除全部店铺数据</button>
           <a class="upload-module-link" onclick="showPage('overview', null)">查看版块 →</a>
         </div>
+        <div class="upload-module-foot" style="border-top:1px dashed #e2e8f0;">
+          <span style="font-size:12px;color:#64748b;">更新频率</span>
+          <select data-cadence="products" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;"><option value="daily">日更</option><option value="weekly">周更</option><option value="free">不定期</option></select>
+          <span data-freshness="products" style="font-size:12px;color:#64748b;"></span>
+        </div>
       </div>
 
       <div class="upload-module">
-        <div class="upload-module-head">🤝 达人合作数据<button class="manual-add-btn" type="button" data-manual-type="达人合作数据">＋ 手动添加</button></div>
-        <div class="upload-module-desc">达人团队或后台导出的合作表直接传。驱动：达人每日时间轴、近7天 TOP10、达人优先处理。</div>
+        <div class="upload-module-head">🤝 达人订单（联盟 · 按天）</div>
+        <div class="upload-module-desc">联盟后台「达人订单」按天导出直接传（日期从文件名如 -20260831 读取）。驱动：每日三清单、动销达人趋势、定向占比、高曝光0产出清单。</div>
         <div class="upload-zone small" onclick="document.getElementById('bd-file-input').click()">
           <div class="upload-zone-icon">📁</div>
-          <div class="upload-zone-title">选择达人合作表</div>
-          <div class="upload-zone-desc">自动识别 日期 / 达人 / 状态 / GMV / 视频数 / 播放量</div>
+          <div class="upload-zone-title">选择达人订单表</div>
+          <div class="upload-zone-desc">自动识别 达人用户名 / 联盟GMV / 视频·直播·商品卡 / 定向GMV / 佣金 / 曝光 / 粉丝</div>
         </div>
         <input id="bd-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
-          <span id="bd-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="creators" data-status-target="bd-upload-status">删除达人数据</button>
+          <span id="bd-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="creatorDaily" data-status-target="bd-upload-status">删除</button>
           <a class="upload-module-link" onclick="showPage('bd', null)">查看版块 →</a>
+        </div>
+        <div class="upload-module-foot" style="border-top:1px dashed #e2e8f0;">
+          <span style="font-size:12px;color:#64748b;">更新频率</span>
+          <select data-cadence="creatorDaily" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;"><option value="daily">日更</option><option value="weekly">周更</option><option value="free">不定期</option></select>
+          <span data-freshness="creatorDaily" style="font-size:12px;color:#64748b;"></span>
         </div>
       </div>
 
       <div class="upload-module">
-        <div class="upload-module-head">🎯 广告投放数据<button class="manual-add-btn" type="button" data-manual-type="广告投放数据">＋ 手动添加</button></div>
-        <div class="upload-module-desc">广告后台导出表直接传。驱动：每日广告时间轴、智能分析·调整事项、广告优先处理。</div>
+        <div class="upload-module-head">🧾 联盟订单（订单级明细）</div>
+        <div class="upload-module-desc">联盟后台「订单」明细导出直接传。驱动：联盟订单明细与佣金、商品动销达人数推导、头部集中度预警。日期读「创建时间」列。</div>
+        <div class="upload-zone small" onclick="document.getElementById('afforder-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择联盟订单表</div>
+          <div class="upload-zone-desc">自动识别 订单ID / 商品ID / 达人用户名 / 内容形式 / 内容ID / 佣金</div>
+        </div>
+        <input id="afforder-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="afforder-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="affOrders" data-status-target="afforder-upload-status">删除</button>
+          <a class="upload-module-link" onclick="showPage('bd', null)">查看版块 →</a>
+        </div>
+        <div class="upload-module-foot" style="border-top:1px dashed #e2e8f0;">
+          <span style="font-size:12px;color:#64748b;">更新频率</span>
+          <select data-cadence="affOrders" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;"><option value="daily">日更</option><option value="weekly">周更</option><option value="free">不定期</option></select>
+          <span data-freshness="affOrders" style="font-size:12px;color:#64748b;"></span>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">📦 样品订单（寄样）</div>
+        <div class="upload-module-desc">样品订单导出直接传（OrderSKUList 工作表，说明行自动跳过）。驱动：SKU 寄样台账——当日 / 累计寄样数。</div>
+        <div class="upload-zone small" onclick="document.getElementById('sample-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择样品订单表</div>
+          <div class="upload-zone-desc">自动识别 SKU ID / Seller SKU / Quantity / Created Time</div>
+        </div>
+        <input id="sample-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="sample-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="samples" data-status-target="sample-upload-status">删除</button>
+          <a class="upload-module-link" onclick="showPage('bd', null)">查看台账 →</a>
+        </div>
+        <div class="upload-module-foot" style="border-top:1px dashed #e2e8f0;">
+          <span style="font-size:12px;color:#64748b;">更新频率</span>
+          <select data-cadence="samples" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;"><option value="daily">日更</option><option value="weekly">周更</option><option value="free">不定期</option></select>
+          <span data-freshness="samples" style="font-size:12px;color:#64748b;"></span>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">🎯 广告 creative data（GMVMax · 按天）</div>
+        <div class="upload-module-desc">GMVMax 创意数据按天导出直接传（日期从文件名读取）。消耗≤0 且 0 单 0 收入的行自动过滤。驱动：决策卡、计划生命周期、动作清单、商品健康表、素材双榜、优质素材库。</div>
         <div class="upload-zone small" onclick="document.getElementById('ads-file-input').click()">
           <div class="upload-zone-icon">📁</div>
-          <div class="upload-zone-title">选择广告数据表</div>
-          <div class="upload-zone-desc">自动识别 日期 / 计划 / 广告组 / 消耗 / 曝光 / CTR / GMV / ROAS</div>
+          <div class="upload-zone-title">选择 creative data 表</div>
+          <div class="upload-zone-desc">自动识别 计划名称 / Campaign ID / Product ID / Creative type / Video ID / 成本 / SKU订单 / 总收入</div>
         </div>
         <input id="ads-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
-          <span id="ads-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="ads" data-status-target="ads-upload-status">删除广告数据</button>
+          <span id="ads-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="adCreatives" data-status-target="ads-upload-status">删除</button>
           <a class="upload-module-link" onclick="showPage('ads', null)">查看版块 →</a>
+        </div>
+        <div class="upload-module-foot" style="border-top:1px dashed #e2e8f0;">
+          <span style="font-size:12px;color:#64748b;">更新频率</span>
+          <select data-cadence="adCreatives" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;"><option value="daily">日更</option><option value="weekly">周更</option><option value="free">不定期</option></select>
+          <span data-freshness="adCreatives" style="font-size:12px;color:#64748b;"></span>
         </div>
       </div>
 
       <div class="upload-module">
-        <div class="upload-module-head">🎬 自营短视频数据<button class="manual-add-btn" type="button" data-manual-type="自营短视频数据">＋ 手动添加</button></div>
-        <div class="upload-module-desc">TikTok Studio / Seller Center 视频明细直接传。驱动：三个排行榜、短视频优先处理。</div>
+        <div class="upload-module-head">🎬 联盟视频（全部视频订单）</div>
+        <div class="upload-module-desc">联盟「全部视频订单」导出直接传（指标说明行自动跳过，发布日期 MM/DD/YYYY）。驱动：出单视频榜（GMV / GPM）、"出单但未被广告利用"清单、自营账号 GMV 归因。</div>
+        <div class="upload-zone small" onclick="document.getElementById('affvideo-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择全部视频订单表</div>
+          <div class="upload-zone-desc">自动识别 视频ID / 商品ID / 达人 / 发布日期 / GMV / 订单 / GPM</div>
+        </div>
+        <input id="affvideo-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="affvideo-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="affVideos" data-status-target="affvideo-upload-status">删除</button>
+          <a class="upload-module-link" onclick="showPage('videos', null)">查看版块 →</a>
+        </div>
+        <div class="upload-module-foot" style="border-top:1px dashed #e2e8f0;">
+          <span style="font-size:12px;color:#64748b;">更新频率</span>
+          <select data-cadence="affVideos" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;"><option value="daily">日更</option><option value="weekly">周更</option><option value="free">不定期</option></select>
+          <span data-freshness="affVideos" style="font-size:12px;color:#64748b;"></span>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">📱 自营账号视频</div>
+        <div class="upload-module-desc">自营账号前台数据（播放量 / 发布量 / 商品ID）直接传；GMV 自动从联盟视频订单按 Video ID 拼接归因，无归因 = 真 0。</div>
         <div class="upload-zone small" onclick="document.getElementById('videos-file-input').click()">
           <div class="upload-zone-icon">📁</div>
-          <div class="upload-zone-title">选择视频数据表</div>
-          <div class="upload-zone-desc">自动识别 日期 / 账号 / 视频ID / 商品ID / 播放量 / GMV</div>
+          <div class="upload-zone-title">选择自营账号数据表</div>
+          <div class="upload-zone-desc">自动识别 账号 / 视频ID / 商品ID / 播放量 / 发布日期</div>
         </div>
         <input id="videos-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
-          <span id="videos-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="videos" data-status-target="videos-upload-status">删除视频数据</button>
+          <span id="videos-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="selfVideos" data-status-target="videos-upload-status">删除</button>
           <a class="upload-module-link" onclick="showPage('videos', null)">查看版块 →</a>
+        </div>
+        <div class="upload-module-foot" style="border-top:1px dashed #e2e8f0;">
+          <span style="font-size:12px;color:#64748b;">更新频率</span>
+          <select data-cadence="selfVideos" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;"><option value="daily">日更</option><option value="weekly">周更</option><option value="free">不定期</option></select>
+          <span data-freshness="selfVideos" style="font-size:12px;color:#64748b;"></span>
         </div>
       </div>
 
       <div class="upload-module">
-        <div class="upload-module-head">⭐ 优质达人素材库<button class="manual-add-btn" type="button" data-manual-type="优质达人素材库">＋ 手动添加</button></div>
-        <div class="upload-module-desc">素材数据表 + mp4 视频双通道；视频只存本机浏览器，按文件名自动关联。</div>
-        <div class="upload-zone small" onclick="document.getElementById('asset-file-input').click()">
-          <div class="upload-zone-icon">📊</div>
-          <div class="upload-zone-title">上传素材数据表</div>
-          <div class="upload-zone-desc">自动识别 达人 / 视频链接 / 商品ID / GMV / ROAS / 标签</div>
-        </div>
+        <div class="upload-module-head">⭐ 广告优质素材库（自动入库）</div>
+        <div class="upload-module-desc">无需传表：命中优质标准（有单且 ROI≥阈值）的素材自动按商品 ID 入库，跨天累积、衰退自动折叠。这里只需可选上传素材 mp4，按 Video ID 关联，仅存本机浏览器。</div>
         <div class="upload-zone small" onclick="document.getElementById('asset-video-input').click()">
           <div class="upload-zone-icon">🎬</div>
-          <div class="upload-zone-title">上传素材视频（mp4）</div>
-          <div class="upload-zone-desc">可多选；与数据表"视频链接/文件名"列自动关联</div>
+          <div class="upload-zone-title">上传素材视频（mp4，可选）</div>
+          <div class="upload-zone-desc">可多选；文件名含 Video ID 自动关联素材库条目</div>
         </div>
-        <input id="asset-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <input id="asset-video-input" type="file" accept="video/mp4,video/quicktime" multiple style="display:none;">
         <div class="upload-module-foot">
-          <span id="asset-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="assets" data-status-target="asset-upload-status">删除素材数据</button>
+          <span id="asset-upload-status" class="tag tag-yellow">随广告数据自动生成</span><button class="btn data-delete-btn" type="button" data-delete-dataset="assets" data-status-target="asset-upload-status">删除素材视频</button>
           <a class="upload-module-link" onclick="showPage('ads', null)">查看素材库 →</a>
+        </div>
+        <div class="upload-module-foot" style="border-top:1px dashed #e2e8f0;">
+          <span style="font-size:12px;color:#64748b;">更新频率</span>
+          <select data-cadence="assets" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;"><option value="daily">日更</option><option value="weekly">周更</option><option value="free">不定期</option></select>
+          <span data-freshness="assets" style="font-size:12px;color:#64748b;"></span>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">💰 价格利润核算表（定价基准）</div>
+        <div class="upload-module-desc">「TikTok泰国产品价格&利润核算表」直接传：SKU 成本 / 活动价 / 费率参数 / 运费阶梯 / 全局活动开关一次读入，整表覆盖。驱动：成交价扫码、保本价、亏损预警。</div>
+        <div class="upload-zone small" onclick="document.getElementById('pricing-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择价格利润核算表</div>
+          <div class="upload-zone-desc">自动识别 产品定价利润明细 / 费率参数表 / 运费阶梯表</div>
+        </div>
+        <input id="pricing-file-input" type="file" accept=".xlsx,.xls,.csv" style="display:none;">
+        <div class="upload-module-foot">
+          <span id="pricing-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="pricing" data-status-target="pricing-upload-status">删除</button>
+          <a class="upload-module-link" onclick="showPage('profit', null)">查看版块 →</a>
+        </div>
+        <div class="upload-module-foot" style="border-top:1px dashed #e2e8f0;">
+          <span style="font-size:12px;color:#64748b;">更新频率</span>
+          <select data-cadence="pricing" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;"><option value="daily">日更</option><option value="weekly">周更</option><option value="free">不定期</option></select>
+          <span data-freshness="pricing" style="font-size:12px;color:#64748b;"></span>
+        </div>
+      </div>
+
+      <div class="upload-module">
+        <div class="upload-module-head">🧾 订单明细（每日 · OrderSKUList）</div>
+        <div class="upload-module-desc">卖家中心「订单 → OrderSKUList」每天导出前日明细直接传（说明行自动跳过，同键去重不双计）。驱动：成交价扫码、亏损订单预警、SKU 价格体检。</div>
+        <div class="upload-zone small" onclick="document.getElementById('order-file-input').click()">
+          <div class="upload-zone-icon">📁</div>
+          <div class="upload-zone-title">选择订单明细表</div>
+          <div class="upload-zone-desc">自动识别 Order ID / Seller SKU / 折后成交价 / 重量 / 创建时间</div>
+        </div>
+        <input id="order-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="order-upload-status" class="tag tag-yellow">待导入</span><button class="btn data-delete-btn" type="button" data-delete-dataset="orders" data-status-target="order-upload-status">删除</button>
+          <a class="upload-module-link" onclick="showPage('profit', null)">查看版块 →</a>
+        </div>
+        <div class="upload-module-foot" style="border-top:1px dashed #e2e8f0;">
+          <span style="font-size:12px;color:#64748b;">更新频率</span>
+          <select data-cadence="orders" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;background:#fff;"><option value="daily">日更</option><option value="weekly">周更</option><option value="free">不定期</option></select>
+          <span data-freshness="orders" style="font-size:12px;color:#64748b;"></span>
         </div>
       </div>
 
@@ -2185,14 +2133,15 @@ body {
 
 <script src="./data/real-store-data.js"></script>
 <script src="./data/real-store-dashboard.js?v=ops-ext-2"></script>
-<script src="./data/ops-extensions.js?v=ops-ext-2"></script>
+<script src="./data/ops-v33.js?v=ops-v33"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'data']);
 const DEMO_PAGE_NOTICES = {
   alert: '预警卡片、风险数量和商品案例仍是流程演示；只有导入同店铺多日期快照后，才能生成真实上涨、下降与预警结论。',
-  bd: '达人数量、待办与履约趋势为界面样例，尚未接入真实达人合作表。',
-  ads: '广告消耗、计划与 Agent 建议为界面样例，尚未接入真实广告后台及归因字段。',
-  videos: '发布数量、视频表现与商品案例为界面样例，尚未接入真实发布记录和视频归因表。',
+  bd: '本页由「数据接入」页的达人订单 / 联盟订单 / 样品订单真实驱动；顶部两张 Agent 卡片仍为交互样例。',
+  ads: '本页由 GMVMax creative data 真实驱动（计划生命周期 / 动作清单 / 素材分层）；顶部两张 Agent 卡片仍为交互样例。',
+  videos: '本页由联盟视频订单与自营账号数据真实驱动；顶部两张 Agent 卡片仍为交互样例。',
+  profit: '本页由价格利润核算表与每日订单明细真实驱动（成交价扫码 / 亏损预警 / SKU 价格体检）。',
   validation: '动作、负责人和验证结论为界面样例，尚未接入真实运营已执行清单及验证证据。',
   knowledge: '知识卡片、复用次数和审核状态为界面样例，尚未连接团队真实知识库。',
   agents: 'Agent 数量、任务队列和执行历史为交互样例；页面按钮只展示流程，不会实际执行外部任务。'
@@ -2386,7 +2335,7 @@ bindAlertFilters();
 bindKnowledgeFilters();
 bindOperationLogFilter();
 
-bindOperationDateRecords();
+if (typeof bindOperationDateRecords === 'function') bindOperationDateRecords();
 updateDataContextVisibility('overview');
 </script>
 
@@ -2395,7 +2344,7 @@ updateDataContextVisibility('overview');
   function confirmDelete(label){return window.confirm('确认删除“'+label+'”？\n\n删除后需要重新导入，页面样式不会受到影响。');}
   document.getElementById('delete-all-store-data')?.addEventListener('click',async()=>{if(!confirmDelete('全部店铺数据'))return;if(window.OPS_BRIDGE&&typeof window.OPS_BRIDGE.clearStoreData==='function'){await window.OPS_BRIDGE.clearStoreData();window.alert('全部店铺数据已删除。');}});
   document.querySelectorAll('[data-delete-dataset]').forEach(btn=>btn.addEventListener('click',async()=>{
-    const key=btn.dataset.deleteDataset;const labels={creators:'达人数据',ads:'广告数据',videos:'视频数据',assets:'素材数据'};if(!confirmDelete(labels[key]||key))return;
+    const key=btn.dataset.deleteDataset;const labels={creatorDaily:'达人订单数据',affOrders:'联盟订单数据',samples:'样品订单数据',adCreatives:'广告 creative data',affVideos:'联盟视频数据',selfVideos:'自营账号视频',assets:'素材视频',orders:'订单明细数据',pricing:'价格利润核算表',creators:'达人数据',ads:'广告数据',videos:'视频数据',actions:'动作记录',knowledge:'知识库记录'};if(!confirmDelete(labels[key]||key))return;
     if(window.OPS_EXT&&typeof window.OPS_EXT.clearDataset==='function'){await window.OPS_EXT.clearDataset(key);const target=document.getElementById(btn.dataset.statusTarget);if(target){target.textContent='已删除，待导入';target.className='tag tag-yellow';}window.dispatchEvent(new CustomEvent('real-data-deleted'));}
   }));
   document.getElementById('delete-manual-records')?.addEventListener('click',()=>{if(!confirmDelete('手动记录'))return;localStorage.removeItem('tiktok-manual-entry-records');window.alert('手动记录已删除。');});
@@ -2404,14 +2353,14 @@ updateDataContextVisibility('overview');
 </script>
 <script>
 (function(){
-  const pageIds=['overview','alert','bd','ads','videos','validation','knowledge','agents'];
+  const pageIds=['overview','alert','bd','ads','videos','profit','validation','knowledge','agents'];
   const message='\u6682\u65e0\u771f\u5b9e\u6570\u636e\uff0c\u8bf7\u5148\u5230\u201c\u6570\u636e\u63a5\u5165\u201d\u5bfc\u5165\u6570\u636e';
   function storeReady(){const d=window.REAL_STORE_DATA;return localStorage.getItem('tiktok-real-data-state-v4')!=='cleared'&&d&&Array.isArray(d.stores)&&d.stores.some(s=>Array.isArray(s.snapshots)&&s.snapshots.length);}
   function extReady(key){return window.OPS_EXT&&typeof window.OPS_EXT.hasImportedData==='function'&&window.OPS_EXT.hasImportedData(key);}
-  function pageReady(id){return id==='overview'||id==='alert'?storeReady():id==='bd'?extReady('creators'):id==='ads'?extReady('ads'):id==='videos'?Boolean(extReady('videos')||extReady('assets')):false;}
+  function pageReady(id){return id==='overview'||id==='alert'?storeReady():id==='bd'?Boolean(extReady('creators')||extReady('affOrders')||extReady('samples')):id==='ads'?extReady('ads'):id==='videos'?Boolean(extReady('videos')||extReady('assets')):id==='profit'?Boolean(extReady('orders')||extReady('pricing')):false;}
   function body(){const el=document.createElement('div');el.className='real-empty-card-body';el.textContent=message+'。导入后显示真实数据。';return el;}
   function sanitize(page){
-    const dynamic=['priority-hub','overview-ranking-grid','real-data-summary','bd-daily-panel','bd-top10-panel','ads-daily-panel','ads-actions-panel','asset-library-panel','video-leaderboard-panel'];
+    const dynamic=['priority-hub','overview-ranking-grid','real-data-summary','source-split-panel','bd-kpi-row','bd-lists-panel','bd-trend-panel','bd-ledger-panel','bd-orders-panel','ads-kpi-row','ads-lifecycle-panel','ads-action-seq-panel','ads-product-health-panel','ads-creative-boards','asset-library-panel','videos-kpi-row','video-gmv-board','video-ads-gap-panel','self-video-panel','product-trend-panel','product-quadrant-panel','cross-diagnosis-panel','profit-kpi-row','profit-loss-panel','profit-sku-panel','profit-unmatched-panel','profit-rate-panel'];
     page.querySelectorAll('.card').forEach(card=>{
       if(card.dataset.realSanitized||dynamic.some(id=>card.querySelector('#'+id))||card.querySelector('.upload-zone'))return;
       const title=card.querySelector(':scope > .card-title');if(!title)return;
