@@ -138,6 +138,10 @@
         cvr: ["cvr", "转化率", "conversion rate", "成交转化率"],
         gmv: ["gmv", "成交额", "销售额", "成交金额", "转化金额", "广告gmv"],
         roas: ["roas", "roi", "投产比", "广告投产比"],
+        orders: ["订单", "订单数", "成交订单", "成交件数", "paid orders", "orders", "销量"],
+        videoId: ["video id", "videoid", "视频id", "视频 ID", "素材id", "素材 ID", "creative id"],
+        account: ["达人", "达人账号", "达人昵称", "tiktok account", "account", "creator", "creator name"],
+        sourceType: ["素材类型", "流量类型", "类型", "来源", "source type", "creative type", "商品卡/Video"],
         status: ["状态", "status", "计划状态", "投放状态"],
       },
     },
@@ -261,7 +265,7 @@
       Object.entries(matched.map).forEach(([fieldKey, columnIndex]) => {
         const raw = row[columnIndex];
         if (fieldKey === "date") record.date = parseDateCell(raw) || "";
-        else if (["gmv", "videos", "views", "spend", "impressions", "clicks", "ctr", "cvr", "roas", "likes", "comments"].includes(fieldKey)) record[fieldKey] = parseNumber(raw);
+        else if (["gmv", "videos", "views", "spend", "impressions", "clicks", "ctr", "cvr", "roas", "orders", "likes", "comments"].includes(fieldKey)) record[fieldKey] = parseNumber(raw);
         else record[fieldKey] = raw == null ? "" : String(raw).trim();
       });
       if (!record.date && fileDate) record.date = fileDate;
@@ -780,86 +784,51 @@
     return items.sort((a, b) => severityOrder[a.sev] - severityOrder[b.sev]).slice(0, 8);
   }
 
+
+  function gmvmaxRecordType(record) {
+    const raw = String(record.sourceType || record.trafficType || record.creativeType || record.type || "").toLowerCase();
+    if (/(product\s*card|productcard|商品\s*卡|商品卡|购物车|商品链接|\bpc\b)/i.test(raw)) return "product";
+    if (/(video|视频|短视频|素材|creative)/i.test(raw) || record.videoId || record.videoUrl) return "video";
+    return "unknown";
+  }
+  function gmvmaxSum(rows, key) { return rows.reduce((sum, row) => sum + (typeof row[key] === "number" && Number.isFinite(row[key]) ? row[key] : 0), 0); }
+  function gmvmaxHasNumber(rows, key) { return rows.some((row) => row[key] != null && row[key] !== "" && Number.isFinite(Number(row[key]))); }
+  function gmvmaxMoney(value, available = true) { return available && value != null ? formatMoney(value) : "待导入"; }
+  function gmvmaxCount(value, available = true) { return available && value != null ? formatCompact(value) : "待导入"; }
+  function gmvmaxUnique(rows, key, predicate) { const values = rows.filter(predicate || (() => true)).map((row) => String(row[key] || "").trim()).filter(Boolean); return new Set(values).size; }
+  function renderGmvmaxProductIdPanel(rows) {
+    const panel = document.getElementById("gmvmax-product-id-panel");
+    if (!panel) return;
+    if (!rows.length) { panel.innerHTML = `<div class="gmvmax-product-empty"><b>暂无真实数据，请先到「数据接入」导入广告数据。</b> 导入后此板块会按 Product ID 生成 GMVMax 核心分析，包括 Video / 商品卡结构、商品汇总、优质素材、0单烧钱和达人表现。</div>`; return; }
+    const spendAvailable = gmvmaxHasNumber(rows, "spend"); const gmvAvailable = gmvmaxHasNumber(rows, "gmv"); const ordersAvailable = gmvmaxHasNumber(rows, "orders");
+    const totalSpend = gmvmaxSum(rows, "spend"); const totalGmv = gmvmaxSum(rows, "gmv"); const totalOrders = ordersAvailable ? gmvmaxSum(rows, "orders") : null; const totalRoi = spendAvailable && totalSpend > 0 && gmvAvailable ? totalGmv / totalSpend : null;
+    const productRows = rows.filter((row) => row.productId); const productMap = new Map();
+    rows.forEach((row) => { const key = String(row.productId || "未标注商品"); const item = productMap.get(key) || { id: key, spend: 0, gmv: 0, orders: 0, rows: 0, zeroSpend: 0 }; item.rows += 1; if (typeof row.spend === "number") item.spend += row.spend; if (typeof row.gmv === "number") item.gmv += row.gmv; if (typeof row.orders === "number") { item.orders += row.orders; if (row.orders === 0 && row.spend > 0) item.zeroSpend += row.spend; } productMap.set(key, item); });
+    const products = [...productMap.values()].sort((a, b) => b.spend - a.spend); const videoRows = rows.filter((row) => gmvmaxRecordType(row) === "video"); const productCardRows = rows.filter((row) => gmvmaxRecordType(row) === "product");
+    const videoSpend = gmvmaxSum(videoRows, "spend"); const productCardSpend = gmvmaxSum(productCardRows, "spend"); const videoGmv = gmvmaxSum(videoRows, "gmv"); const productCardGmv = gmvmaxSum(productCardRows, "gmv"); const videoOrders = ordersAvailable ? gmvmaxSum(videoRows, "orders") : null; const productCardOrders = ordersAvailable ? gmvmaxSum(productCardRows, "orders") : null;
+    const qualityVideoRows = ordersAvailable ? videoRows.filter((row) => row.spend >= 0.5 && row.orders > 0 && row.spend > 0 && row.gmv != null && row.gmv / row.spend >= 3) : []; const qualityVideos = gmvmaxUnique(qualityVideoRows, "videoId") || qualityVideoRows.length; const zeroOrderRows = ordersAvailable ? rows.filter((row) => row.spend > 0 && row.orders === 0) : []; const creatorRows = ordersAvailable ? rows.filter((row) => row.account && (row.orders > 0 || row.gmv > 0)) : []; const creatorCount = gmvmaxUnique(creatorRows, "account");
+    const card = (label, value, color) => `<div class="gmvmax-product-kpi"><div class="gmvmax-product-kpi-label">${label}</div><div class="gmvmax-product-kpi-value ${color}">${value}</div></div>`;
+    const structureCard = (title, spend, orders, gmv, color, available) => { const roi = available && spend > 0 && gmvAvailable ? (gmv / spend).toFixed(2) + "x" : "待导入"; const share = available && totalGmv > 0 && gmv != null ? (gmv / totalGmv * 100).toFixed(1) + "%" : "待导入"; return `<div class="gmvmax-product-structure-card"><div class="gmvmax-product-structure-title">${title}</div><div class="gmvmax-product-structure-value ${color}">${available ? formatMoney(spend) : "待导入"}</div><div class="gmvmax-product-structure-detail">消耗 · ${ordersAvailable ? formatCompact(orders) + "单" : "待导入"} · GMV ${gmvAvailable ? formatMoney(gmv) : "待导入"}<br>ROI <strong>${roi}</strong> · 成交占比 <strong>${share}</strong></div></div>`; };
+    const bestProduct = products.filter((item) => item.spend > 0 && item.gmv > 0).map((item) => ({ ...item, roi: item.gmv / item.spend })).sort((a, b) => b.roi - a.roi)[0]; const zeroProduct = products.filter((item) => item.zeroSpend > 0).sort((a, b) => b.zeroSpend - a.zeroSpend)[0];
+    const productSummary = products.slice(0, 10).map((item, index) => `<tr><td>${index + 1}</td><td class="l"><strong>${escapeHtml(item.id)}</strong></td><td>${item.spend ? formatMoney(item.spend) : "待导入"}</td><td>${ordersAvailable ? formatCompact(item.orders) : "待导入"}</td><td>${item.gmv ? formatMoney(item.gmv) : (gmvAvailable ? formatMoney(0) : "待导入")}</td><td>${item.spend > 0 && item.gmv != null ? (item.gmv / item.spend).toFixed(2) + "x" : "待导入"}</td><td>${item.rows}</td></tr>`).join("");
+    const qualityRows = qualityVideoRows.slice().sort((a, b) => (b.orders || 0) - (a.orders || 0)).slice(0, 5).map((row, index) => `<div class="gmvmax-product-rank-row"><span class="gmvmax-product-rank-name">${index + 1}. ${escapeHtml(row.videoId || row.plan || row.productId || "未标注素材")}</span><span class="gmvmax-product-rank-value">${formatCompact(row.orders)}单</span></div>`).join("");
+    const zeroRows = products.filter((item) => item.zeroSpend > 0).sort((a, b) => b.zeroSpend - a.zeroSpend).slice(0, 5).map((item, index) => `<div class="gmvmax-product-rank-row"><span class="gmvmax-product-rank-name">${index + 1}. ${escapeHtml(item.id)}</span><span class="gmvmax-product-rank-value">${formatMoney(item.zeroSpend)}</span></div>`).join("");
+    const creatorMap = new Map(); creatorRows.forEach((row) => { const key = String(row.account); const item = creatorMap.get(key) || { account: key, gmv: 0, orders: 0 }; item.gmv += row.gmv || 0; item.orders += row.orders || 0; creatorMap.set(key, item); }); const creatorRowsHtml = [...creatorMap.values()].sort((a, b) => b.gmv - a.gmv).slice(0, 5).map((item, index) => `<div class="gmvmax-product-rank-row"><span class="gmvmax-product-rank-name">${index + 1}. ${escapeHtml(item.account)}</span><span class="gmvmax-product-rank-value">${formatMoney(item.gmv)}</span></div>`).join("");
+    const findings = []; if (ordersAvailable) findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-red">素材/订单</span><strong>${products.filter((item) => item.id !== "未标注商品").length}个有消耗商品、${videoRows.length}条Video记录</strong>，其中优质素材 ${qualityVideos} 条、0单烧钱 ${zeroOrderRows.length} 条。</li>`); if (zeroProduct) findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-red">烧钱重灾区</span><strong>商品${escapeHtml(zeroProduct.id)}</strong> 0单消耗 ${formatMoney(zeroProduct.zeroSpend)}，建议优先检查素材和归因。</li>`); if (bestProduct) findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-green">ROI标杆</span><strong>商品${escapeHtml(bestProduct.id)}</strong> ROI ${bestProduct.roi.toFixed(2)}x，建议结合消耗规模评估是否扩量。</li>`); if (creatorCount) { const topCreator = [...creatorMap.values()].sort((a, b) => b.gmv - a.gmv)[0]; const share = totalGmv > 0 ? topCreator.gmv / totalGmv * 100 : 0; findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-yellow">达人集中</span><strong>${escapeHtml(topCreator.account)}</strong>贡献 ${formatMoney(topCreator.gmv)} GMV（${formatCompact(topCreator.orders)}单），占当前GMV ${share.toFixed(1)}%。</li>`); } if (gmvAvailable && spendAvailable && totalRoi != null) findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-green">整体效率</span>当前范围总消耗 <strong>${formatMoney(totalSpend)}</strong>，总GMV <strong>${formatMoney(totalGmv)}</strong>，整体ROI <strong>${totalRoi.toFixed(2)}x</strong>。</li>`); if (!findings.length) findings.push(`<li><span class="gmvmax-product-tag gmvmax-product-tag-yellow">字段提示</span>当前已导入广告记录，但订单、素材类型或Product ID字段不足，补充对应字段后可生成完整分析。</li>`);
+    panel.innerHTML = `<div class="gmvmax-product-kpis">${card("总消耗", gmvmaxMoney(totalSpend, spendAvailable), "gmvmax-product-blue")}${card("总GMV", gmvmaxMoney(totalGmv, gmvAvailable), "gmvmax-product-green")}${card("整体ROI", totalRoi != null ? totalRoi.toFixed(2) + "x" : "待导入", "gmvmax-product-green")}${card("总订单", gmvmaxCount(totalOrders, ordersAvailable), "gmvmax-product-orange")}${card("有消耗商品", productRows.length ? gmvmaxUnique(productRows, "productId") + "个" : "待导入", "gmvmax-product-blue")}${card("优质Video素材", ordersAvailable ? qualityVideos + "条" : "待导入", "gmvmax-product-red")}${card("0单烧钱素材", ordersAvailable ? zeroOrderRows.length + "条" : "待导入", "gmvmax-product-orange")}${card("出单达人", creatorCount ? creatorCount + "个" : "待导入", "gmvmax-product-blue")}</div><div class="gmvmax-product-structure">${structureCard("Video 素材", videoSpend, videoOrders, videoGmv, "gmvmax-product-blue", videoRows.length > 0)}${structureCard("Product card 商品卡", productCardSpend, productCardOrders, productCardGmv, "gmvmax-product-green", productCardRows.length > 0)}</div><div class="gmvmax-product-findings"><div class="gmvmax-product-findings-title">核心发现</div><ol>${findings.join("")}</ol></div><div class="gmvmax-product-table"><div class="gmvmax-product-table-title">Product ID 级汇总（按消耗降序）</div><div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>#</th><th>Product ID</th><th>消耗</th><th>订单</th><th>GMV</th><th>ROI</th><th>记录数</th></tr></thead><tbody>${productSummary || `<tr><td colspan="7" class="real-empty-cell">暂无可识别的Product ID</td></tr>`}</tbody></table></div></div><div class="gmvmax-product-ranks"><div class="gmvmax-product-rank"><div class="gmvmax-product-rank-title">① 优质Video素材</div>${qualityRows || `<div class="gmvmax-product-empty">${ordersAvailable ? "暂无达到优质标准的素材" : "订单字段待导入"}</div>`}</div><div class="gmvmax-product-rank"><div class="gmvmax-product-rank-title">② 0单烧钱排行</div>${zeroRows || `<div class="gmvmax-product-empty">${ordersAvailable ? "暂无0单烧钱记录" : "订单字段待导入"}</div>`}</div><div class="gmvmax-product-rank"><div class="gmvmax-product-rank-title">③ 达人成交排行</div>${creatorRowsHtml || `<div class="gmvmax-product-empty">${creatorCount ? "暂无可展示达人" : "达人字段待导入"}</div>`}</div></div>`;
+  }
+
+
   function renderAdsPage() {
-    const dailyPanel = document.getElementById("ads-daily-panel");
-    const actionsPanel = document.getElementById("ads-actions-panel");
-    if (!dailyPanel && !actionsPanel) return;
-    const status = document.getElementById("ads-upload-status");
-    const rows = extraData.ads;
-    if (status && !status.dataset.touched) {
-      status.className = `tag ${rows.length ? "tag-green" : "tag-yellow"}`;
-      status.textContent = rows.length ? `已导入 ${rows.length} 条广告记录` : "待导入";
-    }
+    const dailyPanel = document.getElementById("ads-daily-panel"); const actionsPanel = document.getElementById("ads-actions-panel"); const productPanel = document.getElementById("gmvmax-product-id-panel");
+    if (!dailyPanel && !actionsPanel && !productPanel) return;
+    const status = document.getElementById("ads-upload-status"); const rows = extraData.ads;
+    if (status && !status.dataset.touched) { status.className = `tag ${rows.length ? "tag-green" : "tag-yellow"}`; status.textContent = rows.length ? `已导入 ${rows.length} 条广告记录` : "待导入"; }
     if (!adsRange) adsRange = makeRangeState("ads", "ads");
-    if (!rows.length) {
-      const guide = emptyBlock(`<b>广告数据待导入。</b>到「数据接入」页上传广告后台导出的数据表后，这里自动按日期展示各计划消耗、曝光、CTR、GMV、ROAS；列名差异自动识别。<br>建议字段：日期、计划、广告组、商品ID、消耗、曝光、点击、GMV——有什么传什么。`);
-      if (dailyPanel) dailyPanel.innerHTML = guide;
-      if (actionsPanel) actionsPanel.innerHTML = emptyBlock(`广告数据导入后，这里会按规则自动生成调整事项（关停亏损计划 / 换素材 / 扩量标杆 / 补归因）。`);
-      return;
-    }
-    const bounds = adsRange.getBounds();
-    const scoped = recordsInRange("ads", bounds);
-
-    if (dailyPanel) {
-      if (!scoped.length) {
-        dailyPanel.innerHTML = emptyBlock(`所选范围（${bounds.start || "?"} 至 ${bounds.end || "?"}）内没有广告记录。`);
-      } else {
-        const byDate = new Map();
-        scoped.forEach((record) => {
-          if (!byDate.has(record.date)) byDate.set(record.date, []);
-          byDate.get(record.date).push(record);
-        });
-        const dates = [...byDate.keys()].sort().reverse();
-        dailyPanel.innerHTML = dates.map((date) => {
-          const dayRows = byDate.get(date);
-          const daySpend = dayRows.reduce((sum, record) => sum + (record.spend || 0), 0);
-          const dayGmv = dayRows.reduce((sum, record) => sum + (record.gmv || 0), 0);
-          const body = dayRows.map((record) => {
-            const ctr = record.ctr != null ? record.ctr : (record.impressions ? record.clicks / record.impressions * 100 : null);
-            const roas = record.roas != null ? record.roas : (record.spend && record.gmv != null ? record.gmv / record.spend : null);
-            return `<tr>
-              <td><strong>${escapeHtml(record.plan || "—")}</strong></td>
-              <td>${escapeHtml(record.group || "—")}</td>
-              <td>${escapeHtml(record.productId || "—")}</td>
-              <td style="font-weight:600;">${record.spend != null ? formatMoney(record.spend) : "待导入"}</td>
-              <td>${formatCompact(record.impressions)}</td>
-              <td>${ctr != null ? ctr.toFixed(2) + "%" : "待导入"}</td>
-              <td>${record.gmv != null ? formatMoney(record.gmv) : "待导入"}</td>
-              <td>${roas != null ? roas.toFixed(2) : "待导入"}</td>
-              <td>${escapeHtml(record.status || "—")}</td>
-            </tr>`;
-          }).join("");
-          return `<div style="margin-bottom:14px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-              <div style="font-size:13px;font-weight:700;color:#0f172a;">📅 ${escapeHtml(date)} <span style="font-weight:400;color:#94a3b8;font-size:11px;">${dayRows.length} 个计划</span></div>
-              <div style="font-size:12px;color:#64748b;">消耗 <b style="color:#0f172a;">${daySpend ? formatMoney(daySpend) : "待导入"}</b> · GMV <b style="color:#0f172a;">${dayGmv ? formatMoney(dayGmv) : "待导入"}</b> · ROAS <b style="color:#0f172a;">${daySpend && dayGmv ? (dayGmv / daySpend).toFixed(2) : "待导入"}</b></div>
-            </div>
-            <div class="desktop-table-wrap"><table class="desktop-table">
-              <thead><tr><th>计划</th><th>广告组</th><th>商品ID</th><th>消耗</th><th>曝光</th><th>CTR</th><th>GMV</th><th>ROAS</th><th>状态</th></tr></thead>
-              <tbody>${body}</tbody>
-            </table></div>
-          </div>`;
-        }).join("");
-      }
-    }
-
-    if (actionsPanel) {
-      if (!scoped.length) {
-        actionsPanel.innerHTML = emptyBlock("所选范围内没有广告记录，暂无调整事项。");
-      } else {
-        const items = adsActionItems(scopedRows(scoped));
-        if (!items.length) {
-          actionsPanel.innerHTML = emptyBlock("所选范围内所有计划表现正常，无需调整。👍");
-        } else {
-          const tagClass = { high: "tag-red", medium: "tag-yellow", low: "tag-blue", good: "tag-green" };
-          actionsPanel.innerHTML = items.map((item) => `<div class="priority-item sev-${item.sev}">
-            <div class="priority-item-title">${item.title}</div>
-            <div class="priority-item-body">${item.body}</div>
-            <div class="priority-item-tags">${(item.tags || []).map((tag, index) => `<span class="tag ${index === 0 ? tagClass[item.sev] : "tag-gray"}">${escapeHtml(tag)}</span>`).join("")}</div>
-          </div>`).join("") + `<div style="font-size:12px;color:#64748b;">规则：ROAS&lt;1 关停缩量 / ROAS 1-2 降预算+换素材 / ROAS≥3 扩量 / CTR&lt;1.5% 且曝光充足换素材 / 有消耗无 GMV 标记待归因。范围：${bounds.start} 至 ${bounds.end}。</div>`;
-        }
-      }
-    }
+    if (!rows.length) { const guide = emptyBlock(`<b>广告数据待导入。</b>到「数据接入」页上传广告后台导出的数据表后，这里自动按日期展示各计划消耗、曝光、CTR、GMV、ROAS；列名差异自动识别。<br>建议字段：日期、计划、广告组、商品ID、消耗、曝光、点击、订单、GMV、Video ID、达人账号、素材类型——有什么传什么。`); if (dailyPanel) dailyPanel.innerHTML = guide; if (actionsPanel) actionsPanel.innerHTML = emptyBlock(`广告数据导入后，这里会按规则自动生成调整事项（关停亏损计划 / 换素材 / 扩量标杆 / 补归因）。`); if (productPanel) renderGmvmaxProductIdPanel([]); return; }
+    const bounds = adsRange.getBounds(); const scoped = recordsInRange("ads", bounds); renderGmvmaxProductIdPanel(scoped);
+    if (dailyPanel) { if (!scoped.length) dailyPanel.innerHTML = emptyBlock(`所选范围（${bounds.start || "?"} 至 ${bounds.end || "?"}）内没有广告记录。`); else { const byDate = new Map(); scoped.forEach((record) => { if (!byDate.has(record.date)) byDate.set(record.date, []); byDate.get(record.date).push(record); }); const dates = [...byDate.keys()].sort().reverse(); dailyPanel.innerHTML = dates.map((date) => { const dayRows = byDate.get(date); const daySpend = dayRows.reduce((sum, record) => sum + (record.spend || 0), 0); const dayGmv = dayRows.reduce((sum, record) => sum + (record.gmv || 0), 0); const body = dayRows.map((record) => { const ctr = record.ctr != null ? record.ctr : (record.impressions ? record.clicks / record.impressions * 100 : null); const roas = record.roas != null ? record.roas : (record.spend && record.gmv != null ? record.gmv / record.spend : null); return `<tr><td><strong>${escapeHtml(record.plan || "—")}</strong></td><td>${escapeHtml(record.group || "—")}</td><td>${escapeHtml(record.productId || "—")}</td><td style="font-weight:600;">${record.spend != null ? formatMoney(record.spend) : "待导入"}</td><td>${formatCompact(record.impressions)}</td><td>${ctr != null ? ctr.toFixed(2) + "%" : "待导入"}</td><td>${record.gmv != null ? formatMoney(record.gmv) : "待导入"}</td><td>${roas != null ? roas.toFixed(2) : "待导入"}</td><td>${escapeHtml(record.status || "—")}</td></tr>`; }).join(""); return `<div style="margin-bottom:14px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="font-size:13px;font-weight:700;color:#0f172a;">📅 ${escapeHtml(date)} <span style="font-weight:400;color:#94a3b8;font-size:11px;">${dayRows.length} 个计划</span></div><div style="font-size:12px;color:#64748b;">消耗 <b style="color:#0f172a;">${daySpend ? formatMoney(daySpend) : "待导入"}</b> · GMV <b style="color:#0f172a;">${dayGmv ? formatMoney(dayGmv) : "待导入"}</b> · ROAS <b style="color:#0f172a;">${daySpend && dayGmv ? (dayGmv / daySpend).toFixed(2) : "待导入"}</b></div></div><div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>计划</th><th>广告组</th><th>商品ID</th><th>消耗</th><th>曝光</th><th>CTR</th><th>GMV</th><th>ROAS</th><th>状态</th></tr></thead><tbody>${body}</tbody></table></div></div>`; }).join(""); } }
+    if (actionsPanel) { if (!scoped.length) actionsPanel.innerHTML = emptyBlock("所选范围内没有广告记录，暂无调整事项。"); else { const items = adsActionItems(scopedRows(scoped)); if (!items.length) actionsPanel.innerHTML = emptyBlock("所选范围内所有计划表现正常，无需调整。👍"); else { const tagClass = { high: "tag-red", medium: "tag-yellow", low: "tag-blue", good: "tag-green" }; actionsPanel.innerHTML = items.map((item) => `<div class="priority-item sev-${item.sev}"><div class="priority-item-title">${item.title}</div><div class="priority-item-body">${item.body}</div><div class="priority-item-tags">${(item.tags || []).map((tag, index) => `<span class="tag ${index === 0 ? tagClass[item.sev] : "tag-gray"}">${escapeHtml(tag)}</span>`).join("")}</div></div>`).join("") + `<div style="font-size:12px;color:#64748b;">规则：ROAS&lt;1 关停缩量 / ROAS 1-2 降预算+换素材 / ROAS≥3 扩量 / CTR&lt;1.5% 且曝光充足换素材 / 有消耗无 GMV 标记待归因。范围：${bounds.start} 至 ${bounds.end}。</div>`; } } }
   }
 
   function scopedRows(rows) {
