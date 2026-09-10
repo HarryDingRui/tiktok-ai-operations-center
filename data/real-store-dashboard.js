@@ -33,6 +33,10 @@
   const DATABASE_KEY = "real-store-data-v2";
   let databasePromise = null;
 
+  function isStoreDataCleared() {
+    return window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared";
+  }
+
   function parseNumber(value) {
     if (value == null || value === "") return null;
     const normalized = String(value).replace(/[฿$¥,%\s,]/g, "");
@@ -633,6 +637,7 @@
   }
 
   function snapshotsInRange(store) {
+    if (isStoreDataCleared()) return store.snapshots.slice();
     const bounds = selectedDateBounds();
     return store.snapshots
       .filter((snapshot) => isDateKey(snapshot.reportDate) && snapshot.reportDate >= bounds.start && snapshot.reportDate <= bounds.end)
@@ -762,6 +767,12 @@
   function updateContextBar() {
     const summary = document.getElementById("data-context-summary");
     if (!summary) return;
+    const status = document.querySelector(".data-context-heading small");
+    if (status) status.textContent = isStoreDataCleared() ? "仅保留目录" : "已导入";
+    if (isStoreDataCleared()) {
+      summary.textContent = `${currentData.stores.length} 个店铺 · ${formatNumber(totalsInScope().productCount, 0)} 个商品目录 · 经营指标待导入`;
+      return;
+    }
     summary.textContent = `${storesInScope().length} 个店铺 · ${formatNumber(totalsInScope().productCount, 0)} 个商品 · 时间范围 ${dateRangeLabel()}`;
   }
 
@@ -982,6 +993,7 @@
   }
 
   function rankingItems(mode) {
+    if (isStoreDataCleared()) return [];
     const products = productsInScope();
     if (mode === "sales") return products.sort((left, right) => (right.units ?? 0) - (left.units ?? 0)).slice(0, 5);
     if (mode === "gmv") return products.sort((left, right) => (right.gmv ?? 0) - (left.gmv ?? 0)).slice(0, 5);
@@ -1014,6 +1026,10 @@
   function renderOverviewRankings() {
     const grid = document.getElementById("overview-ranking-grid");
     if (!grid) return;
+    if (isStoreDataCleared()) {
+      grid.innerHTML = '<div class="real-empty-card-body">暂无真实经营指标。店铺名称、商品名称和商品 ID 已保留，导入真实 product_list 数据后生成排行榜。</div>';
+      return;
+    }
     grid.innerHTML = [
       renderRankingCard({ mode: "sales", className: "", icon: "📊", title: "销量 Top5", subtitle: "按区间内最新快照成交件数" }),
       renderRankingCard({ mode: "gmv", className: "gmv", icon: "💰", title: "全店 GMV Top5", subtitle: "按区间内最新快照 GMV" }),
@@ -1028,6 +1044,17 @@
     if (!container) return;
     const totals = totalsInScope();
     const scopedStores = storesInScope();
+    if (isStoreDataCleared()) {
+      const catalogRows = productsInScope().slice(0, 12).map((product) => `<tr>
+        <td>${escapeHtml(product.store)}</td><td>${escapeHtml(product.id)}</td><td><span class="long-text" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</span></td><td>${statusTag("指标待导入")}</td>
+      </tr>`).join("") || '<tr><td colspan="4" class="real-ranking-empty">暂无商品目录。</td></tr>';
+      container.innerHTML = `<div class="card real-data-card">
+        <div class="card-title">📚 已保留真实店铺与商品目录 <span>仅保留名称和商品 ID</span></div>
+        <div class="real-data-note">经营指标、日期快照、订单、GMV、曝光、点击、转化、退款和趋势数据已清除；导入真实文件后才会显示。</div>
+        <div class="desktop-table-wrap"><table class="desktop-table real-product-table"><thead><tr><th>店铺</th><th>商品 ID</th><th>商品名称</th><th>经营指标</th></tr></thead><tbody>${catalogRows}</tbody></table></div>
+      </div>`;
+      return;
+    }
     const storeRows = scopedStores.map((store) => {
       const snapshot = latestSnapshot(store);
       const storeTotals = snapshot.totals;
@@ -1073,10 +1100,14 @@
     const sourceRow = sourceCard && sourceCard.querySelector(".desktop-table tbody tr");
     if (sourceRow) {
       const statusCell = sourceRow.lastElementChild;
-      if (statusCell) statusCell.innerHTML = '<span class="tag tag-green">已导入真实数据</span>';
+      if (statusCell) statusCell.innerHTML = isStoreDataCleared()
+        ? '<span class="tag tag-yellow">仅保留目录，指标待导入</span>'
+        : '<span class="tag tag-green">已导入真实数据</span>';
     }
     const uploadDescription = page.querySelector(".upload-zone-desc");
-    if (uploadDescription) uploadDescription.textContent = `支持多选 .xlsx / .xls / .csv；当前保存 ${currentData.stores.length} 个店铺、${currentData.stores.reduce((sum, store) => sum + store.snapshots.length, 0)} 个日期快照。列名差异自动识别，店铺和日期自动推断。`;
+    if (uploadDescription) uploadDescription.textContent = isStoreDataCleared()
+      ? `当前仅保留 ${currentData.stores.length} 个店铺的商品名称和 ID；经营指标、日期快照和趋势数据均待导入。`
+      : `支持多选 .xlsx / .xls / .csv；当前保存 ${currentData.stores.length} 个店铺、${currentData.stores.reduce((sum, store) => sum + store.snapshots.length, 0)} 个日期快照。列名差异自动识别，店铺和日期自动推断。`;
   }
 
   function updateDateControls() {
@@ -1321,7 +1352,7 @@
     normalizeData,
     setData: (data) => { currentData = data; },
     saveCurrentData,
-    clearStoreData: async () => { await clearIndexedData(); window.localStorage.removeItem(STORAGE_KEY); window.localStorage.removeItem(LEGACY_STORAGE_KEY); currentData = normalizeData(sourceData); window.localStorage.setItem("tiktok-real-data-state-v4", "cleared"); renderAll(); },
+    clearStoreData: async () => { await clearIndexedData(); window.localStorage.removeItem(STORAGE_KEY); window.localStorage.removeItem(LEGACY_STORAGE_KEY); currentData = normalizeData(sourceData); window.localStorage.setItem("tiktok-real-data-state-v4", "cleared"); renderAll(); window.dispatchEvent(new CustomEvent("real-data-deleted")); },
     ensureXlsxLibrary,
     productsInScope,
     storesInScope,

@@ -1842,7 +1842,7 @@ body {
         </div>
         <input id="real-store-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
-          <span id="real-data-upload-status" class="tag tag-green">已加载公开快照</span>
+          <span id="real-data-upload-status" class="tag tag-yellow">仅保留商品目录，指标待导入</span>
           <button id="reset-real-store-data" class="btn" type="button">恢复公开快照</button><button id="delete-all-store-data" class="btn data-delete-btn" type="button">删除全部店铺数据</button>
           <a class="upload-module-link" onclick="showPage('overview', null)">查看版块 →</a>
         </div>
@@ -2139,7 +2139,7 @@ body {
 </div>
 
 <script src="./data/real-store-data.js"></script>
-<script src="./data/real-store-dashboard.js?v=ops-ext-2"></script>
+<script src="./data/real-store-dashboard.js?v=ops-ext-4"></script>
 <script src="./data/ops-v33.js?v=gmvmax-native-3"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'data']);
@@ -2384,9 +2384,9 @@ updateDataContextVisibility('overview');
     page.querySelectorAll('.kb-card,.alert-card').forEach(card=>{if(card.dataset.realSanitized)return;card.innerHTML='<div class="'+(card.classList.contains('kb-card')?'kb-title':'alert-card-title')+'">'+message+'</div><div class="real-empty-card-body">导入对应真实数据后显示。</div>';card.dataset.realSanitized='1';});
     page.querySelectorAll('.agent-panel').forEach(panel=>{if(panel.dataset.realSanitized)return;const header=panel.querySelector('.agent-panel-header');[...panel.children].filter(n=>n!==header).forEach(n=>n.remove());panel.appendChild(body());panel.dataset.realSanitized='1';});
   }
-  function apply(){const empty=!storeReady();document.querySelectorAll('.nav-badge').forEach(n=>{n.style.display=empty?'none':'';});document.querySelectorAll('.alert-card').forEach(n=>{n.style.display=empty?'none':'';});pageIds.forEach(id=>{const page=document.getElementById('page-'+id);if(!page)return;sanitize(page);const ready=pageReady(id);if(!ready&&['overview','alert'].includes(id)){const hub=document.getElementById('priority-hub');if(hub)hub.innerHTML='<div class="real-empty-card-body">暂无真实预警或优先处理事项，导入店铺多日期数据后生成。</div>';page.querySelectorAll('.alert-card').forEach(n=>n.remove());}page.classList.toggle('real-data-empty-page',!ready);const banner=page.querySelector('.real-data-empty-banner');if(ready){if(banner)banner.remove();const shell=page.querySelector('.data-empty-shell');if(shell)shell.remove();}else{const header=page.querySelector('.page-header');if(header&&!header.nextElementSibling?.classList.contains('real-data-empty-banner')){const x=document.createElement('div');x.className='real-data-empty-banner alert alert-info';x.innerHTML='<span>\u2139\ufe0f</span><span><strong>'+message+'</strong>。导入后此板块才会显示真实内容。</span>';header.insertAdjacentElement('afterend',x);}page.querySelectorAll('.stats-row .stat-value').forEach(n=>n.textContent='0');page.querySelectorAll('.stats-row .stat-trend').forEach(n=>n.textContent='\u6682\u65e0\u771f\u5b9e\u6570\u636e');}});}
+  function apply(){const empty=!storeReady();if(empty&&window.OPS_BRIDGE&&typeof window.OPS_BRIDGE.renderAll==='function')window.OPS_BRIDGE.renderAll();document.querySelectorAll('.nav-badge').forEach(n=>{n.style.display=empty?'none':'';});document.querySelectorAll('.alert-card').forEach(n=>{n.style.display=empty?'none':'';});pageIds.forEach(id=>{const page=document.getElementById('page-'+id);if(!page)return;sanitize(page);const ready=pageReady(id);if(!ready&&['overview','alert'].includes(id)){const hub=document.getElementById('priority-hub');if(hub)hub.innerHTML='<div class="real-empty-card-body">暂无真实预警或优先处理事项，导入店铺多日期数据后生成。</div>';page.querySelectorAll('.alert-card').forEach(n=>n.remove());}page.classList.toggle('real-data-empty-page',!ready);const banner=page.querySelector('.real-data-empty-banner');if(ready){if(banner)banner.remove();const shell=page.querySelector('.data-empty-shell');if(shell)shell.remove();}else{const header=page.querySelector('.page-header');if(header&&!header.nextElementSibling?.classList.contains('real-data-empty-banner')){const x=document.createElement('div');x.className='real-data-empty-banner alert alert-info';x.innerHTML='<span>\u2139\ufe0f</span><span><strong>'+message+'</strong>。导入后此板块才会显示真实内容。</span>';header.insertAdjacentElement('afterend',x);}page.querySelectorAll('.stats-row .stat-value').forEach(n=>n.textContent='\u5f85\u5bfc\u5165');page.querySelectorAll('.stats-row .stat-trend').forEach(n=>n.textContent='\u6682\u65e0\u771f\u5b9e\u6570\u636e');}});}
   if(!localStorage.getItem('tiktok-real-data-state-v4')){['tiktok-real-store-data-v1','tiktok-real-store-data-v2','tiktok-manual-entry-records'].forEach(k=>localStorage.removeItem(k));['tiktok-header-mapping-creators','tiktok-header-mapping-ads','tiktok-header-mapping-videos','tiktok-header-mapping-assets'].forEach(k=>localStorage.removeItem(k));try{indexedDB.deleteDatabase('tiktok-ai-operations-center');indexedDB.deleteDatabase('tiktok-ops-assets');}catch(_){ }localStorage.setItem('tiktok-real-data-state-v4','cleared');}
-  apply();['real-data-ready','real-store-ready','real-data-imported'].forEach(e=>window.addEventListener(e,apply));
+  apply();['real-data-ready','real-store-ready','real-data-imported','real-data-deleted'].forEach(e=>window.addEventListener(e,apply));
 })();
 </script>
 </body>

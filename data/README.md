@@ -1,8 +1,8 @@
 # 运营中控台云端数据文档
 
-网站已接入 `data/real-store-data.js` 中的真实店铺商品快照；页面顶部可以在“全部店铺”和真实店铺之间切换，并按日期范围查看。原有 `data/operations-data.json` 仍保留为旧版模块数据资产。
+网站保留 `data/real-store-data.js` 中的真实店铺名称、商品名称和商品 ID 目录；经营指标、日期快照和趋势数据默认不发布，必须重新导入真实文件后才能显示。原有旧版模块仍只允许使用浏览器本地导入数据。
 
-本次导入的来源是 5 份 TikTok Shop `product_list` Excel：yaya112、yaya thailand tth、PETTOS、Miniyaya、INSPIRE PURIFY，共 1,481 条商品记录。文件日期为 2026-08-01 或 2026-08-23，网站金额沿用原始文件币种 THB（฿）。
+目录来源于 5 个 TikTok Shop 店铺：yaya112、yaya thailand tth、PETTOS、Miniyaya、INSPIRE PURIFY。公开文件只保留商品目录字段，不包含 GMV、订单、曝光、点击、转化、退款、日期或趋势数值。
 
 运营填报请使用同目录的 `tiktok-ai-operations-center-wps-kdocs-template.xlsx`，不要直接让运营编辑 JSON。该模板适合上传到 WPS/Kdocs，黄色区域是填报区，蓝色区域是公式或网站使用字段；网站“数据接入”页也提供直接下载入口。
 
@@ -39,7 +39,7 @@
 - `storeStats`：全部店铺和各店铺总览指标、成交来源占比。
 - `alertSummary`：商品预警页的高风险、中风险、低风险和今日检测商品汇总；演示数据替换时应与预警明细保持同一统计口径。
 - `products`：旧版演示数据中的商品/链接、销量、GMV、变化和预警字段。
-- `real-store-data.js`：本次从 5 份真实 `product_list` Excel 规范化导入的商品快照，包含商品名、商品 ID、GMV、订单、成交件数、曝光、点击、CTR、加购和 CVR 等字段。
+- `real-store-data.js`：公开商品目录，只包含店铺名、商品名和商品 ID；经营指标必须由用户重新导入真实 `product_list` 文件。
 - `actions`：运营已执行动作、负责人、验证节点、证据和结论。
 - `publishTrend`：每日自营发布量。
 - `bd`：达人合作与交付汇总。
