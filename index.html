@@ -1832,6 +1832,20 @@ body {
   <div class="card" style="margin-bottom:18px;border-left:4px solid #0f172a;">
     <div class="card-title">🛰️ 统一数据接入中心 <span>所有版块的数据都从这里进 · 自适应列识别 · 认不出的列指认一次永久记住</span></div>
     <div class="upload-hub-grid">
+      <div class="upload-module" style="grid-column:1/-1;border:2px solid #0f172a;background:#f8fafc;">
+        <div class="upload-module-head">🧠 一键智能导入</div>
+        <div class="upload-module-desc">可同时选择商品、广告、达人、联盟订单、样品和视频文件。系统根据表头自动识别类型，分别保存到对应数据集，并自动刷新相关板块与动态图。</div>
+        <div class="upload-zone" id="unified-data-upload-zone" onclick="document.getElementById('unified-data-file-input').click()">
+          <div class="upload-zone-icon">📂</div>
+          <div class="upload-zone-title">选择一批 TikTok Shop 导出文件</div>
+          <div class="upload-zone-desc">无需手动分类；无法确认类型的文件会列入导入报告，不会被强行写入</div>
+        </div>
+        <input id="unified-data-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        <div class="upload-module-foot">
+          <span id="unified-data-upload-status" class="tag tag-yellow">待导入</span>
+          <span style="font-size:12px;color:#64748b;">同键自动去重 · 缺失字段保持“待导入” · 仅保存到当前浏览器</span>
+        </div>
+      </div>
       <div class="upload-module">
         <div class="upload-module-head">🛍️ 商品 / 店铺经营数据<button class="manual-add-btn" type="button" data-manual-type="商品 / 店铺经营数据">＋ 手动添加</button></div>
         <div class="upload-module-desc">店铺后台 product_list 导出表直接传。驱动：经营总览、排行榜、数据预警、近7天趋势图。</div>
@@ -2139,8 +2153,8 @@ body {
 </div>
 
 <script src="./data/real-store-data.js"></script>
-<script src="./data/real-store-dashboard.js?v=ops-ext-4"></script>
-<script src="./data/ops-v33.js?v=gmvmax-native-3"></script>
+<script src="./data/real-store-dashboard.js?v=ops-ext-5"></script>
+<script src="./data/ops-v33.js?v=gmvmax-native-4"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'data']);
 const DEMO_PAGE_NOTICES = {

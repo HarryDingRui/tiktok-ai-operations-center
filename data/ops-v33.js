@@ -637,7 +637,7 @@
   }
 
   /* ================= 导入处理 ================= */
-  async function handleV33Import(event, datasetKey, statusId) {
+  async function handleV33Import(event, datasetKey, statusId, { notify = true } = {}) {
     const files = [...(event.target.files || [])];
     if (!files.length) return;
     const spec = DATASETS[datasetKey];
@@ -668,10 +668,130 @@
       renderAllV33();
       renderFreshnessBadges();
       bridge.renderPriorityPanel();
-      window.alert(`✅ ${spec.label}导入完成\n\n${notes.join("\n")}\n\n累计存储 ${v33[datasetKey].length} 条（同键自动去重，重复导入不双计）。`);
+      if (notify) window.alert(`✅ ${spec.label}导入完成\n\n${notes.join("\n")}\n\n累计存储 ${v33[datasetKey].length} 条（同键自动去重，重复导入不双计）。`);
+      return { datasetKey, records: parsedCount, stored: v33[datasetKey].length, notes };
     } catch (error) {
       setStatus("导入失败", "tag-red");
-      window.alert(`❌ 导入失败\n\n${error.message || "无法识别该文件"}`);
+      if (notify) window.alert(`❌ 导入失败\n\n${error.message || "无法识别该文件"}`);
+      if (!notify) return { datasetKey, error: error.message || "无法识别该文件" };
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  const UNIFIED_DATASET_LABELS = {
+    products: "商品 / 店铺经营",
+    creatorDaily: "达人订单",
+    affOrders: "联盟订单",
+    samples: "样品订单",
+    adCreatives: "广告 creative data",
+    affVideos: "联盟视频",
+    selfVideos: "自营账号视频",
+    orders: "订单明细",
+  };
+  const UNIFIED_DATASET_SIGNATURES = [
+    { key: "products", keywords: ["商品 ID", "商品名"] },
+    { key: "adCreatives", keywords: ["广告计划名称", "Campaign ID", "Product ID", "Creative type", "成本"] },
+    { key: "creatorDaily", keywords: ["达人用户名", "联盟 GMV", "商品曝光次数"] },
+    { key: "affOrders", keywords: ["订单 ID", "商品 ID", "达人用户名"] },
+    { key: "samples", keywords: ["Order ID", "SKU ID", "Seller SKU"] },
+    { key: "orders", keywords: ["Order ID", "Seller SKU", "SKU Subtotal After Discount"] },
+    { key: "affVideos", keywords: ["视频 ID", "视频标题", "联盟视频归因 GMV"] },
+    { key: "selfVideos", keywords: ["账号", "视频", "播放"] },
+  ];
+  const UNIFIED_FILENAME_HINTS = [
+    { pattern: /product_list/i, key: "products" },
+    { pattern: /creative\s*data|campaign/i, key: "adCreatives" },
+    { pattern: /creator[_\s-]*list/i, key: "creatorDaily" },
+    { pattern: /affiliate[_\s-]*orders/i, key: "affOrders" },
+    { pattern: /video[_\s-]*analysis|video[_\s-]*list/i, key: "affVideos" },
+    { pattern: /全部.*订单|sample|样品/i, key: "samples" },
+    { pattern: /order[_\s-]*sku|ordersku/i, key: "orders" },
+  ];
+
+  function signatureScore(rows, keywords) {
+    return rows.slice(0, 6).reduce((best, row) => {
+      const cells = (row || []).map((cell) => normalizeHeaderText(cell == null ? "" : String(cell)));
+      const score = keywords.reduce((total, keyword) => {
+        const target = normalizeHeaderText(keyword);
+        return total + (cells.some((cell) => cell === target || cell.includes(target)) ? 1 : 0);
+      }, 0);
+      return Math.max(best, score);
+    }, 0);
+  }
+
+  function unifiedFilenameHint(fileName) {
+    return UNIFIED_FILENAME_HINTS.find((hint) => hint.pattern.test(fileName)) || null;
+  }
+
+  async function detectUnifiedDataset(file) {
+    const hinted = unifiedFilenameHint(file.name);
+    if (hinted) return { key: hinted.key };
+    const sheets = await readWorkbook(file);
+    const matches = UNIFIED_DATASET_SIGNATURES
+      .map((signature) => ({ key: signature.key, score: Math.max(...sheets.map((sheet) => signatureScore(sheet.rows, signature.keywords))) }))
+      .filter((match) => match.score >= 2);
+    if (!matches.length) return { key: null, reason: "未识别到支持的表头" };
+    const bestScore = Math.max(...matches.map((match) => match.score));
+    const best = matches.filter((match) => match.score === bestScore);
+    if (best.length !== 1) return { key: null, reason: `表头同时符合：${best.map((match) => UNIFIED_DATASET_LABELS[match.key]).join("、")}` };
+    return { key: best[0].key };
+  }
+
+  async function handleUnifiedImport(event) {
+    const files = [...(event.target.files || [])];
+    const status = document.getElementById("unified-data-upload-status");
+    const setStatus = (text, cls = "tag-yellow") => {
+      if (!status) return;
+      status.className = `tag ${cls}`;
+      status.textContent = text;
+    };
+    if (!files.length) return;
+    setStatus(`正在识别 ${files.length} 个文件…`);
+    const groups = new Map();
+    const issues = [];
+    try {
+      for (const file of files) {
+        try {
+          const detected = await detectUnifiedDataset(file);
+          if (!detected.key) {
+            issues.push(`${file.name}：${detected.reason}`);
+            continue;
+          }
+          const group = groups.get(detected.key) || [];
+          group.push(file);
+          groups.set(detected.key, group);
+        } catch (error) {
+          issues.push(`${file.name}：读取失败（${error.message || "文件格式无法读取"}）`);
+        }
+      }
+      const results = [];
+      let importedFileCount = 0;
+      const productFiles = groups.get("products") || [];
+      if (productFiles.length) {
+        try {
+          const imported = await bridge.importStoreFiles(productFiles, { notify: false });
+          importedFileCount += productFiles.length;
+          results.push(`${UNIFIED_DATASET_LABELS.products}：${imported.snapshots.reduce((sum, snapshot) => sum + snapshot.productCount, 0)} 条商品，${productFiles.length} 个文件`);
+        } catch (error) {
+          issues.push(`商品 / 店铺经营：${error.message || "导入失败"}`);
+        }
+      }
+      for (const [datasetKey, datasetFiles] of groups) {
+        if (datasetKey === "products") continue;
+        const result = await handleV33Import({ target: { files: datasetFiles, value: "" } }, datasetKey, null, { notify: false });
+        if (result && result.error) issues.push(`${UNIFIED_DATASET_LABELS[datasetKey]}：${result.error}`);
+        else if (result) {
+          importedFileCount += datasetFiles.length;
+          results.push(`${UNIFIED_DATASET_LABELS[datasetKey]}：解析 ${result.records} 条，当前累计 ${result.stored} 条，${datasetFiles.length} 个文件`);
+        }
+      }
+      if (!results.length) setStatus("未找到可导入文件", "tag-red");
+      else setStatus(`已自动归类 ${importedFileCount} 个文件 · ${issues.length ? `${issues.length} 个需检查` : "全部成功"}`, issues.length ? "tag-yellow" : "tag-green");
+      const report = ["✅ 自动归类导入完成", "", ...results];
+      if (issues.length) report.push("", "⚠️ 以下文件未导入：", ...issues);
+      report.push("", "已保存到当前浏览器，并已刷新对应板块与动态图。");
+      window.alert(report.join("\n"));
     } finally {
       event.target.value = "";
     }
@@ -2575,6 +2695,7 @@
     bind("asset-video-input", handleAssetVideoImport);
     bind("order-file-input", (e) => handleV33Import(e, "orders", "order-upload-status"));
     bind("pricing-file-input", handlePricingImport);
+    bind("unified-data-file-input", handleUnifiedImport);
     // 利润页：手动补成本（事件委托，内容动态渲染）
     document.addEventListener("click", (e) => {
       const btn = e.target && e.target.closest ? e.target.closest(".profit-patch-save") : null;

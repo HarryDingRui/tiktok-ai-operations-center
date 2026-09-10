@@ -1224,16 +1224,16 @@
     });
   }
 
-  async function handleFileImport(event) {
-    const files = [...(event.target.files || [])];
-    if (!files.length) return;
-    updateUploadStatus(`正在解析 ${files.length} 个文件…`);
+  async function importStoreFiles(files, { notify = true } = {}) {
+    const selectedFiles = [...(files || [])];
+    if (!selectedFiles.length) return { snapshots: [] };
+    updateUploadStatus(`正在解析 ${selectedFiles.length} 个文件…`);
     let previousData = currentData;
     try {
       await dataReadyPromise;
       previousData = currentData;
       await ensureXlsxLibrary();
-      const importedSnapshots = await Promise.all(files.map(parseProductListFile));
+      const importedSnapshots = await Promise.all(selectedFiles.map(parseProductListFile));
       for (const snapshot of importedSnapshots) {
         if (!isDateKey(snapshot.reportDate)) {
           const input = window.prompt(`未能自动识别文件「${snapshot.sourceFile}」的数据日期。\n\n请输入该文件对应的日期（格式 YYYY-MM-DD），点取消则中止本次导入：`, "");
@@ -1268,12 +1268,24 @@
       renderMappingPanel(importedSnapshots);
       const unmatchedCount = importedSnapshots.reduce((sum, snapshot) => sum + (((snapshot.matchReport || {}).unmatched || []).length), 0);
       updateUploadStatus(`已导入 ${importedSnapshots.length} 个文件 · ${importedSnapshots.reduce((sum, snapshot) => sum + snapshot.productCount, 0)} 条商品`);
-      window.alert(`✅ 数据导入完成\n\n${importedSnapshots.map((snapshot) => `${snapshot.inferredStore} · ${snapshot.reportDate}：${snapshot.productCount} 条商品`).join("\n")}\n\n历史快照已按店铺和日期保存。${unmatchedCount ? `\n\n有 ${unmatchedCount} 列未自动识别，请到「数据接入」页的黄色面板指认一次，系统会永久记住。` : "\n\n所有列均已自动识别。"}`);
+      if (notify) {
+        window.alert(`✅ 数据导入完成\n\n${importedSnapshots.map((snapshot) => `${snapshot.inferredStore} · ${snapshot.reportDate}：${snapshot.productCount} 条商品`).join("\n")}\n\n历史快照已按店铺和日期保存。${unmatchedCount ? `\n\n有 ${unmatchedCount} 列未自动识别，请到「数据接入」页的黄色面板指认一次，系统会永久记住。` : "\n\n所有列均已自动识别。"}`);
+      }
+      return { snapshots: importedSnapshots };
     } catch (error) {
       currentData = previousData;
       renderAll();
       updateUploadStatus("导入失败，请检查文件格式", "error");
-      window.alert(`❌ 导入失败\n\n${error.message || "无法识别该文件"}`);
+      if (notify) window.alert(`❌ 导入失败\n\n${error.message || "无法识别该文件"}`);
+      throw error;
+    }
+  }
+
+  async function handleFileImport(event) {
+    try {
+      await importStoreFiles([...(event.target.files || [])]);
+    } catch {
+      // importStoreFiles 已负责恢复旧状态并提示错误；这里避免 change 事件产生未处理的 Promise rejection。
     } finally {
       event.target.value = "";
     }
@@ -1377,6 +1389,7 @@
     resolveHeaderIndices,
     standardCanonicalHeaders,
     renderAll,
+    importStoreFiles,
     renderPriorityPanel,
     updateUploadStatus,
   };
