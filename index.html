@@ -571,6 +571,9 @@ body {
 .upload-module .upload-zone { margin:0; }
 .upload-module-link { font-size:11px; color:#2563eb; cursor:pointer; text-decoration:none; }
 .upload-module-link:hover { text-decoration:underline; }
+.file-catalog-summary { margin-top:12px; color:#475569; font-size:13px; font-weight:600; }
+.file-catalog-table { margin-top:10px; }
+.file-catalog-table th, .file-catalog-table td { white-space:nowrap; }
 @media (max-width: 1100px) { .upload-hub-grid { grid-template-columns:1fr 1fr; } }
 @media (max-width: 640px) { .upload-hub-grid { grid-template-columns:1fr; } }
 
@@ -1843,8 +1846,10 @@ body {
         <input id="unified-data-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
           <span id="unified-data-upload-status" class="tag tag-yellow">待导入</span>
+          <button class="btn" type="button" onclick="openUnifiedDirectoryPicker()">导入整个导出文件夹</button>
           <span style="font-size:12px;color:#64748b;">同键自动去重 · 缺失字段保持“待导入” · 仅保存到当前浏览器</span>
         </div>
+        <input id="unified-data-directory-input" type="file" accept=".xlsx,.xls,.csv" webkitdirectory directory multiple style="display:none;">
       </div>
       <div class="upload-module">
         <div class="upload-module-head">🛍️ 商品 / 店铺经营数据<button class="manual-add-btn" type="button" data-manual-type="商品 / 店铺经营数据">＋ 手动添加</button></div>
@@ -2082,6 +2087,18 @@ body {
     <div style="margin-top:10px;font-size:12px;color:#64748b;">选择对应模块后，填写日期、对象、数值、状态和说明。手动记录仅保存在当前浏览器，不影响原有上传入口。</div>
   </div>
 
+  <div class="card" style="margin-top:14px;" data-file-catalog-card>
+    <div class="card-title">🗂️ 自动归类文件清单 <span>按店铺 / 类型 / 数据日期登记</span></div>
+    <div style="font-size:13px;line-height:1.7;color:#475569;">
+      文件导入后会自动识别为“广告、商品、达人视频、达人、样品订单、联盟订单”，并保留店铺和文件日期。选择本地归类目录后，网站会在该目录创建“店铺\数据类型”文件夹并复制原文件；原始文件不会删除，也不会覆盖同名文件。
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;">
+      <button id="choose-local-directory" class="btn btn-primary" type="button">选择本地归类目录</button>
+      <button id="download-catalog-manifest" class="btn" type="button">下载归类清单</button>
+      <span id="local-directory-status" class="tag tag-gray">未选择本地目录，仅保存到当前浏览器</span>
+    </div>
+    <div id="data-file-catalog" style="margin-top:14px;"></div>
+  </div>
   <div class="card" style="margin-top:14px;">
     <div class="card-title">📋 字段与来源登记 <span>Agent 执行依赖真实字段</span></div>
     <div class="desktop-table-wrap">
@@ -2155,6 +2172,7 @@ body {
 <script src="./data/real-store-data.js"></script>
 <script src="./data/real-store-dashboard.js?v=ops-ext-5"></script>
 <script src="./data/ops-v33.js?v=gmvmax-native-5"></script>
+<script src="./data/file-categorization.js?v=auto-categorization-1"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'alert', 'bd', 'ads', 'videos', 'profit', 'validation', 'knowledge', 'agents', 'data']);
 const DEMO_PAGE_NOTICES = {};
@@ -2373,8 +2391,8 @@ updateDataContextVisibility('overview');
   function body(){const el=document.createElement('div');el.className='real-empty-card-body';el.textContent=message+'。导入后显示真实数据。';return el;}
   function sanitize(page){
     const dynamic=['priority-hub','overview-ranking-grid','real-data-summary','source-split-panel','bd-kpi-row','bd-lists-panel','bd-trend-panel','bd-ledger-panel','bd-orders-panel','ads-kpi-row','ads-lifecycle-panel','ads-action-seq-panel','ads-product-health-panel','ads-creative-boards','gmvmax-product-id-panel','asset-library-panel','videos-kpi-row','video-gmv-board','video-ads-gap-panel','self-video-panel','product-trend-panel','product-quadrant-panel','cross-diagnosis-panel','profit-kpi-row','profit-loss-panel','profit-sku-panel','profit-unmatched-panel','profit-rate-panel'];
-    page.querySelectorAll('.card').forEach(card=>{
-      if(card.dataset.realSanitized||dynamic.some(id=>card.querySelector('#'+id))||card.querySelector('.upload-zone'))return;
+       page.querySelectorAll('.card').forEach(card=>{
+       if(card.dataset.realSanitized||card.dataset.fileCatalogCard||dynamic.some(id=>card.querySelector('#'+id))||card.querySelector('.upload-zone'))return;
       const title=card.querySelector(':scope > .card-title');if(!title)return;
       const validationTable=page.id==='page-validation'&&card.querySelector('table');
       if(validationTable){

@@ -2764,6 +2764,7 @@
     bind("order-file-input", (e) => handleV33Import(e, "orders", "order-upload-status"));
     bind("pricing-file-input", handlePricingImport);
     bind("unified-data-file-input", handleUnifiedImport);
+    bind("unified-data-directory-input", handleUnifiedImport);
     // 利润页：手动补成本（事件委托，内容动态渲染）
     document.addEventListener("click", (e) => {
       const btn = e.target && e.target.closest ? e.target.closest(".profit-patch-save") : null;
