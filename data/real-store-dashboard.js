@@ -800,8 +800,8 @@
 
     const productCard = [...page.querySelectorAll(".card")].find((card) => card.textContent.includes("🛍️ 商品经营"));
     if (productCard) {
-      const largeValue = productCard.querySelector("div[style*='font-size:32px']");
-      const description = productCard.querySelector("div[style*='font-size:13px']");
+      const largeValue = document.getElementById("overview-product-value") || productCard.querySelector("div[style*='font-size:32px']");
+      const description = document.getElementById("overview-product-meta") || productCard.querySelector("div[style*='font-size:13px']");
       if (largeValue) largeValue.textContent = formatNumber(totals.productCount, 0);
       if (description) description.innerHTML = `${scope} 当前最新商品记录<br><span style="color:#64748b;font-weight:600;">${escapeHtml(dateRangeLabel())}</span>`;
     }

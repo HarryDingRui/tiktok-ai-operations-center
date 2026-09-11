@@ -751,15 +751,15 @@ body {
     <div class="card">
       <div class="card-title">🛍️ 商品经营</div>
       <div style="display:flex;align-items:center;gap:14px;">
-        <div style="font-size:32px;font-weight:700;color:#0f172a;">0</div>
-        <div style="font-size:13px;color:#64748b;">当前窗口有发布记录的商品 ID<br><span style="color:#ef4444;font-weight:600;">2 个需处理</span></div>
+        <div id="overview-product-value" style="font-size:32px;font-weight:700;color:#0f172a;">0</div>
+        <div id="overview-product-meta" style="font-size:13px;color:#64748b;">当前窗口有发布记录的商品 ID<br><span style="color:#ef4444;font-weight:600;">2 个需处理</span></div>
       </div>
     </div>
     <div class="card">
       <div class="card-title">🤝 BD / 达人</div>
       <div style="display:flex;align-items:center;gap:14px;">
-        <div style="font-size:32px;font-weight:700;color:#0f172a;">0</div>
-        <div style="font-size:13px;color:#64748b;">暂无真实数据</div>
+        <div id="overview-creator-value" style="font-size:32px;font-weight:700;color:#0f172a;">0</div>
+        <div id="overview-creator-meta" style="font-size:13px;color:#64748b;">暂无真实数据</div>
       </div>
     </div>
   </div>
@@ -767,15 +767,15 @@ body {
   <div class="card">
     <div class="card-title">🎯 广告投放</div>
     <div style="display:flex;align-items:center;gap:14px;">
-      <div style="font-size:28px;font-weight:700;color:#0f172a;">0</div>
-      <div style="font-size:13px;color:#64748b;">当前窗口广告消耗<br>ROAS 待导入</div>
+      <div id="overview-ads-value" style="font-size:28px;font-weight:700;color:#0f172a;">0</div>
+      <div id="overview-ads-meta" style="font-size:13px;color:#64748b;">当前窗口广告消耗<br>ROAS 待导入</div>
       <span class="tag tag-dark" style="cursor:pointer;margin-left:auto;" onclick="alert('🤖 调用 广告优化Agent\n\n任务：分析广告计划表现 → 输出调价/换素材建议')">▶ 广告优化Agent</span>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">📝 日报草稿预览 <span>AI日报Agent 生成 · 提交前复核</span></div>
-    <div style="background:#f8fafc;padding:14px;border-radius:8px;font-size:13px;line-height:1.8;color:#64748b;white-space:pre-line;">暂无真实数据，导入后生成日报草稿。</div>
+    <div id="overview-report-draft" style="background:#f8fafc;padding:14px;border-radius:8px;font-size:13px;line-height:1.8;color:#64748b;white-space:pre-line;">暂无真实数据，导入后生成日报草稿。</div>
     <div style="margin-top:10px;display:flex;gap:8px;">
       <button class="btn btn-primary" onclick="alert('✅ 日报已确认并保存到系统')">确认日报</button>
       <button class="btn" onclick="alert('🤖 已重新调用 AI日报Agent 生成新版本')">重新生成</button>
@@ -2170,7 +2170,7 @@ body {
 </div>
 
 <script src="./data/real-store-data.js"></script>
-<script src="./data/cloud-import.js?v=2026-09-cloud-1"></script>
+<script src="./data/cloud-import.js?v=2026-09-cloud-2"></script>
 <script>
 // 新的云端快照发布后，清除旧演示数据的浏览器只迁移一次；之后仍保留用户手动清除的能力。
 (function () {
@@ -2434,7 +2434,7 @@ updateDataContextVisibility('overview');
   function pageReady(id){return id==='overview'||id==='alert'?storeReady():id==='bd'?Boolean(extReady('creators')||extReady('affOrders')||extReady('samples')):id==='ads'?extReady('ads'):id==='videos'?Boolean(extReady('videos')||extReady('assets')):id==='profit'?Boolean(extReady('orders')||extReady('pricing')):false;}
   function body(){const el=document.createElement('div');el.className='real-empty-card-body';el.textContent=message+'。导入后显示真实数据。';return el;}
   function sanitize(page){
-    const dynamic=['priority-hub','overview-ranking-grid','real-data-summary','source-split-panel','bd-kpi-row','bd-lists-panel','bd-trend-panel','bd-ledger-panel','bd-orders-panel','ads-kpi-row','ads-lifecycle-panel','ads-action-seq-panel','ads-product-health-panel','ads-creative-boards','gmvmax-product-id-panel','asset-library-panel','videos-kpi-row','video-gmv-board','video-ads-gap-panel','self-video-panel','product-trend-panel','product-quadrant-panel','cross-diagnosis-panel','profit-kpi-row','profit-loss-panel','profit-sku-panel','profit-unmatched-panel','profit-rate-panel'];
+    const dynamic=['priority-hub','overview-ranking-grid','overview-product-value','overview-product-meta','overview-creator-value','overview-creator-meta','overview-ads-value','overview-ads-meta','overview-report-draft','real-data-summary','source-split-panel','bd-kpi-row','bd-lists-panel','bd-trend-panel','bd-ledger-panel','bd-orders-panel','ads-kpi-row','ads-lifecycle-panel','ads-action-seq-panel','ads-product-health-panel','ads-creative-boards','gmvmax-product-id-panel','asset-library-panel','videos-kpi-row','video-gmv-board','video-ads-gap-panel','self-video-panel','product-trend-panel','product-quadrant-panel','cross-diagnosis-panel','profit-kpi-row','profit-loss-panel','profit-sku-panel','profit-unmatched-panel','profit-rate-panel'];
        page.querySelectorAll('.card').forEach(card=>{
        const insideDynamic=dynamic.some(id=>card.closest('#'+id));
        if(card.dataset.realSanitized||card.dataset.fileCatalogCard||insideDynamic||dynamic.some(id=>card.querySelector('#'+id))||card.querySelector('.upload-zone'))return;

@@ -2689,7 +2689,55 @@
       }).join("") +
       `</div><div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:#64748b;">${latest} · 联盟口径（达人订单合计 ${fmtThb(total)}），不含自营与其他渠道。</div>`;
   }
+  function latestRowsPerStore(rows) {
+    const latestByStore = new Map();
+    rows.forEach((row) => {
+      if (!row.date) return;
+      const store = row.store || "未标注店铺";
+      if (!latestByStore.has(store) || row.date > latestByStore.get(store)) latestByStore.set(store, row.date);
+    });
+    return rows.filter((row) => latestByStore.get(row.store || "未标注店铺") === row.date);
+  }
+  function renderOverviewOperationalCards() {
+    const creatorValue = document.getElementById("overview-creator-value");
+    const creatorMeta = document.getElementById("overview-creator-meta");
+    const adsValue = document.getElementById("overview-ads-value");
+    const adsMeta = document.getElementById("overview-ads-meta");
+    const reportDraft = document.getElementById("overview-report-draft");
+    if (!creatorValue && !adsValue && !reportDraft) return;
+
+    const creatorRows = latestRowsPerStore(scopedRows("creatorDaily"));
+    const activeCreators = new Set(creatorRows
+      .filter((row) => Number(row.orders || 0) > 0 || Number(row.gmv || 0) > 0)
+      .map((row) => `${row.store || "未标注店铺"}|${row.creator || "未标注达人"}`));
+    const creatorGmv = creatorRows.reduce((sum, row) => sum + Number(row.gmv || 0), 0);
+    const creatorDates = creatorRows.map((row) => row.date).filter(Boolean).sort();
+    const latestCreator = creatorDates[creatorDates.length - 1] || "";
+
+    const adsRows = latestRowsPerStore(scopedRows("adCreatives"));
+    const adSpend = adsRows.reduce((sum, row) => sum + Number(row.spend || 0), 0);
+    const adRevenue = adsRows.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
+    const adRoi = adSpend > 0 ? adRevenue / adSpend : null;
+    const adDates = adsRows.map((row) => row.date).filter(Boolean).sort();
+    const latestAd = adDates[adDates.length - 1] || "";
+    const latest = [latestCreator, latestAd].filter(Boolean).sort().pop() || "";
+
+    if (creatorValue) creatorValue.textContent = creatorRows.length ? formatNumber(activeCreators.size, 0) : "待导入";
+    if (creatorMeta) creatorMeta.innerHTML = creatorRows.length
+      ? `动销达人 · GMV ${fmtThb(creatorGmv)}<br><span style="color:#64748b;font-weight:600;">最新日期 ${latestCreator}</span>`
+      : "达人订单待导入";
+    if (adsValue) adsValue.textContent = adsRows.length ? fmtUsd(adSpend) : "待导入";
+    if (adsMeta) adsMeta.innerHTML = adsRows.length
+      ? `广告消耗 · GMV ${fmtUsd(adRevenue)}<br>ROI ${adRoi == null ? "待导入" : `${adRoi.toFixed(2)}x`}`
+      : "广告数据待导入<br>ROI 待导入";
+    if (reportDraft) {
+      reportDraft.textContent = latest
+        ? `已加载真实数据（最新日期 ${latest}）\n达人：${formatNumber(activeCreators.size, 0)} 位动销达人，GMV ${fmtThb(creatorGmv)}\n广告：消耗 ${fmtUsd(adSpend)}，GMV ${fmtUsd(adRevenue)}，ROI ${adRoi == null ? "待导入" : `${adRoi.toFixed(2)}x`}\n以上为导入数据摘要；点击“重新生成”后再生成日报草稿。`
+        : "暂无真实数据，导入后生成日报草稿。";
+    }
+  }
   function renderAllV33() {
+    renderOverviewOperationalCards();
     renderSourceSplit();
     renderBdPageV33();
     renderAdsPageV33();
