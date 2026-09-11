@@ -147,8 +147,11 @@ body {
 .real-ranking-item { display: flex; align-items: center; gap: 7px; padding: 7px 0; border-top: 1px solid rgba(148,163,184,0.22); min-width: 0; }
 .real-ranking-item:first-of-type { border-top: 0; }
 .real-ranking-rank { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: #1e3a8a; color: #fff; font-size: 11px; font-weight: 700; }
-.real-ranking-name { flex: 1; min-width: 0; color: #334155; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.real-ranking-value { color: #0f172a; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.real-ranking-details { flex: 1; min-width: 0; }
+.real-ranking-name { display: block; min-width: 0; color: #334155; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.real-ranking-store { display: block; margin-top: 3px; color: #64748b; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.real-ranking-id { display: block; margin-top: 2px; color: #1e3a8a; font: 700 10px/1.35 Consolas, "SFMono-Regular", monospace; white-space: nowrap; user-select: all; }
+.real-ranking-value { align-self: flex-start; margin-top: 1px; color: #0f172a; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .real-ranking-empty { padding: 14px 4px; color: #92400e; font-size: 12px; line-height: 1.6; }
 @media (max-width: 1100px) { .real-ranking-grid { grid-template-columns: repeat(2, minmax(220px, 1fr)); } .real-field-grid, .source-metric-section .real-field-grid { grid-template-columns: repeat(3, minmax(130px, 1fr)); } }
 @media (max-width: 768px) { .data-context-bar { align-items: flex-start; } .data-context-controls { width: 100%; } .data-context-select, .data-context-date-select, .data-context-date-input { flex: 1; min-width: 180px; } .data-context-date-custom { width: 100%; } .real-ranking-grid { grid-template-columns: 1fr; } .real-field-grid, .source-metric-section .real-field-grid { grid-template-columns: repeat(2, minmax(130px, 1fr)); } .source-field-inspector { grid-template-columns: 1fr; } }
@@ -2215,7 +2218,7 @@ body {
   renderCloudStatuses();
 })();
 </script>
-<script src="./data/real-store-dashboard.js?v=ops-ext-9"></script>
+<script src="./data/real-store-dashboard.js?v=ops-ext-10"></script>
 <script src="./data/ops-v33.js?v=gmvmax-native-11"></script>
 <script src="./data/file-categorization.js?v=auto-categorization-2"></script>
 <script>

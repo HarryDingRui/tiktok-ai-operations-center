@@ -1025,9 +1025,14 @@
       let value = config.mode === "sales" ? `${formatNumber(product.units, 0)} 件` : formatMoney(product.gmv);
       if (config.mode === "up" || config.mode === "down") value = `${product.gmvChangePct > 0 ? "+" : ""}${product.gmvChangePct.toFixed(1)}%`;
       if (config.mode === "cvrDown") value = `${product.cvrChangePp.toFixed(2)} 个百分点`;
-      return `<div class="real-ranking-item" title="${escapeHtml(product.name)}">
+      const productId = product.id || "待导入";
+      return `<div class="real-ranking-item" title="${escapeHtml(product.store)} · 商品 ID ${escapeHtml(productId)} · ${escapeHtml(product.name)}">
         <span class="real-ranking-rank">${index + 1}</span>
-        <span class="real-ranking-name">${escapeHtml(product.name)} · ${escapeHtml(product.store)}</span>
+        <span class="real-ranking-details">
+          <span class="real-ranking-name">${escapeHtml(product.name)}</span>
+          <span class="real-ranking-store">店铺：${escapeHtml(product.store)}</span>
+          <span class="real-ranking-id">ID：${escapeHtml(productId)}</span>
+        </span>
         <span class="real-ranking-value">${value}</span>
       </div>`;
     }).join("") : `<div class="real-ranking-empty">${config.mode === "sales" || config.mode === "gmv" ? "当前范围暂无真实商品数据。" : "需要同一店铺在当前范围内至少有两个日期快照，才生成真实对比。"}</div>`;
