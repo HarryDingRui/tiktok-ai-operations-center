@@ -43,7 +43,7 @@
   }
 
   async function loadExtraData() {
-    if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared") return;
+    if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared" && !window.TIKTOK_CLOUD_SNAPSHOT?.published) return;
     try {
       const db = await openDb(DATABASE_NAME, DATABASE_STORE);
       const row = await new Promise((resolve, reject) => {
@@ -58,6 +58,18 @@
           ads: Array.isArray(row.ads) ? row.ads : [],
           videos: Array.isArray(row.videos) ? row.videos : [],
           assets: Array.isArray(row.assets) ? row.assets : [],
+        };
+      }
+      const hasLocalRows = Object.values(extraData).some((rows) => rows.length > 0);
+      const cloud = window.TIKTOK_CLOUD_SNAPSHOT && window.TIKTOK_CLOUD_SNAPSHOT.v33;
+      if (!hasLocalRows && cloud && typeof cloud === "object") {
+        extraData = {
+          creators: Array.isArray(cloud.creatorDaily) ? cloud.creatorDaily : [],
+          ads: Array.isArray(cloud.adCreatives) ? cloud.adCreatives : [],
+          videos: Array.isArray(cloud.affVideos)
+            ? cloud.affVideos.map((row) => ({ ...row, account: row.account || row.creator || "" }))
+            : [],
+          assets: [],
         };
       }
     } catch (error) {

@@ -1,4 +1,4 @@
-/* TikTok Shop 导出文件归类：只保存文件元数据；原始文件仍由用户掌控。 */
+/* TikTok Shop 导出文件归类：保存文件元数据；原始文件仍由用户掌控，云端快照只登记来源。 */
 (function () {
   "use strict";
 
@@ -120,7 +120,20 @@
   function loadCatalog() {
     try {
       const saved = JSON.parse(window.localStorage.getItem(CATALOG_KEY) || "[]");
-      return Array.isArray(saved) ? saved : [];
+      if (Array.isArray(saved) && saved.length) return saved;
+      const cloudManifest = window.TIKTOK_CLOUD_SNAPSHOT?.manifest;
+      if (!Array.isArray(cloudManifest)) return [];
+      return cloudManifest.map((entry) => ({
+        storeName: entry.store || "待确认",
+        category: entry.category || "待确认",
+        reportDate: entry.date || "待确认",
+        sourceFile: String(entry.file || "").split("/").pop(),
+        relativePath: entry.file || "",
+        rowCount: entry.records ?? null,
+        importedAt: window.TIKTOK_CLOUD_SNAPSHOT.generatedAt || new Date().toISOString(),
+        localPath: "云端真实快照",
+        cloudStatus: entry.status || "invalid",
+      }));
     } catch (error) {
       return [];
     }
@@ -239,7 +252,13 @@
     const rows = stores.map((store) => `<tr><td>${escapeHtml(store)}</td>${CATEGORIES.map((category) => `<td>${cells(store, category) || "—"}</td>`).join("")}<td><strong>${catalog.filter((record) => record.storeName === store).length}</strong></td></tr>`).join("");
     const recent = catalog.slice(0, 12).map((record) => `<tr><td>${escapeHtml(record.storeName)}</td><td><span class="tag tag-blue">${escapeHtml(record.category)}</span></td><td>${escapeHtml(record.reportDate)}</td><td>${escapeHtml(record.sourceFile)}</td><td>${record.rowCount == null ? "—" : record.rowCount}</td><td>${escapeHtml(record.localPath)}</td></tr>`).join("");
     const unresolved = catalog.filter((record) => record.storeName === "待确认" || record.category === "待确认").length;
-    container.innerHTML = `<div class="file-catalog-summary">已登记 ${catalog.length} 个文件 · ${unresolved ? `${unresolved} 个待确认` : "店铺和数据类型均已识别"}</div><div class="desktop-table-wrap"><table class="desktop-table file-catalog-table"><thead><tr><th>店铺</th>${CATEGORIES.map((category) => `<th>${category}</th>`).join("")}<th>合计</th></tr></thead><tbody>${rows}</tbody></table></div><div class="desktop-table-wrap file-catalog-table"><table class="desktop-table"><thead><tr><th>店铺</th><th>类型</th><th>数据日期</th><th>文件名</th><th>记录数</th><th>本地归类路径</th></tr></thead><tbody>${recent}</tbody></table></div>`;
+    const invalid = catalog.filter((record) => record.cloudStatus === "invalid").length;
+    const summary = [
+      `已登记 ${catalog.length} 个文件`,
+      unresolved ? `${unresolved} 个待确认` : "店铺和数据类型均已识别",
+      invalid ? `${invalid} 个文件无法解析，保留在来源清单` : "全部文件可解析",
+    ].join(" · ");
+    container.innerHTML = `<div class="file-catalog-summary">${summary}</div><div class="desktop-table-wrap"><table class="desktop-table file-catalog-table"><thead><tr><th>店铺</th>${CATEGORIES.map((category) => `<th>${category}</th>`).join("")}<th>合计</th></tr></thead><tbody>${rows}</tbody></table></div><div class="desktop-table-wrap file-catalog-table"><table class="desktop-table"><thead><tr><th>店铺</th><th>类型</th><th>数据日期</th><th>文件名</th><th>记录数</th><th>本地归类路径</th></tr></thead><tbody>${recent}</tbody></table></div>`;
   }
 
   async function ingestFiles(files) {

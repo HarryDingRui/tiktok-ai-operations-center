@@ -1805,7 +1805,7 @@ body {
     <div class="page-title">⚙️ 数据接入</div>
     <div class="page-subtitle">Control Plane 数据源 · Agent 执行需要真实数据支撑 · 不以推算替代缺失</div>
   </div>
-  <div class="alert alert-info" style="margin-bottom:18px;"><span>ℹ️</span><span>文件只在本机浏览器内解析和保存，不会自动上传。正式网站部署前，需要主管确认数据源、账号权限、同步频率和敏感字段处理方式。</span></div>
+  <div class="alert alert-info" style="margin-bottom:18px;"><span>ℹ️</span><span>新导入文件默认只保存在当前浏览器；本页另外展示管理员发布的公开云端数据快照。公开发布前请确认数据源、账号权限、同步频率和敏感字段处理方式。</span></div>
   <div id="real-data-summary"></div>
   <div id="import-mapping-panel"></div>
   <div id="import-report-panel"></div>
@@ -1847,7 +1847,7 @@ body {
         <div class="upload-module-foot">
           <span id="unified-data-upload-status" class="tag tag-yellow">待导入</span>
           <button class="btn" type="button" onclick="openUnifiedDirectoryPicker()">导入整个导出文件夹</button>
-          <span style="font-size:12px;color:#64748b;">同键自动去重 · 缺失字段保持“待导入” · 仅保存到当前浏览器</span>
+          <span style="font-size:12px;color:#64748b;">同键自动去重 · 缺失字段保持“待导入” · 新导入默认保存到当前浏览器；已发布快照由网站直接加载</span>
         </div>
         <input id="unified-data-directory-input" type="file" accept=".xlsx,.xls,.csv" webkitdirectory directory multiple style="display:none;">
       </div>
@@ -2170,9 +2170,53 @@ body {
 </div>
 
 <script src="./data/real-store-data.js"></script>
+<script src="./data/cloud-import.js?v=2026-09-cloud-1"></script>
+<script>
+// 新的云端快照发布后，清除旧演示数据的浏览器只迁移一次；之后仍保留用户手动清除的能力。
+(function () {
+  const snapshot = window.TIKTOK_CLOUD_SNAPSHOT;
+  if (!snapshot || !snapshot.published || !snapshot.version) return;
+  const versionKey = "tiktok-cloud-snapshot-version";
+  if (window.localStorage.getItem(versionKey) !== snapshot.version) {
+    if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared") {
+      window.localStorage.removeItem("tiktok-real-data-state-v4");
+    }
+    window.localStorage.setItem(versionKey, snapshot.version);
+  }
+  (snapshot.realStoreData?.stores || []).forEach((store) => {
+    (store.snapshots || []).forEach((item) => { item.imported = true; });
+  });
+  const statusLabels = {
+    creatorDaily: "bd-upload-status",
+    affOrders: "afforder-upload-status",
+    samples: "sample-upload-status",
+    adCreatives: "ads-upload-status",
+    affVideos: "affvideo-upload-status",
+  };
+  const latestDate = (dataset) => (dataset || []).map((row) => row.date).filter(Boolean).sort().pop() || "?";
+  const renderCloudStatuses = () => {
+    Object.entries(statusLabels).forEach(([dataset, elementId]) => {
+      const element = document.getElementById(elementId);
+      const count = snapshot.counts?.[dataset] || 0;
+      if (element && count) {
+        element.className = "tag tag-green";
+        element.textContent = `云端已加载 · ${count.toLocaleString()} 条 · 数据至 ${latestDate(snapshot.v33?.[dataset])}`;
+      }
+    });
+    const productStatus = document.getElementById("real-data-upload-status");
+    if (productStatus) {
+      productStatus.className = "tag tag-green";
+      productStatus.textContent = `云端已加载 · ${snapshot.validFileCount}/${snapshot.sourceFileCount} 个文件`;
+    }
+  };
+  window.addEventListener("real-data-ready", renderCloudStatuses);
+  window.addEventListener("real-store-ready", renderCloudStatuses);
+  renderCloudStatuses();
+})();
+</script>
 <script src="./data/real-store-dashboard.js?v=ops-ext-5"></script>
 <script src="./data/ops-v33.js?v=gmvmax-native-5"></script>
-<script src="./data/file-categorization.js?v=auto-categorization-1"></script>
+<script src="./data/file-categorization.js?v=auto-categorization-2"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'alert', 'bd', 'ads', 'videos', 'profit', 'validation', 'knowledge', 'agents', 'data']);
 const DEMO_PAGE_NOTICES = {};
@@ -2385,7 +2429,7 @@ updateDataContextVisibility('overview');
 (function(){
   const pageIds=['overview','alert','bd','ads','videos','profit','validation','knowledge','agents'];
   const message='\u6682\u65e0\u771f\u5b9e\u6570\u636e\uff0c\u8bf7\u5148\u5230\u201c\u6570\u636e\u63a5\u5165\u201d\u5bfc\u5165\u6570\u636e';
-  function storeReady(){const d=window.REAL_STORE_DATA;return localStorage.getItem('tiktok-real-data-state-v4')!=='cleared'&&d&&Array.isArray(d.stores)&&d.stores.some(s=>Array.isArray(s.snapshots)&&s.snapshots.length);}
+  function storeReady(){const d=window.REAL_STORE_DATA;const cloud=window.TIKTOK_CLOUD_SNAPSHOT?.published;return (localStorage.getItem('tiktok-real-data-state-v4')!=='cleared'||cloud)&&d&&Array.isArray(d.stores)&&d.stores.some(s=>Array.isArray(s.snapshots)&&s.snapshots.length);}
   function extReady(key){return window.OPS_EXT&&typeof window.OPS_EXT.hasImportedData==='function'&&window.OPS_EXT.hasImportedData(key);}
   function pageReady(id){return id==='overview'||id==='alert'?storeReady():id==='bd'?Boolean(extReady('creators')||extReady('affOrders')||extReady('samples')):id==='ads'?extReady('ads'):id==='videos'?Boolean(extReady('videos')||extReady('assets')):id==='profit'?Boolean(extReady('orders')||extReady('pricing')):false;}
   function body(){const el=document.createElement('div');el.className='real-empty-card-body';el.textContent=message+'。导入后显示真实数据。';return el;}

@@ -134,18 +134,36 @@
     });
   }
   async function loadV33() {
-    if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared") return;
+    const cloudSnapshot = window.TIKTOK_CLOUD_SNAPSHOT;
+    if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared" && !cloudSnapshot?.published) return;
     try {
       const row = await idbGet(V33_DATA_KEY);
       if (row && typeof row === "object") {
         const base = EMPTY_DATA();
         Object.keys(base).forEach((k) => { if (Array.isArray(row[k])) base[k] = row[k]; });
+        const hasLocalRows = Object.values(base).some((rows) => rows.length > 0);
+        const cloud = cloudSnapshot && cloudSnapshot.v33;
+        if (!hasLocalRows && cloud && typeof cloud === "object") {
+          Object.keys(base).forEach((k) => { if (Array.isArray(cloud[k])) base[k] = cloud[k]; });
+        }
         v33 = base;
+      } else {
+        const cloud = cloudSnapshot && cloudSnapshot.v33;
+        if (cloud && typeof cloud === "object") {
+          const base = EMPTY_DATA();
+          Object.keys(base).forEach((k) => { if (Array.isArray(cloud[k])) base[k] = cloud[k]; });
+          v33 = base;
+        }
       }
       const m = await idbGet(V33_META_KEY);
       if (m && typeof m === "object") {
         meta.lastImport = m.lastImport || {};
         meta.removedAssets = Array.isArray(m.removedAssets) ? m.removedAssets : [];
+      } else if (cloudSnapshot && cloudSnapshot.v33) {
+        Object.entries(cloudSnapshot.v33).forEach(([dataset, rows]) => {
+          const latest = (Array.isArray(rows) ? rows : []).map((row) => row.date).filter(isDateKey).sort().pop();
+          if (latest) meta.lastImport[dataset] = `${latest}T00:00:00.000Z`;
+        });
       }
       const p = await idbGet("ops-v33-pricing");
       if (p && typeof p === "object" && Array.isArray(p.skus)) { pricing = p; pricingIndex = null; }

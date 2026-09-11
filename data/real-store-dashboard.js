@@ -34,7 +34,8 @@
   let databasePromise = null;
 
   function isStoreDataCleared() {
-    return window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared";
+    return window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared"
+      && !window.TIKTOK_CLOUD_SNAPSHOT?.published;
   }
 
   function parseNumber(value) {
