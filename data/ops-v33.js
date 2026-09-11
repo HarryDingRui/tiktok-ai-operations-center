@@ -2728,8 +2728,9 @@
       return;
     }
     const dates = [...new Set(creatorRows.map((r) => r.date).filter(Boolean))].sort();
+    const first = dates[0];
     const latest = dates[dates.length - 1];
-    const rows = creatorRows.filter((r) => r.date === latest);
+    const rows = creatorRows;
     const sum = (k) => rows.reduce((s, r) => s + (r[k] || 0), 0);
     const total = sum("gmv");
     const parts = [
@@ -2748,7 +2749,7 @@
         const pct = Math.round((p.value / total) * 100);
         return `<div><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;"><span>${p.label}</span><span style="font-weight:700;">${pct}% · ${fmtThb(p.value)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${p.color};"></div></div></div>`;
       }).join("") +
-      `</div><div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:#64748b;">${latest} · 联盟口径（达人订单合计 ${fmtThb(total)}），不含自营与其他渠道。</div>`;
+      `</div><div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:#64748b;">${first === latest ? latest : `${first} 至 ${latest}`} · 区间累计联盟口径（达人订单合计 ${fmtThb(total)}），不含自营与其他渠道。</div>`;
   }
   function latestRowsPerStore(rows) {
     const latestByStore = new Map();
@@ -2768,8 +2769,9 @@
     if (!creatorValue && !adsValue && !reportDraft) return;
     const creatorOverviewRows = scopedOverviewRows("creatorDaily");
     const detailedCreatorRows = scopedRows("creatorDaily");
-    const creatorRows = latestRowsPerStore(creatorOverviewRows.length ? creatorOverviewRows : detailedCreatorRows);
-    const activeCreators = new Set(creatorRows
+    const creatorRows = creatorOverviewRows.length ? creatorOverviewRows : detailedCreatorRows;
+    const latestCreatorRows = latestRowsPerStore(creatorRows);
+    const activeCreators = new Set(latestCreatorRows
       .filter((row) => Number(row.orders || 0) > 0 || Number(row.gmv || 0) > 0)
       .map((row) => `${row.store || "未标注店铺"}|${row.creator || "未标注达人"}`));
     const creatorGmv = creatorRows.reduce((sum, row) => sum + Number(row.gmv || 0), 0);
@@ -2778,25 +2780,25 @@
 
     const adsOverviewRows = scopedOverviewRows("adCreatives");
     const detailedAdsRows = scopedRows("adCreatives");
-    const adsRows = latestRowsPerStore(adsOverviewRows.length ? adsOverviewRows : detailedAdsRows);
+    const adsRows = adsOverviewRows.length ? adsOverviewRows : detailedAdsRows;
     const adSpend = adsRows.reduce((sum, row) => sum + Number(row.spend || 0), 0);
     const adRevenue = adsRows.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
     const adRoi = adSpend > 0 ? adRevenue / adSpend : null;
     const adDates = adsRows.map((row) => row.date).filter(Boolean).sort();
     const latestAd = adDates[adDates.length - 1] || "";
     const latest = [latestCreator, latestAd].filter(Boolean).sort().pop() || "";
-    const summaryCreatorCount = creatorRows.some((row) => row.activeCreators != null)
-      ? creatorRows.reduce((sum, row) => sum + Number(row.activeCreators || 0), 0)
+    const summaryCreatorCount = latestCreatorRows.some((row) => row.activeCreators != null)
+      ? latestCreatorRows.reduce((sum, row) => sum + Number(row.activeCreators || 0), 0)
       : activeCreators.size;
     const analyticsLoading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY && !creatorRows.length && !adsRows.length;
 
     if (creatorValue) creatorValue.textContent = creatorRows.length ? formatNumber(summaryCreatorCount, 0) : analyticsLoading ? "读取中" : "待导入";
     if (creatorMeta) creatorMeta.innerHTML = creatorRows.length
-      ? `动销达人 · GMV ${fmtThb(creatorGmv)}<br><span style="color:#64748b;font-weight:600;">最新日期 ${latestCreator}</span>`
+      ? `最新日动销达人 · 区间 GMV ${fmtThb(creatorGmv)}<br><span style="color:#64748b;font-weight:600;">区间至 ${latestCreator}</span>`
       : analyticsLoading ? "正在读取云端达人数据…" : "当前范围暂无达人订单";
     if (adsValue) adsValue.textContent = adsRows.length ? fmtUsd(adSpend) : analyticsLoading ? "读取中" : "待导入";
     if (adsMeta) adsMeta.innerHTML = adsRows.length
-      ? `广告消耗 · GMV ${fmtUsd(adRevenue)}<br>ROI ${adRoi == null ? "待导入" : `${adRoi.toFixed(2)}x`}`
+      ? `区间广告消耗 · GMV ${fmtUsd(adRevenue)}<br>ROI ${adRoi == null ? "待导入" : `${adRoi.toFixed(2)}x`}`
       : analyticsLoading ? "正在读取云端广告数据…<br>ROI 待计算" : "当前范围暂无广告数据<br>ROI 待导入";
     if (reportDraft) {
       reportDraft.textContent = analyticsLoading

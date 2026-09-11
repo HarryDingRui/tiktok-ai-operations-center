@@ -666,6 +666,15 @@
     return summarizeProducts(productsInScope());
   }
 
+  function periodProductsInScope() {
+    return storesInScope().flatMap((store) =>
+      snapshotsInRange(store).flatMap((snapshot) => snapshot.products));
+  }
+
+  function periodTotalsInScope() {
+    return summarizeProducts(periodProductsInScope());
+  }
+
   function scopeLabel() {
     return selectedStore === "all" ? "全部店铺" : selectedStore;
   }
@@ -785,14 +794,15 @@
     const statsRow = page && page.querySelector(".stats-row");
     if (!statsRow) return;
     const cards = [...statsRow.querySelectorAll(".stat-card")];
-    const totals = totalsInScope();
+    const totals = periodTotalsInScope();
     const scope = scopeLabel();
+    const range = dateRangeLabel();
     const values = [formatMoney(totals.gmv), formatNumber(totals.orders, 0), formatCompact(totals.exposure), formatPercent(totals.cvr)];
     const descriptions = [
-      `${scope} · 区间内最新可用快照 ${currentSnapshotDateLabel()}`,
-      `${scope} · 区间内最新可用快照合计`,
-      `${scope} · 区间内最新可用快照`,
-      `${scope} · 订单数 ÷ 商品点击量`,
+      `${scope} · 所选区间累计 · ${range}`,
+      `${scope} · 所选区间累计`,
+      `${scope} · 所选区间累计`,
+      `${scope} · 区间订单数 ÷ 区间商品点击量`,
     ];
     cards.forEach((card, index) => {
       const value = card.querySelector(".stat-value");
@@ -805,7 +815,8 @@
     if (productCard) {
       const largeValue = document.getElementById("overview-product-value") || productCard.querySelector("div[style*='font-size:32px']");
       const description = document.getElementById("overview-product-meta") || productCard.querySelector("div[style*='font-size:13px']");
-      if (largeValue) largeValue.textContent = formatNumber(totals.productCount, 0);
+      const latestTotals = totalsInScope();
+      if (largeValue) largeValue.textContent = formatNumber(latestTotals.productCount, 0);
       if (description) description.innerHTML = `${scope} 当前最新商品记录<br><span style="color:#64748b;font-weight:600;">${escapeHtml(dateRangeLabel())}</span>`;
     }
   }
