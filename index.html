@@ -710,7 +710,7 @@ body {
     <div class="card">
       <div class="card-title">📈 成交来源占比 <span>联盟口径 · 达人订单驱动</span></div>
       <div id="source-split-panel">
-        <div class="ops-empty">导入达人订单后，这里展示 视频 / 直播 / 商品卡 成交占比。</div>
+        <div class="ops-empty">正在读取云端达人日快照，请稍候…</div>
       </div>
     </div>
   </div>
@@ -758,8 +758,8 @@ body {
     <div class="card">
       <div class="card-title">🤝 BD / 达人</div>
       <div style="display:flex;align-items:center;gap:14px;">
-        <div id="overview-creator-value" style="font-size:32px;font-weight:700;color:#0f172a;">0</div>
-        <div id="overview-creator-meta" style="font-size:13px;color:#64748b;">暂无真实数据</div>
+        <div id="overview-creator-value" style="font-size:32px;font-weight:700;color:#0f172a;">读取中</div>
+        <div id="overview-creator-meta" style="font-size:13px;color:#64748b;">正在读取云端达人数据…</div>
       </div>
     </div>
   </div>
@@ -767,15 +767,15 @@ body {
   <div class="card">
     <div class="card-title">🎯 广告投放</div>
     <div style="display:flex;align-items:center;gap:14px;">
-      <div id="overview-ads-value" style="font-size:28px;font-weight:700;color:#0f172a;">0</div>
-      <div id="overview-ads-meta" style="font-size:13px;color:#64748b;">当前窗口广告消耗<br>ROAS 待导入</div>
+      <div id="overview-ads-value" style="font-size:28px;font-weight:700;color:#0f172a;">读取中</div>
+      <div id="overview-ads-meta" style="font-size:13px;color:#64748b;">正在读取云端广告数据…<br>ROI 待计算</div>
       <span class="tag tag-dark" style="cursor:pointer;margin-left:auto;" onclick="alert('🤖 调用 广告优化Agent\n\n任务：分析广告计划表现 → 输出调价/换素材建议')">▶ 广告优化Agent</span>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">📝 日报草稿预览 <span>AI日报Agent 生成 · 提交前复核</span></div>
-    <div id="overview-report-draft" style="background:#f8fafc;padding:14px;border-radius:8px;font-size:13px;line-height:1.8;color:#64748b;white-space:pre-line;">暂无真实数据，导入后生成日报草稿。</div>
+    <div id="overview-report-draft" style="background:#f8fafc;padding:14px;border-radius:8px;font-size:13px;line-height:1.8;color:#64748b;white-space:pre-line;">正在读取云端达人、广告和视频数据，请稍候…</div>
     <div style="margin-top:10px;display:flex;gap:8px;">
       <button class="btn btn-primary" onclick="alert('✅ 日报已确认并保存到系统')">确认日报</button>
       <button class="btn" onclick="alert('🤖 已重新调用 AI日报Agent 生成新版本')">重新生成</button>
@@ -2170,7 +2170,7 @@ body {
 </div>
 
 <script src="./data/real-store-data.js"></script>
-<script src="./data/cloud-import.js?v=2026-09-cloud-2"></script>
+<script src="./data/cloud-import.js?v=2026-09-cloud-4"></script>
 <script>
 // 新的云端快照发布后，清除旧演示数据的浏览器只迁移一次；之后仍保留用户手动清除的能力。
 (function () {
@@ -2193,14 +2193,15 @@ body {
     adCreatives: "ads-upload-status",
     affVideos: "affvideo-upload-status",
   };
-  const latestDate = (dataset) => (dataset || []).map((row) => row.date).filter(Boolean).sort().pop() || "?";
+  const latestDate = (dataset) => (dataset || []).map((row) => row.date).filter(Boolean).sort().pop() || "";
+  const cloudDatasetLatestDate = (dataset) => latestDate(snapshot.v33?.[dataset]) || snapshot.v33Dates?.[dataset]?.slice(-1)[0] || "?";
   const renderCloudStatuses = () => {
     Object.entries(statusLabels).forEach(([dataset, elementId]) => {
       const element = document.getElementById(elementId);
       const count = snapshot.counts?.[dataset] || 0;
       if (element && count) {
         element.className = "tag tag-green";
-        element.textContent = `云端已加载 · ${count.toLocaleString()} 条 · 数据至 ${latestDate(snapshot.v33?.[dataset])}`;
+        element.textContent = `云端已加载 · ${count.toLocaleString()} 条 · 数据至 ${cloudDatasetLatestDate(dataset)}`;
       }
     });
     const productStatus = document.getElementById("real-data-upload-status");

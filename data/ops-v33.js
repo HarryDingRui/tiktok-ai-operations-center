@@ -134,10 +134,32 @@
       tx.onerror = () => reject(tx.error);
     });
   }
+  async function loadCloudV33() {
+    const snapshot = window.TIKTOK_CLOUD_SNAPSHOT;
+    if (snapshot?.v33 && typeof snapshot.v33 === "object") return snapshot.v33;
+    if (snapshot?.v33Urls && typeof snapshot.v33Urls === "object") {
+      const entries = await Promise.all(Object.entries(snapshot.v33Urls).map(async ([dataset, url]) => {
+        const response = await fetch(url, { cache: "force-cache" });
+        if (!response.ok) throw new Error(`云端 ${dataset} 数据读取失败（HTTP ${response.status}）`);
+        return [dataset, await response.json()];
+      }));
+      return Object.fromEntries(entries);
+    }
+    if (!snapshot?.v33Url) return null;
+    const response = await fetch(snapshot.v33Url, { cache: "force-cache" });
+    if (!response.ok) throw new Error(`云端分析数据读取失败（HTTP ${response.status}）`);
+    const parsed = await response.json();
+    return parsed && typeof parsed === "object" ? parsed : null;
+  }
   async function loadV33() {
     const cloudSnapshot = window.TIKTOK_CLOUD_SNAPSHOT;
     if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared" && !cloudSnapshot?.published) return;
-    const cloud = cloudSnapshot && cloudSnapshot.v33;
+    let cloud = null;
+    try {
+      cloud = await loadCloudV33();
+    } catch (error) {
+      console.warn("云端分析数据读取失败，继续使用本地数据", error);
+    }
     const base = EMPTY_DATA();
     if (cloud && typeof cloud === "object") {
       Object.keys(base).forEach((k) => { if (Array.isArray(cloud[k])) base[k] = cloud[k]; });
