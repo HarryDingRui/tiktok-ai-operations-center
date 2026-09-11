@@ -44,6 +44,16 @@
 
   async function loadExtraData() {
     if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared" && !window.TIKTOK_CLOUD_SNAPSHOT?.published) return;
+    const cloud = window.TIKTOK_CLOUD_SNAPSHOT && window.TIKTOK_CLOUD_SNAPSHOT.v33;
+    const cloudData = cloud && typeof cloud === "object" ? {
+      creators: Array.isArray(cloud.creatorDaily) ? cloud.creatorDaily : [],
+      ads: Array.isArray(cloud.adCreatives) ? cloud.adCreatives : [],
+      videos: Array.isArray(cloud.affVideos)
+        ? cloud.affVideos.map((row) => ({ ...row, account: row.account || row.creator || "" }))
+        : [],
+      assets: [],
+    } : null;
+    if (cloudData) extraData = cloudData;
     try {
       const db = await openDb(DATABASE_NAME, DATABASE_STORE);
       const row = await new Promise((resolve, reject) => {
@@ -53,27 +63,12 @@
         req.onerror = () => reject(req.error);
       });
       if (row && typeof row === "object") {
-        extraData = {
-          creators: Array.isArray(row.creators) ? row.creators : [],
-          ads: Array.isArray(row.ads) ? row.ads : [],
-          videos: Array.isArray(row.videos) ? row.videos : [],
-          assets: Array.isArray(row.assets) ? row.assets : [],
-        };
-      }
-      const hasLocalRows = Object.values(extraData).some((rows) => rows.length > 0);
-      const cloud = window.TIKTOK_CLOUD_SNAPSHOT && window.TIKTOK_CLOUD_SNAPSHOT.v33;
-      if (!hasLocalRows && cloud && typeof cloud === "object") {
-        extraData = {
-          creators: Array.isArray(cloud.creatorDaily) ? cloud.creatorDaily : [],
-          ads: Array.isArray(cloud.adCreatives) ? cloud.adCreatives : [],
-          videos: Array.isArray(cloud.affVideos)
-            ? cloud.affVideos.map((row) => ({ ...row, account: row.account || row.creator || "" }))
-            : [],
-          assets: [],
-        };
+        Object.keys(extraData).forEach((key) => {
+          if (Array.isArray(row[key]) && row[key].length > 0) extraData[key] = row[key];
+        });
       }
     } catch (error) {
-      console.warn("读取扩展数据失败", error);
+      console.warn("读取扩展数据失败，继续使用云端快照", error);
     }
   }
 

@@ -136,38 +136,38 @@
   async function loadV33() {
     const cloudSnapshot = window.TIKTOK_CLOUD_SNAPSHOT;
     if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared" && !cloudSnapshot?.published) return;
+    const cloud = cloudSnapshot && cloudSnapshot.v33;
+    const base = EMPTY_DATA();
+    if (cloud && typeof cloud === "object") {
+      Object.keys(base).forEach((k) => { if (Array.isArray(cloud[k])) base[k] = cloud[k]; });
+    }
     try {
       const row = await idbGet(V33_DATA_KEY);
       if (row && typeof row === "object") {
-        const base = EMPTY_DATA();
-        Object.keys(base).forEach((k) => { if (Array.isArray(row[k])) base[k] = row[k]; });
-        const hasLocalRows = Object.values(base).some((rows) => rows.length > 0);
-        const cloud = cloudSnapshot && cloudSnapshot.v33;
-        if (!hasLocalRows && cloud && typeof cloud === "object") {
-          Object.keys(base).forEach((k) => { if (Array.isArray(cloud[k])) base[k] = cloud[k]; });
-        }
-        v33 = base;
-      } else {
-        const cloud = cloudSnapshot && cloudSnapshot.v33;
-        if (cloud && typeof cloud === "object") {
-          const base = EMPTY_DATA();
-          Object.keys(base).forEach((k) => { if (Array.isArray(cloud[k])) base[k] = cloud[k]; });
-          v33 = base;
-        }
+        // 本地导入优先；仅当某个数据集没有本地记录时，才用云端快照补齐。
+        Object.keys(base).forEach((k) => {
+          if (Array.isArray(row[k]) && row[k].length > 0) base[k] = row[k];
+        });
       }
+    } catch (e) { console.warn("v3.3 本地数据读取失败，继续使用云端快照", e); }
+    v33 = base;
+    try {
       const m = await idbGet(V33_META_KEY);
       if (m && typeof m === "object") {
         meta.lastImport = m.lastImport || {};
         meta.removedAssets = Array.isArray(m.removedAssets) ? m.removedAssets : [];
-      } else if (cloudSnapshot && cloudSnapshot.v33) {
-        Object.entries(cloudSnapshot.v33).forEach(([dataset, rows]) => {
-          const latest = (Array.isArray(rows) ? rows : []).map((row) => row.date).filter(isDateKey).sort().pop();
-          if (latest) meta.lastImport[dataset] = `${latest}T00:00:00.000Z`;
-        });
       }
+    } catch (e) { console.warn("v3.3 元数据读取失败，继续使用云端日期", e); }
+    if (!Object.keys(meta.lastImport).length && cloud && typeof cloud === "object") {
+      Object.entries(cloud).forEach(([dataset, rows]) => {
+        const latest = (Array.isArray(rows) ? rows : []).map((row) => row.date).filter(isDateKey).sort().pop();
+        if (latest) meta.lastImport[dataset] = `${latest}T00:00:00.000Z`;
+      });
+    }
+    try {
       const p = await idbGet("ops-v33-pricing");
       if (p && typeof p === "object" && Array.isArray(p.skus)) { pricing = p; pricingIndex = null; }
-    } catch (e) { console.warn("v3.3 数据读取失败", e); }
+    } catch (e) { console.warn("价格数据读取失败，继续使用其他云端数据", e); }
   }
   async function saveV33() {
     try { await idbPut(V33_DATA_KEY, v33); await idbPut(V33_META_KEY, meta); await idbPut("ops-v33-pricing", pricing); }
