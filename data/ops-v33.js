@@ -313,6 +313,14 @@
     if (bounds?.start) rows = rows.filter((row) => row.date >= bounds.start && (!bounds.end || row.date <= bounds.end));
     return rows;
   }
+  function scopedOverviewRows(datasetKey) {
+    let rows = [...(window.TIKTOK_CLOUD_SNAPSHOT?.overview?.[datasetKey] || [])];
+    const store = document.getElementById("store-filter")?.value || "all";
+    if (store !== "all") rows = rows.filter((row) => row.store === store);
+    const bounds = selectedScopeBounds();
+    if (bounds?.start) rows = rows.filter((row) => row.date >= bounds.start && (!bounds.end || row.date <= bounds.end));
+    return rows;
+  }
 
   function addImportScope(records, fileName) {
     const store = storeFromFilename(fileName);
@@ -2684,7 +2692,8 @@
   function renderSourceSplit() {
     const el = document.getElementById("source-split-panel");
     if (!el) return;
-    const creatorRows = scopedRows("creatorDaily");
+    const detailedRows = scopedRows("creatorDaily");
+    const creatorRows = detailedRows.length ? detailedRows : scopedOverviewRows("creatorDaily");
     if (!creatorRows.length) {
       const loading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY;
       el.innerHTML = `<div class="ops-empty">${loading ? "正在读取云端达人日快照，请稍候…" : "当前店铺和日期范围暂无可拆分的达人订单。"}</div>`;
@@ -2729,9 +2738,8 @@
     const adsMeta = document.getElementById("overview-ads-meta");
     const reportDraft = document.getElementById("overview-report-draft");
     if (!creatorValue && !adsValue && !reportDraft) return;
-    const analyticsLoading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY;
-
-    const creatorRows = latestRowsPerStore(scopedRows("creatorDaily"));
+    const detailedCreatorRows = scopedRows("creatorDaily");
+    const creatorRows = latestRowsPerStore(detailedCreatorRows.length ? detailedCreatorRows : scopedOverviewRows("creatorDaily"));
     const activeCreators = new Set(creatorRows
       .filter((row) => Number(row.orders || 0) > 0 || Number(row.gmv || 0) > 0)
       .map((row) => `${row.store || "未标注店铺"}|${row.creator || "未标注达人"}`));
@@ -2739,15 +2747,20 @@
     const creatorDates = creatorRows.map((row) => row.date).filter(Boolean).sort();
     const latestCreator = creatorDates[creatorDates.length - 1] || "";
 
-    const adsRows = latestRowsPerStore(scopedRows("adCreatives"));
+    const detailedAdsRows = scopedRows("adCreatives");
+    const adsRows = latestRowsPerStore(detailedAdsRows.length ? detailedAdsRows : scopedOverviewRows("adCreatives"));
     const adSpend = adsRows.reduce((sum, row) => sum + Number(row.spend || 0), 0);
     const adRevenue = adsRows.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
     const adRoi = adSpend > 0 ? adRevenue / adSpend : null;
     const adDates = adsRows.map((row) => row.date).filter(Boolean).sort();
     const latestAd = adDates[adDates.length - 1] || "";
     const latest = [latestCreator, latestAd].filter(Boolean).sort().pop() || "";
+    const summaryCreatorCount = creatorRows.some((row) => row.activeCreators != null)
+      ? creatorRows.reduce((sum, row) => sum + Number(row.activeCreators || 0), 0)
+      : activeCreators.size;
+    const analyticsLoading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY && !creatorRows.length && !adsRows.length;
 
-    if (creatorValue) creatorValue.textContent = creatorRows.length ? formatNumber(activeCreators.size, 0) : analyticsLoading ? "读取中" : "待导入";
+    if (creatorValue) creatorValue.textContent = creatorRows.length ? formatNumber(summaryCreatorCount, 0) : analyticsLoading ? "读取中" : "待导入";
     if (creatorMeta) creatorMeta.innerHTML = creatorRows.length
       ? `动销达人 · GMV ${fmtThb(creatorGmv)}<br><span style="color:#64748b;font-weight:600;">最新日期 ${latestCreator}</span>`
       : analyticsLoading ? "正在读取云端达人数据…" : "当前范围暂无达人订单";
@@ -2759,7 +2772,7 @@
       reportDraft.textContent = analyticsLoading
         ? "正在读取云端达人、广告和视频数据，请稍候…"
         : latest
-        ? `已加载真实数据（最新日期 ${latest}）\n达人：${formatNumber(activeCreators.size, 0)} 位动销达人，GMV ${fmtThb(creatorGmv)}\n广告：消耗 ${fmtUsd(adSpend)}，GMV ${fmtUsd(adRevenue)}，ROI ${adRoi == null ? "待导入" : `${adRoi.toFixed(2)}x`}\n以上为导入数据摘要；点击“重新生成”后再生成日报草稿。`
+        ? `已加载真实数据（最新日期 ${latest}）\n达人：${formatNumber(summaryCreatorCount, 0)} 位动销达人，GMV ${fmtThb(creatorGmv)}\n广告：消耗 ${fmtUsd(adSpend)}，GMV ${fmtUsd(adRevenue)}，ROI ${adRoi == null ? "待导入" : `${adRoi.toFixed(2)}x`}\n以上为导入数据摘要；点击“重新生成”后再生成日报草稿。`
         : "暂无真实数据，导入后生成日报草稿。";
     }
   }
@@ -2900,6 +2913,9 @@
     });
   }
 
+  // 先用轻量摘要填充总览，避免用户等待全部明细解析完成才看到核心指标。
+  renderOverviewOperationalCards();
+  renderSourceSplit();
   loadV33().then(() => {
     bindV33();
     window.OPS_V33_READY = true;

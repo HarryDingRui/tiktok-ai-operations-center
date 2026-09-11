@@ -770,12 +770,14 @@
     if (!summary) return;
     const status = document.querySelector(".data-context-heading small");
     if (status) status.textContent = isStoreDataCleared() ? "仅保留目录" : "已导入";
-    const analyticsLoading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY;
+    const hasAnalyticsSummary = Boolean(window.TIKTOK_CLOUD_SNAPSHOT?.overview);
+    const analyticsLoading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY && !hasAnalyticsSummary;
+    const analyticsDetailLoading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY && hasAnalyticsSummary;
     if (isStoreDataCleared()) {
-      summary.textContent = `${currentData.stores.length} 个店铺 · ${formatNumber(totalsInScope().productCount, 0)} 个商品目录 · ${analyticsLoading ? "经营分析加载中…" : "经营指标待导入"}`;
+      summary.textContent = `${currentData.stores.length} 个店铺 · ${formatNumber(totalsInScope().productCount, 0)} 个商品目录 · ${analyticsLoading ? "经营分析加载中…" : analyticsDetailLoading ? "经营分析摘要已就绪 · 明细后台加载中…" : "经营指标待导入"}`;
       return;
     }
-    summary.textContent = `${storesInScope().length} 个店铺 · ${formatNumber(totalsInScope().productCount, 0)} 个商品 · 时间范围 ${dateRangeLabel()}${analyticsLoading ? " · 经营分析加载中…" : ""}`;
+    summary.textContent = `${storesInScope().length} 个店铺 · ${formatNumber(totalsInScope().productCount, 0)} 个商品 · 时间范围 ${dateRangeLabel()}${analyticsLoading ? " · 经营分析加载中…" : analyticsDetailLoading ? " · 经营分析摘要已就绪 · 明细后台加载中…" : ""}`;
   }
 
   function updateOverviewStats() {
