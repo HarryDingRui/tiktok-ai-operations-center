@@ -95,6 +95,31 @@
   let v33 = EMPTY_DATA();
   window.OPS_V33_READY = false;
   let meta = { lastImport: {}, removedAssets: [] };
+  let latestDataDateCache;
+
+  function invalidateLatestDataDate() {
+    latestDataDateCache = undefined;
+  }
+
+  function latestAvailableDataDate() {
+    if (latestDataDateCache !== undefined) return latestDataDateCache;
+    const dates = [];
+    const cloudOverview = window.TIKTOK_CLOUD_SNAPSHOT?.overview;
+    Object.values(cloudOverview || {}).forEach((rows) => {
+      (rows || []).forEach((row) => { if (isDateKey(row.date)) dates.push(row.date); });
+    });
+    const source = bridge.getData && bridge.getData();
+    (source?.stores || []).forEach((store) => (store.snapshots || []).forEach((snapshot) => {
+      if (isDateKey(snapshot.reportDate)) dates.push(snapshot.reportDate);
+    }));
+    if (!dates.length) {
+      Object.values(v33).forEach((rows) => (rows || []).forEach((row) => {
+        if (isDateKey(row.date)) dates.push(row.date);
+      }));
+    }
+    latestDataDateCache = dates.sort().pop() || "";
+    return latestDataDateCache;
+  }
 
   function openDb(name, store) {
     return new Promise((resolve, reject) => {
@@ -174,6 +199,7 @@
       }
     } catch (e) { console.warn("v3.3 本地数据读取失败，继续使用云端快照", e); }
     v33 = base;
+    invalidateLatestDataDate();
     try {
       const m = await idbGet(V33_META_KEY);
       if (m && typeof m === "object") {
@@ -294,13 +320,7 @@
         end: document.getElementById("date-range-end")?.value || "",
       };
     }
-    const dates = [];
-    Object.values(v33).forEach((rows) => (rows || []).forEach((row) => { if (isDateKey(row.date)) dates.push(row.date); }));
-    const source = bridge.getData && bridge.getData();
-    (source?.stores || []).forEach((store) => (store.snapshots || []).forEach((snapshot) => {
-      if (isDateKey(snapshot.reportDate)) dates.push(snapshot.reportDate);
-    }));
-    const latest = dates.sort().pop() || "";
+    const latest = latestAvailableDataDate();
     // The shared date selector uses numeric values ("7" / "14"). Keep the
     // legacy names working as well because imported local state may still use them.
     const days = preset === "7" || preset === "last7"
@@ -751,6 +771,7 @@
         const merged = new Map((v33[datasetKey] || []).map((r) => [spec.keyOf(r), r]));
         addImportScope(result.records, file.name).forEach((r) => merged.set(spec.keyOf(r), r)); // 同键覆盖，重复导入不双计
         v33[datasetKey] = [...merged.values()];
+        invalidateLatestDataDate();
         parsedCount += result.records.length;
         notes.push(`${file.name}：${result.note}`);
       }
@@ -2698,8 +2719,9 @@
   function renderSourceSplit() {
     const el = document.getElementById("source-split-panel");
     if (!el) return;
+    const overviewRows = scopedOverviewRows("creatorDaily");
     const detailedRows = scopedRows("creatorDaily");
-    const creatorRows = detailedRows.length ? detailedRows : scopedOverviewRows("creatorDaily");
+    const creatorRows = overviewRows.length ? overviewRows : detailedRows;
     if (!creatorRows.length) {
       const loading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY;
       el.innerHTML = `<div class="ops-empty">${loading ? "正在读取云端达人日快照，请稍候…" : "当前店铺和日期范围暂无可拆分的达人订单。"}</div>`;
@@ -2744,8 +2766,9 @@
     const adsMeta = document.getElementById("overview-ads-meta");
     const reportDraft = document.getElementById("overview-report-draft");
     if (!creatorValue && !adsValue && !reportDraft) return;
+    const creatorOverviewRows = scopedOverviewRows("creatorDaily");
     const detailedCreatorRows = scopedRows("creatorDaily");
-    const creatorRows = latestRowsPerStore(detailedCreatorRows.length ? detailedCreatorRows : scopedOverviewRows("creatorDaily"));
+    const creatorRows = latestRowsPerStore(creatorOverviewRows.length ? creatorOverviewRows : detailedCreatorRows);
     const activeCreators = new Set(creatorRows
       .filter((row) => Number(row.orders || 0) > 0 || Number(row.gmv || 0) > 0)
       .map((row) => `${row.store || "未标注店铺"}|${row.creator || "未标注达人"}`));
@@ -2753,8 +2776,9 @@
     const creatorDates = creatorRows.map((row) => row.date).filter(Boolean).sort();
     const latestCreator = creatorDates[creatorDates.length - 1] || "";
 
+    const adsOverviewRows = scopedOverviewRows("adCreatives");
     const detailedAdsRows = scopedRows("adCreatives");
-    const adsRows = latestRowsPerStore(detailedAdsRows.length ? detailedAdsRows : scopedOverviewRows("adCreatives"));
+    const adsRows = latestRowsPerStore(adsOverviewRows.length ? adsOverviewRows : detailedAdsRows);
     const adSpend = adsRows.reduce((sum, row) => sum + Number(row.spend || 0), 0);
     const adRevenue = adsRows.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
     const adRoi = adSpend > 0 ? adRevenue / adSpend : null;
@@ -2782,9 +2806,11 @@
         : "暂无真实数据，导入后生成日报草稿。";
     }
   }
-  function renderAllV33() {
+  let fullRenderTimer = null;
+  function renderAllV33(options = {}) {
     renderOverviewOperationalCards();
     renderSourceSplit();
+    if (options.overviewOnly) return;
     renderBdPageV33();
     renderAdsPageV33();
     renderAssetLibraryV33();
@@ -2793,6 +2819,15 @@
     renderProfitPage();
     const searchInput = document.getElementById("alert-search-input");
     if (searchInput && searchInput.value.trim()) renderTrendSearchV33(searchInput.value);
+  }
+  function scheduleFullRender() {
+    if (fullRenderTimer != null) return;
+    // Let the changed filter and lightweight overview paint before rebuilding
+    // the large detail panels from tens of thousands of rows.
+    fullRenderTimer = window.setTimeout(() => {
+      fullRenderTimer = null;
+      renderAllV33();
+    }, 0);
   }
   function hasData(key) {
     if (key === "pricing") return Boolean(pricing);
@@ -2806,6 +2841,7 @@
   }
   window.OPS_EXT = {
     render: renderAllV33,
+    scheduleFullRender,
     hasImportedData: (key) => key ? hasData(key) : (Object.keys(v33).some((k) => v33[k].length > 0) || Boolean(pricing)),
     clearDataset: async (key) => {
       if (key === "pricing") {
@@ -2831,6 +2867,7 @@
       if (target === null) return;
       if (!target) return;
       v33[target] = [];
+      invalidateLatestDataDate();
       delete meta.lastImport[target];
       await saveV33();
       renderAllV33();
@@ -2839,6 +2876,7 @@
     },
     clearAll: async () => {
       v33 = EMPTY_DATA();
+      invalidateLatestDataDate();
       meta = { lastImport: {}, removedAssets: [] };
       pricing = null;
       pricingIndex = null;

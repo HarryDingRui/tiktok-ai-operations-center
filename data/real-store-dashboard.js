@@ -1355,7 +1355,8 @@
     updateDataSourceStatus();
     if (window.OPS_EXT && typeof window.OPS_EXT.render === "function") {
       try {
-        window.OPS_EXT.render();
+        window.OPS_EXT.render({ overviewOnly: true });
+        if (typeof window.OPS_EXT.scheduleFullRender === "function") window.OPS_EXT.scheduleFullRender();
       } catch (error) {
         console.warn("OPS_EXT render failed", error);
       }
