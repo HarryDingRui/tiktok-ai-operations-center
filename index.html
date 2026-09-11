@@ -2436,7 +2436,8 @@ updateDataContextVisibility('overview');
   function sanitize(page){
     const dynamic=['priority-hub','overview-ranking-grid','real-data-summary','source-split-panel','bd-kpi-row','bd-lists-panel','bd-trend-panel','bd-ledger-panel','bd-orders-panel','ads-kpi-row','ads-lifecycle-panel','ads-action-seq-panel','ads-product-health-panel','ads-creative-boards','gmvmax-product-id-panel','asset-library-panel','videos-kpi-row','video-gmv-board','video-ads-gap-panel','self-video-panel','product-trend-panel','product-quadrant-panel','cross-diagnosis-panel','profit-kpi-row','profit-loss-panel','profit-sku-panel','profit-unmatched-panel','profit-rate-panel'];
        page.querySelectorAll('.card').forEach(card=>{
-       if(card.dataset.realSanitized||card.dataset.fileCatalogCard||dynamic.some(id=>card.querySelector('#'+id))||card.querySelector('.upload-zone'))return;
+       const insideDynamic=dynamic.some(id=>card.closest('#'+id));
+       if(card.dataset.realSanitized||card.dataset.fileCatalogCard||insideDynamic||dynamic.some(id=>card.querySelector('#'+id))||card.querySelector('.upload-zone'))return;
       const title=card.querySelector(':scope > .card-title');if(!title)return;
       const validationTable=page.id==='page-validation'&&card.querySelector('table');
       if(validationTable){
