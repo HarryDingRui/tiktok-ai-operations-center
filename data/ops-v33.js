@@ -301,7 +301,13 @@
       if (isDateKey(snapshot.reportDate)) dates.push(snapshot.reportDate);
     }));
     const latest = dates.sort().pop() || "";
-    const days = preset === "last7" ? 6 : preset === "last14" ? 13 : 0;
+    // The shared date selector uses numeric values ("7" / "14"). Keep the
+    // legacy names working as well because imported local state may still use them.
+    const days = preset === "7" || preset === "last7"
+      ? 6
+      : preset === "14" || preset === "last14"
+        ? 13
+        : 0;
     return latest ? { start: addDays(latest, -days), end: latest } : null;
   }
 
