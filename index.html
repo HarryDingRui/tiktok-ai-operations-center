@@ -2156,17 +2156,8 @@ body {
 <script src="./data/real-store-dashboard.js?v=ops-ext-5"></script>
 <script src="./data/ops-v33.js?v=gmvmax-native-4"></script>
 <script>
-const FILTERED_DATA_PAGES = new Set(['overview', 'data']);
-const DEMO_PAGE_NOTICES = {
-  alert: '预警卡片、风险数量和商品案例仍是流程演示；只有导入同店铺多日期快照后，才能生成真实上涨、下降与预警结论。',
-  bd: '本页由「数据接入」页的达人订单 / 联盟订单 / 样品订单真实驱动；顶部两张 Agent 卡片仍为交互样例。',
-  ads: '本页由 GMVMax creative data 真实驱动（计划生命周期 / 动作清单 / 素材分层）；顶部两张 Agent 卡片仍为交互样例。',
-  videos: '本页由联盟视频订单与自营账号数据真实驱动；顶部两张 Agent 卡片仍为交互样例。',
-  profit: '本页由价格利润核算表与每日订单明细真实驱动（成交价扫码 / 亏损预警 / SKU 价格体检）。',
-  validation: '动作、负责人和验证结论为界面样例，尚未接入真实运营已执行清单及验证证据。',
-  knowledge: '知识卡片、复用次数和审核状态为界面样例，尚未连接团队真实知识库。',
-  agents: 'Agent 数量、任务队列和执行历史为交互样例；页面按钮只展示流程，不会实际执行外部任务。'
-};
+const FILTERED_DATA_PAGES = new Set(['overview', 'alert', 'bd', 'ads', 'videos', 'profit', 'validation', 'knowledge', 'agents', 'data']);
+const DEMO_PAGE_NOTICES = {};
 
 function updateDataContextVisibility(pageId) {
   const contextBar = document.querySelector('.data-context-bar');
@@ -2180,7 +2171,7 @@ function addDataBoundaryNotices() {
     if (!header || page.querySelector('.data-boundary-notice')) return;
     const notice = document.createElement('div');
     notice.className = 'data-boundary-notice';
-    notice.innerHTML = '<span>⚠️</span><span><strong>数据边界：</strong>' + message + ' 顶部真实店铺与日期筛选不作用于本页。</span>';
+    notice.innerHTML = '<span>ℹ️</span><span><strong>数据口径：</strong>' + message + '</span>';
     header.insertAdjacentElement('afterend', notice);
   });
 }
@@ -2234,7 +2225,7 @@ function showPage(pageId, el) {
   if (el && el.classList.contains('nav-item')) {
     el.classList.add('active');
   } else {
-    const navMap = { 'overview': 0, 'alert': 1, 'bd': 2, 'ads': 3, 'videos': 4, 'validation': 5, 'knowledge': 6, 'agents': 7, 'data': 8 };
+    const navMap = { 'overview': 0, 'alert': 1, 'bd': 2, 'ads': 3, 'videos': 4, 'profit': 5, 'validation': 6, 'knowledge': 7, 'agents': 8, 'data': 9 };
     const sidebarItems = document.querySelectorAll('.sidebar .nav-item');
     if (sidebarItems[navMap[pageId]]) sidebarItems[navMap[pageId]].classList.add('active');
   }
@@ -2366,7 +2357,7 @@ updateDataContextVisibility('overview');
   document.getElementById('delete-all-store-data')?.addEventListener('click',async()=>{if(!confirmDelete('全部店铺数据'))return;if(window.OPS_BRIDGE&&typeof window.OPS_BRIDGE.clearStoreData==='function'){await window.OPS_BRIDGE.clearStoreData();window.alert('全部店铺数据已删除。');}});
   document.querySelectorAll('[data-delete-dataset]').forEach(btn=>btn.addEventListener('click',async()=>{
     const key=btn.dataset.deleteDataset;const labels={creatorDaily:'达人订单数据',affOrders:'联盟订单数据',samples:'样品订单数据',adCreatives:'广告 creative data',affVideos:'联盟视频数据',selfVideos:'自营账号视频',assets:'素材视频',orders:'订单明细数据',pricing:'价格利润核算表',creators:'达人数据',ads:'广告数据',videos:'视频数据',actions:'动作记录',knowledge:'知识库记录'};if(!confirmDelete(labels[key]||key))return;
-    if(window.OPS_EXT&&typeof window.OPS_EXT.clearDataset==='function'){await window.OPS_EXT.clearDataset(key);const target=document.getElementById(btn.dataset.statusTarget);if(target){target.textContent='已删除，待导入';target.className='tag tag-yellow';}window.dispatchEvent(new CustomEvent('real-data-deleted'));}
+    if((key==='actions'||key==='knowledge')&&window.OPS_CONTROL_PLANE&&typeof window.OPS_CONTROL_PLANE.clearDataset==='function'){await window.OPS_CONTROL_PLANE.clearDataset(key);}else if(window.OPS_EXT&&typeof window.OPS_EXT.clearDataset==='function'){await window.OPS_EXT.clearDataset(key);}const target=document.getElementById(btn.dataset.statusTarget);if(target){target.textContent='已删除，待导入';target.className='tag tag-yellow';}window.dispatchEvent(new CustomEvent('real-data-deleted'));
   }));
   document.getElementById('delete-manual-records')?.addEventListener('click',()=>{if(!confirmDelete('手动记录'))return;localStorage.removeItem('tiktok-manual-entry-records');window.alert('手动记录已删除。');});
   document.getElementById('delete-local-assets')?.addEventListener('click',async()=>{if(!confirmDelete('本地视频素材'))return;try{indexedDB.deleteDatabase('tiktok-ops-assets');}catch(_){}window.alert('本地视频素材已删除。');});
@@ -2398,10 +2389,11 @@ updateDataContextVisibility('overview');
     page.querySelectorAll('.kb-card,.alert-card').forEach(card=>{if(card.dataset.realSanitized)return;card.innerHTML='<div class="'+(card.classList.contains('kb-card')?'kb-title':'alert-card-title')+'">'+message+'</div><div class="real-empty-card-body">导入对应真实数据后显示。</div>';card.dataset.realSanitized='1';});
     page.querySelectorAll('.agent-panel').forEach(panel=>{if(panel.dataset.realSanitized)return;const header=panel.querySelector('.agent-panel-header');[...panel.children].filter(n=>n!==header).forEach(n=>n.remove());panel.appendChild(body());panel.dataset.realSanitized='1';});
   }
-  function apply(){const empty=!storeReady();if(empty&&window.OPS_BRIDGE&&typeof window.OPS_BRIDGE.renderAll==='function')window.OPS_BRIDGE.renderAll();document.querySelectorAll('.nav-badge').forEach(n=>{n.style.display=empty?'none':'';});document.querySelectorAll('.alert-card').forEach(n=>{n.style.display=empty?'none':'';});pageIds.forEach(id=>{const page=document.getElementById('page-'+id);if(!page)return;sanitize(page);const ready=pageReady(id);if(!ready&&['overview','alert'].includes(id)){const hub=document.getElementById('priority-hub');if(hub)hub.innerHTML='<div class="real-empty-card-body">暂无真实预警或优先处理事项，导入店铺多日期数据后生成。</div>';page.querySelectorAll('.alert-card').forEach(n=>n.remove());}page.classList.toggle('real-data-empty-page',!ready);const banner=page.querySelector('.real-data-empty-banner');if(ready){if(banner)banner.remove();const shell=page.querySelector('.data-empty-shell');if(shell)shell.remove();}else{const header=page.querySelector('.page-header');if(header&&!header.nextElementSibling?.classList.contains('real-data-empty-banner')){const x=document.createElement('div');x.className='real-data-empty-banner alert alert-info';x.innerHTML='<span>\u2139\ufe0f</span><span><strong>'+message+'</strong>。导入后此板块才会显示真实内容。</span>';header.insertAdjacentElement('afterend',x);}page.querySelectorAll('.stats-row .stat-value').forEach(n=>n.textContent='\u5f85\u5bfc\u5165');page.querySelectorAll('.stats-row .stat-trend').forEach(n=>n.textContent='\u6682\u65e0\u771f\u5b9e\u6570\u636e');}});}
+  function apply(){const empty=!storeReady();if(empty&&window.OPS_BRIDGE&&typeof window.OPS_BRIDGE.renderAll==='function')window.OPS_BRIDGE.renderAll();document.querySelectorAll('.nav-badge').forEach(n=>{n.style.display=empty?'none':'';});document.querySelectorAll('.alert-card').forEach(n=>{n.style.display=empty?'none':'';});pageIds.forEach(id=>{const page=document.getElementById('page-'+id);if(!page)return;if(!page.querySelector('[data-control-plane-root]'))sanitize(page);const ready=pageReady(id);if(!ready&&['overview','alert'].includes(id)){const hub=document.getElementById('priority-hub');if(hub)hub.innerHTML='<div class="real-empty-card-body">暂无真实预警或优先处理事项，导入店铺多日期数据后生成。</div>';page.querySelectorAll('.alert-card').forEach(n=>n.remove());}page.classList.toggle('real-data-empty-page',!ready);const banner=page.querySelector('.real-data-empty-banner');if(ready){if(banner)banner.remove();const shell=page.querySelector('.data-empty-shell');if(shell)shell.remove();}else{const header=page.querySelector('.page-header');if(header&&!header.nextElementSibling?.classList.contains('real-data-empty-banner')){const x=document.createElement('div');x.className='real-data-empty-banner alert alert-info';x.innerHTML='<span>\u2139\ufe0f</span><span><strong>'+message+'</strong>。导入后此板块才会显示真实内容。</span>';header.insertAdjacentElement('afterend',x);}page.querySelectorAll('.stats-row .stat-value').forEach(n=>n.textContent='\u5f85\u5bfc\u5165');page.querySelectorAll('.stats-row .stat-trend').forEach(n=>n.textContent='\u6682\u65e0\u771f\u5b9e\u6570\u636e');}});}
   if(!localStorage.getItem('tiktok-real-data-state-v4')){['tiktok-real-store-data-v1','tiktok-real-store-data-v2','tiktok-manual-entry-records'].forEach(k=>localStorage.removeItem(k));['tiktok-header-mapping-creators','tiktok-header-mapping-ads','tiktok-header-mapping-videos','tiktok-header-mapping-assets'].forEach(k=>localStorage.removeItem(k));try{indexedDB.deleteDatabase('tiktok-ai-operations-center');indexedDB.deleteDatabase('tiktok-ops-assets');}catch(_){ }localStorage.setItem('tiktok-real-data-state-v4','cleared');}
   apply();['real-data-ready','real-store-ready','real-data-imported','real-data-deleted'].forEach(e=>window.addEventListener(e,apply));
 })();
 </script>
+<script src="./data/ops-control-plane.js?v=control-plane-1"></script>
 </body>
 </html>

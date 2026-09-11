@@ -237,6 +237,46 @@
     if (m) return `${m[1]}-${m[2]}-${m[3]}`;
     return "";
   }
+
+  const KNOWN_STORES = ["INSPIRE PURIFY", "Miniyaya", "PETTOS", "yaya thailand tth", "yaya112"];
+  function storeFromFilename(name) {
+    const normalized = normalizeHeaderText(name || "");
+    return KNOWN_STORES.find((store) => normalized.includes(normalizeHeaderText(store))) || "";
+  }
+
+  function selectedScopeBounds() {
+    const preset = document.getElementById("date-range-preset")?.value || "all";
+    if (preset === "all") return null;
+    if (preset === "custom") {
+      return {
+        start: document.getElementById("date-range-start")?.value || "",
+        end: document.getElementById("date-range-end")?.value || "",
+      };
+    }
+    const dates = [];
+    Object.values(v33).forEach((rows) => (rows || []).forEach((row) => { if (isDateKey(row.date)) dates.push(row.date); }));
+    const source = bridge.getData && bridge.getData();
+    (source?.stores || []).forEach((store) => (store.snapshots || []).forEach((snapshot) => {
+      if (isDateKey(snapshot.reportDate)) dates.push(snapshot.reportDate);
+    }));
+    const latest = dates.sort().pop() || "";
+    const days = preset === "last7" ? 6 : preset === "last14" ? 13 : 0;
+    return latest ? { start: addDays(latest, -days), end: latest } : null;
+  }
+
+  function scopedRows(datasetKey) {
+    let rows = [...(v33[datasetKey] || [])];
+    const store = document.getElementById("store-filter")?.value || "all";
+    if (store !== "all") rows = rows.filter((row) => row.store === store);
+    const bounds = selectedScopeBounds();
+    if (bounds?.start) rows = rows.filter((row) => row.date >= bounds.start && (!bounds.end || row.date <= bounds.end));
+    return rows;
+  }
+
+  function addImportScope(records, fileName) {
+    const store = storeFromFilename(fileName);
+    return records.map((record) => (record.store || !store ? record : { ...record, store }));
+  }
   // 读工作簿：返回 [{sheetName, rows}]
   async function readWorkbook(file) {
     await bridge.ensureXlsxLibrary();
@@ -619,17 +659,17 @@
   }
 
   const DATASETS = {
-    adCreatives: { label: "广告 creative data", parser: parseAdCreatives, keyOf: (r) => `${r.date}|${r.campaignId}|${r.creativeType}|${r.videoId || r.productId}`, dateOf: (r) => r.date },
-    creatorDaily: { label: "达人订单", parser: parseCreatorDaily, keyOf: (r) => `${r.date}|${r.creator}`, dateOf: (r) => r.date },
-    affOrders: { label: "联盟订单", parser: parseAffOrders, keyOf: (r) => `${r.orderId}|${r.skuId}`, dateOf: (r) => r.date },
-    samples: { label: "样品订单", parser: parseSamples, keyOf: (r) => `${r.orderId}|${r.skuId}`, dateOf: (r) => r.date },
-    affVideos: { label: "全部视频订单", parser: parseAffVideos, keyOf: (r) => `${r.date}|${r.videoId}|${r.productId}`, dateOf: (r) => r.date },
-    selfVideos: { label: "自营账号数据", parser: parseSelfVideos, keyOf: (r) => `${r.date}|${r.account}|${r.videoId}`, dateOf: (r) => r.date },
-    orders: { label: "订单明细", parser: parseOrderLines, keyOf: (r) => `${r.orderId}|${r.skuId}`, dateOf: (r) => r.date },
+    adCreatives: { label: "广告 creative data", parser: parseAdCreatives, keyOf: (r) => `${r.store || ""}|${r.date}|${r.campaignId}|${r.creativeType}|${r.videoId || r.productId}`, dateOf: (r) => r.date },
+    creatorDaily: { label: "达人订单", parser: parseCreatorDaily, keyOf: (r) => `${r.store || ""}|${r.date}|${r.creator}`, dateOf: (r) => r.date },
+    affOrders: { label: "联盟订单", parser: parseAffOrders, keyOf: (r) => `${r.store || ""}|${r.orderId}|${r.skuId}`, dateOf: (r) => r.date },
+    samples: { label: "样品订单", parser: parseSamples, keyOf: (r) => `${r.store || ""}|${r.orderId}|${r.skuId}`, dateOf: (r) => r.date },
+    affVideos: { label: "全部视频订单", parser: parseAffVideos, keyOf: (r) => `${r.store || ""}|${r.date}|${r.videoId}|${r.productId}`, dateOf: (r) => r.date },
+    selfVideos: { label: "自营账号数据", parser: parseSelfVideos, keyOf: (r) => `${r.store || ""}|${r.date}|${r.account}|${r.videoId}`, dateOf: (r) => r.date },
+    orders: { label: "订单明细", parser: parseOrderLines, keyOf: (r) => `${r.store || ""}|${r.orderId}|${r.skuId}`, dateOf: (r) => r.date },
   };
 
   function datasetDates(datasetKey) {
-    return [...new Set((v33[datasetKey] || []).map((r) => r.date).filter(isDateKey))].sort();
+    return [...new Set(scopedRows(datasetKey).map((r) => r.date).filter(isDateKey))].sort();
   }
   function datasetCoverage(datasetKey) {
     const dates = datasetDates(datasetKey);
@@ -654,7 +694,7 @@
       for (const file of files) {
         const result = await spec.parser(file);
         const merged = new Map((v33[datasetKey] || []).map((r) => [spec.keyOf(r), r]));
-        result.records.forEach((r) => merged.set(spec.keyOf(r), r)); // 同键覆盖，重复导入不双计
+        addImportScope(result.records, file.name).forEach((r) => merged.set(spec.keyOf(r), r)); // 同键覆盖，重复导入不双计
         v33[datasetKey] = [...merged.values()];
         parsedCount += result.records.length;
         notes.push(`${file.name}：${result.note}`);
@@ -879,12 +919,12 @@
   }
 
   function latestAdsDate() { return datasetDates("adCreatives").pop() || ""; }
-  function rowsOnDate(datasetKey, date) { return (v33[datasetKey] || []).filter((r) => r.date === date); }
+  function rowsOnDate(datasetKey, date) { return scopedRows(datasetKey).filter((r) => r.date === date); }
 
   // 计划×日 序列（只有消耗>0或有成交的日子算"在跑"）
   function planDailySeries() {
     const byPlan = new Map();
-    v33.adCreatives.forEach((r) => {
+    scopedRows("adCreatives").forEach((r) => {
       const key = r.campaignId || r.plan;
       if (!key) return;
       const agg = byPlan.get(key) || { campaignId: r.campaignId, plan: r.plan, days: new Map() };
@@ -957,7 +997,7 @@
         campaignId: agg.campaignId, plan: agg.plan, mode: metaName.mode || "未识别",
         created, age, dayCount: dates.length, total, roi, targetRoi, declineDays,
         stage, stageLabel, advice, activeToday,
-        productIds: [...new Set(v33.adCreatives.filter((r) => (r.campaignId || r.plan) === (agg.campaignId || agg.plan)).map((r) => r.productId).filter(Boolean))],
+        productIds: [...new Set(scopedRows("adCreatives").filter((r) => (r.campaignId || r.plan) === (agg.campaignId || agg.plan)).map((r) => r.productId).filter(Boolean))],
       });
     });
     const order = { kill: 0, warn: 1, observing: 2, healthy: 3, idle: 4 };
@@ -1030,7 +1070,7 @@
     const T = getThresholds();
     const latest = latestAdsDate();
     const byVideo = new Map();
-    v33.adCreatives.forEach((r) => {
+    scopedRows("adCreatives").forEach((r) => {
       if (r.creativeType !== "Video" || !r.videoId) return;
       const a = byVideo.get(r.videoId) || {
         videoId: r.videoId, productId: r.productId, account: r.account, timePosted: r.timePosted,
@@ -1126,7 +1166,7 @@
 
   /* ================= 货币格式化 ================= */
   function adsCurrency() {
-    const row = v33.adCreatives.find((r) => r.currency);
+    const row = scopedRows("adCreatives").find((r) => r.currency);
     return row ? row.currency : "USD";
   }
   function fmtUsd(v) {
@@ -1156,7 +1196,7 @@
     const prevRows = prev ? rowsOnDate("creatorDaily", prev) : [];
     const prevActive = new Set(prevRows.filter((r) => (r.gmv || 0) > 0).map((r) => r.creator));
     const everActiveBefore = new Set();
-    v33.creatorDaily.forEach((r) => {
+    scopedRows("creatorDaily").forEach((r) => {
       if (r.date < latest && (r.gmv || 0) > 0) everActiveBefore.add(r.creator);
     });
     const fresh = [], lost = [], steady = [];
@@ -1214,7 +1254,7 @@
   // SKU 寄样台账
   function sampleLedger() {
     const bySku = new Map();
-    v33.samples.forEach((s) => {
+    scopedRows("samples").forEach((s) => {
       const key = s.sellerSku || s.skuId || "未知SKU";
       const a = bySku.get(key) || { sellerSku: key, productName: s.productName, total: 0, orders: 0, lastDate: "", byDate: new Map() };
       a.total += s.qty || 0; a.orders += 1;
@@ -1227,7 +1267,7 @@
     return {
       latest,
       rows: [...bySku.values()].sort((a, b) => b.total - a.total),
-      todayTotal: latest ? v33.samples.filter((s) => s.date === latest).reduce((x, s) => x + (s.qty || 0), 0) : 0,
+      todayTotal: latest ? scopedRows("samples").filter((s) => s.date === latest).reduce((x, s) => x + (s.qty || 0), 0) : 0,
     };
   }
 
@@ -1235,7 +1275,7 @@
   function latestVideoDate() { return datasetDates("affVideos").pop() || ""; }
   // 出单视频榜（GPM 优先）
   function videoBoards() {
-    const rows = v33.affVideos;
+    const rows = scopedRows("affVideos");
     if (!rows.length) return null;
     const latest = latestVideoDate();
     const dayRows = rowsOnDate("affVideos", latest);
@@ -1253,7 +1293,7 @@
   }
   // 出单但还没被广告利用的视频（视频模块 × 广告模块的联动）
   function videosNotInAds() {
-    const adVideoIds = new Set(v33.adCreatives.map((r) => r.videoId).filter(Boolean));
+    const adVideoIds = new Set(scopedRows("adCreatives").map((r) => r.videoId).filter(Boolean));
     const latest = latestVideoDate();
     if (!latest) return [];
     return rowsOnDate("affVideos", latest)
@@ -1263,15 +1303,17 @@
   // 自营账号拼接：前台播放 + 联盟归因 GMV
   function selfVideoRows() {
     const byVideoId = new Map();
-    v33.affVideos.forEach((r) => { if (r.videoId) byVideoId.set(r.videoId, r); });
-    const selfAccounts = new Set(v33.selfVideos.map((r) => r.account).filter(Boolean));
+    const affVideos = scopedRows("affVideos");
+    const selfVideos = scopedRows("selfVideos");
+    affVideos.forEach((r) => { if (r.videoId) byVideoId.set(r.videoId, r); });
+    const selfAccounts = new Set(selfVideos.map((r) => r.account).filter(Boolean));
     // 自营上传的记录
-    const rows = v33.selfVideos.map((r) => {
+    const rows = selfVideos.map((r) => {
       const hit = r.videoId && byVideoId.get(r.videoId);
       return { ...r, gmv: hit ? hit.gmv : null, orders: hit ? hit.orders : null, matched: Boolean(hit) };
     });
     // 联盟视频里属于自营账号的（账号名匹配）
-    const extra = v33.affVideos.filter((r) => r.creator && selfAccounts.has(r.creator) && !v33.selfVideos.some((s) => s.videoId === r.videoId));
+    const extra = affVideos.filter((r) => r.creator && selfAccounts.has(r.creator) && !selfVideos.some((s) => s.videoId === r.videoId));
     return { rows, extra, accounts: [...selfAccounts] };
   }
 
@@ -1306,7 +1348,7 @@
     const medCvr = med(list.map((p) => p.cvr));
     // 集中度：每商品动销达人数（联盟订单推导）
     const sellersByProduct = new Map();
-    v33.affOrders.forEach((o) => {
+    scopedRows("affOrders").forEach((o) => {
       if (!o.productId || !o.creator || !(o.qty > 0)) return;
       if (!sellersByProduct.has(o.productId)) sellersByProduct.set(o.productId, new Set());
       sellersByProduct.get(o.productId).add(o.creator);
@@ -1328,7 +1370,7 @@
       .slice(0, 15)
       .map((p) => ({ ...p, sellers: sellersByProduct.get(p.id) ? sellersByProduct.get(p.id).size : null }))
       .filter((p) => p.sellers != null && p.sellers <= 2);
-    return { medExposure, medCvr, quad, concentrated, hasOrders: v33.affOrders.length > 0 };
+    return { medExposure, medCvr, quad, concentrated, hasOrders: scopedRows("affOrders").length > 0 };
   }
 
   /* ================= 交叉诊断引擎（商品ID 主轴 · 全模块取证） ================= */
@@ -1348,7 +1390,8 @@
       evidence.push({ module: "商品", ok: false, text: "商品快照不足 2 天，无法计算趋势" });
     }
     // ② 广告侧
-    const adRows = v33.adCreatives.filter((r) => r.productId === productId);
+    const scopedAdRows = scopedRows("adCreatives");
+    const adRows = scopedAdRows.filter((r) => r.productId === productId);
     if (adRows.length) {
       const latestRows = adRows.filter((r) => r.date === latest);
       const spend = latestRows.reduce((s, r) => s + r.spend, 0);
@@ -1361,10 +1404,11 @@
         text: `${latest}：${latestRows.length} 条素材在跑（Video ${videoRows.length}），消耗 ${fmtUsd(spend)}，ROI ${spend > 0 ? (revenue / spend).toFixed(1) : "—"}，0单烧钱 ${fmtUsd(burnSpend)}（${spend > 0 ? Math.round(burnSpend / spend * 100) : 0}%）`,
       });
     } else {
-      evidence.push({ module: "广告", ok: false, text: v33.adCreatives.length ? "该商品近期无广告消耗（广告断供？）" : "广告模块未导入，无法验证" });
+      evidence.push({ module: "广告", ok: false, text: scopedAdRows.length ? "该商品近期无广告消耗（广告断供？）" : "广告模块未导入，无法验证" });
     }
     // ③ 视频侧
-    const vRows = v33.affVideos.filter((r) => r.productId === productId);
+    const scopedAffVideos = scopedRows("affVideos");
+    const vRows = scopedAffVideos.filter((r) => r.productId === productId);
     if (vRows.length) {
       const vLatest = latestVideoDate();
       const dayRows = vRows.filter((r) => r.date === vLatest);
@@ -1374,10 +1418,11 @@
         text: `${vLatest}：${dayRows.length} 条联盟视频在档，${selling.length} 条出单，视频GMV ${fmtThb(selling.reduce((s, r) => s + (r.gmv || 0), 0))}${selling.length ? "" : "（出单断供）"}`,
       });
     } else {
-      evidence.push({ module: "视频", ok: false, text: v33.affVideos.length ? "该商品近期无联盟视频数据" : "视频模块未导入，无法验证" });
+      evidence.push({ module: "视频", ok: false, text: scopedAffVideos.length ? "该商品近期无联盟视频数据" : "视频模块未导入，无法验证" });
     }
     // ④ 达人侧（联盟订单推导该商品的动销达人）
-    const oRows = v33.affOrders.filter((r) => r.productId === productId && (r.qty || 0) > 0);
+    const scopedAffOrders = scopedRows("affOrders");
+    const oRows = scopedAffOrders.filter((r) => r.productId === productId && (r.qty || 0) > 0);
     if (oRows.length) {
       const sellers = new Set(oRows.map((r) => r.creator).filter(Boolean));
       const dates = [...new Set(oRows.map((r) => r.date).filter(isDateKey))].sort();
@@ -1388,7 +1433,7 @@
         text: `${lastD}：${todaySellers.size} 位达人在带（累计 ${sellers.size} 位）${todaySellers.size <= 2 ? "，⚠️ 集中度高" : ""}`,
       });
     } else {
-      evidence.push({ module: "达人", ok: false, text: v33.affOrders.length ? "该商品近期无达人出单" : "联盟订单未导入，无法验证" });
+      evidence.push({ module: "达人", ok: false, text: scopedAffOrders.length ? "该商品近期无达人出单" : "联盟订单未导入，无法验证" });
     }
     return evidence;
   }
@@ -1532,7 +1577,8 @@
     const boardsEl = document.getElementById("ads-creative-boards");
     const gmvmaxEl = document.getElementById("gmvmax-product-id-panel");
     if (!kpiEl && !lifeEl && !boardsEl && !gmvmaxEl) return;
-    if (!v33.adCreatives.length) {
+    const adRowsInScope = scopedRows("adCreatives");
+    if (!adRowsInScope.length) {
       const guide = emptyBlock(`<b>广告数据待导入。</b>到「数据接入」页上传 GMVMax creative data 导出表（原样直传，系统自动滤掉零消耗素材池行）。导入后这里出现：计划生命周期、素材四分层、商品健康表、今日动作清单。`);
       if (kpiEl) kpiEl.innerHTML = "";
       if (lifeEl) lifeEl.innerHTML = guide;
@@ -1542,7 +1588,7 @@
       if (gmvmaxEl) renderGmvmaxProductIdPanelV33([]);
       return;
     }
-    if (gmvmaxEl) renderGmvmaxProductIdPanelV33(v33.adCreatives);
+    if (gmvmaxEl) renderGmvmaxProductIdPanelV33(adRowsInScope);
     const T = getThresholds();
     const latest = latestAdsDate();
     const rows = rowsOnDate("adCreatives", latest);
@@ -1738,7 +1784,8 @@
     const ledgerEl = document.getElementById("bd-ledger-panel");
     const ordersEl = document.getElementById("bd-orders-panel");
     if (!kpiEl && !listsEl) return;
-    if (!v33.creatorDaily.length) {
+    const creatorRows = scopedRows("creatorDaily");
+    if (!creatorRows.length) {
       const guide = emptyBlock(`<b>达人订单待导入。</b>到「数据接入」页上传店铺导出的「达人订单」日报（一达人一行）。导入后这里出现：每日三清单（新增/流失/连续动销）、动销趋势、定向转化、高曝光0产出。`);
       if (kpiEl) kpiEl.innerHTML = "";
       if (listsEl) listsEl.innerHTML = guide;
@@ -1782,7 +1829,7 @@
     }
     // SKU 寄样台账
     if (ledgerEl) {
-      if (!v33.samples.length) {
+      if (!scopedRows("samples").length) {
         ledgerEl.innerHTML = emptyBlock(`样品订单待导入。上传店铺「样品订单」导出后，这里按 Seller SKU 展示 当日寄样数 / 累计寄样数 / 最近寄样日期。`);
       } else {
         const L = sampleLedger();
@@ -1800,7 +1847,7 @@
     }
     // 联盟订单明细（最新日）
     if (ordersEl) {
-      if (!v33.affOrders.length) {
+      if (!scopedRows("affOrders").length) {
         ordersEl.innerHTML = emptyBlock(`联盟订单待导入。上传后这里展示最新日订单流水（达人×商品×内容×佣金），用于下钻核对。`);
       } else {
         const latest = datasetDates("affOrders").pop();
@@ -1860,7 +1907,7 @@
         <div style="margin-top:8px;font-size:12px;color:#64748b;">完播率/互动率仅作参考列，不做内容诊断（达人素材内容不可干预，这里用于「选」不用于「改」）。</div>`;
       }
       if (gapEl) {
-        if (!v33.adCreatives.length) {
+        if (!scopedRows("adCreatives").length) {
           gapEl.innerHTML = emptyBlock("广告数据未导入，暂时无法判断哪些出单视频还没被广告利用。导入 creative data 后自动生成联动清单。");
         } else {
           const gap = videosNotInAds();
@@ -1873,7 +1920,7 @@
     }
     // 自营账号
     if (selfEl) {
-      if (!v33.selfVideos.length) {
+      if (!scopedRows("selfVideos").length) {
         selfEl.innerHTML = emptyBlock(`<b>自营账号前台数据待导入。</b>上传自营账号数据（账号/视频ID/商品ID/播放量）后，系统自动从「全部视频订单」拼接归因 GMV；无归因成交的显示 0（真实零，不是缺数据）。`);
       } else {
         const { rows, accounts } = selfVideoRows();
@@ -2005,7 +2052,7 @@
 
   /* ================= 经营总览「今日优先处理」来源 ================= */
   function creatorPriorityProviderV33() {
-    if (!v33.creatorDaily.length) {
+    if (!scopedRows("creatorDaily").length) {
       return { items: [], emptyHtml: `<b>达人订单未导入。</b>到「数据接入」页上传达人订单日报后，这里自动列出：新增动销（建联）、流失预警（唤醒）、高曝光0产出（换品邀请）。` };
     }
     const lists = creatorThreeLists();
@@ -2027,7 +2074,7 @@
     return { items: items.slice(0, 6), emptyHtml: "今日达人盘无新增流失波动。👍" };
   }
   function adsPriorityProviderV33() {
-    if (!v33.adCreatives.length) {
+    if (!scopedRows("adCreatives").length) {
       return { items: [], emptyHtml: `<b>广告数据未导入。</b>到「数据接入」页上传 creative data 后，这里自动列出：死刑计划关停、连降预警、烧钱素材暂停、待放量素材加测。` };
     }
     const steps = adsActionSequence();
@@ -2040,7 +2087,7 @@
     return { items, emptyHtml: "今日广告盘无必须动作。👍" };
   }
   function videoPriorityProviderV33() {
-    if (!v33.affVideos.length) {
+    if (!scopedRows("affVideos").length) {
       return { items: [], emptyHtml: `<b>视频订单未导入。</b>到「数据接入」页上传「全部视频订单」后，这里自动列出：出单但未投广告的视频（拿去投 GMVMax）。` };
     }
     const gap = videosNotInAds();
@@ -2282,7 +2329,7 @@
   // —— 成交价扫码：订单级聚合（运费按订单总重只计一次；取消单 / 全退行剔除）——
   function profitScan() {
     const R = profitRates();
-    const lines = v33.orders.filter((l) => l.status && !/取消|cancel/i.test(l.status) && (l.dealPrice || 0) > 0);
+    const lines = scopedRows("orders").filter((l) => l.status && !/取消|cancel/i.test(l.status) && (l.dealPrice || 0) > 0);
     const orderMap = new Map();
     const unmatched = new Map();
     let matchedLines = 0, totalLines = 0;
@@ -2353,8 +2400,9 @@
     const rateEl = document.getElementById("profit-rate-panel");
     if (!kpiEl && !lossEl && !skuEl) return;
     const settings = getProfitSettings();
+    const ordersInScope = scopedRows("orders");
     if (rateEl) renderProfitRatePanel(rateEl, settings);
-    if (!pricing && !v33.orders.length) {
+    if (!pricing && !ordersInScope.length) {
       if (kpiEl) kpiEl.innerHTML = "";
       if (lossEl) lossEl.innerHTML = emptyBlock(`<b>利润扫码待启用。</b>到「数据接入」页上传 ① 价格利润核算表（定价 / 费率 / 运费阶梯）② 每日订单明细（OrderSKUList）。上传后自动扫描每笔实际成交价，亏损订单立刻预警。`);
       if (skuEl) skuEl.innerHTML = "";
@@ -2363,12 +2411,12 @@
     }
     if (!pricing) {
       if (kpiEl) kpiEl.innerHTML = "";
-      if (lossEl) lossEl.innerHTML = emptyBlock(`<b>还差一步：上传价格利润核算表。</b>订单明细已在档（${v33.orders.length} 行），但没有成本与费率就无法判定亏损。到「数据接入」页上传「价格利润核算表」。`);
+      if (lossEl) lossEl.innerHTML = emptyBlock(`<b>还差一步：上传价格利润核算表。</b>订单明细已在档（${ordersInScope.length} 行），但没有成本与费率就无法判定亏损。到「数据接入」页上传「价格利润核算表」。`);
       if (skuEl) skuEl.innerHTML = "";
       if (unmatchEl) unmatchEl.innerHTML = "";
       return;
     }
-    if (!v33.orders.length) {
+    if (!ordersInScope.length) {
       if (kpiEl) kpiEl.innerHTML = "";
       if (lossEl) lossEl.innerHTML = emptyBlock(`<b>定价表已在档（${pricing.skus.length} 个 SKU）。</b>现在上传每日订单明细（OrderSKUList），系统立即扫描成交价并预警亏损。`);
       if (skuEl) skuEl.innerHTML = "";
@@ -2539,13 +2587,14 @@
 
   // —— 今日优先处理 · 利润 ——
   function profitPriorityProviderV33() {
-    if (!pricing && !v33.orders.length) {
+    const ordersInScope = scopedRows("orders");
+    if (!pricing && !ordersInScope.length) {
       return { items: [], emptyHtml: `<b>利润扫码未启用。</b>到「数据接入」页上传价格利润核算表 + 每日订单明细后，这里自动推送亏损预警。` };
     }
     if (!pricing) {
       return { items: [{ sev: "medium", title: "📋 订单明细已在档，缺价格利润核算表", body: "【数据】订单明细已导入，但没有成本与费率无法判定亏损。<br>【建议动作】到「数据接入」页上传「价格利润核算表」。", tags: ["利润"] }], emptyHtml: "" };
     }
-    if (!v33.orders.length) {
+    if (!ordersInScope.length) {
       return { items: [{ sev: "medium", title: "📋 定价表已在档，缺订单明细", body: `【数据】${pricing.skus.length} 个 SKU 定价已加载。<br>【建议动作】上传前日订单明细（OrderSKUList），立即扫描成交价。`, tags: ["利润"] }], emptyHtml: "" };
     }
     const scan = profitScan();
@@ -2594,13 +2643,14 @@
   function renderSourceSplit() {
     const el = document.getElementById("source-split-panel");
     if (!el) return;
-    if (!v33.creatorDaily.length) {
+    const creatorRows = scopedRows("creatorDaily");
+    if (!creatorRows.length) {
       el.innerHTML = `<div class="ops-empty">导入达人订单后，这里展示 视频 / 直播 / 商品卡 成交占比（联盟口径）。</div>`;
       return;
     }
-    const dates = [...new Set(v33.creatorDaily.map((r) => r.date).filter(Boolean))].sort();
+    const dates = [...new Set(creatorRows.map((r) => r.date).filter(Boolean))].sort();
     const latest = dates[dates.length - 1];
-    const rows = v33.creatorDaily.filter((r) => r.date === latest);
+    const rows = creatorRows.filter((r) => r.date === latest);
     const sum = (k) => rows.reduce((s, r) => s + (r[k] || 0), 0);
     const total = sum("gmv");
     const parts = [
@@ -2657,6 +2707,15 @@
       }
       const map = { creators: "creatorDaily", ads: "adCreatives", videos: "affVideos", assets: null };
       const target = Object.prototype.hasOwnProperty.call(v33, key) ? key : map[key];
+      if (key === "assets") {
+        meta.removedAssets = [];
+        await saveV33();
+        try { indexedDB.deleteDatabase(VIDEO_DB_NAME); } catch (e) {}
+        renderAllV33();
+        renderFreshnessBadges();
+        bridge.renderPriorityPanel();
+        return;
+      }
       if (target === null) return;
       if (!target) return;
       v33[target] = [];
@@ -2678,6 +2737,15 @@
       bridge.renderPriorityPanel();
     },
     renderFreshness: renderFreshnessBadges,
+  };
+  window.OPS_V33 = {
+    getData: () => v33,
+    getRows: (datasetKey) => scopedRows(datasetKey),
+    getScope: () => ({
+      store: document.getElementById("store-filter")?.value || "all",
+      bounds: selectedScopeBounds(),
+    }),
+    getPricing: () => pricing,
   };
 
   /* ================= 绑定与初始化 ================= */
