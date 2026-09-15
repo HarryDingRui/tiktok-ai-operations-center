@@ -295,14 +295,20 @@
     }
     return "";
   }
-  // 文件名里的日期：20260831 / 2026-08-31 / 2026_08_31
+  // 文件名里的数据日期：兼容 20260831、2026-08-31、202609-10，以及带日期范围的文件名。
+  // 取最后一个可识别的日期片段，避免把 20260907-202609-13 误读成起始日。
   function dateFromFilename(name) {
     const s = String(name || "");
-    let m = s.match(/(20\d{2})[-_.](\d{2})[-_.](\d{2})/);
-    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-    m = s.match(/(20\d{2})(\d{2})(\d{2})/);
-    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-    return "";
+    const candidates = [];
+    const addMatches = (pattern, formatter) => {
+      for (const match of s.matchAll(pattern)) candidates.push({ index: match.index ?? -1, date: formatter(match) });
+    };
+    addMatches(/(20\d{2})[-_.](\d{2})[-_.](\d{2})/g, (m) => `${m[1]}-${m[2]}-${m[3]}`);
+    addMatches(/(20\d{4})[-_.](\d{2})/g, (m) => `${m[1].slice(0, 4)}-${m[1].slice(4, 6)}-${m[2]}`);
+    addMatches(/(?<!\d)(20\d{6})(?!\d)/g, (m) => `${m[1].slice(0, 4)}-${m[1].slice(4, 6)}-${m[1].slice(6, 8)}`);
+    const currentYear = String(new Date().getFullYear());
+    addMatches(/(?<!\d)(0[1-9]|1[0-2])[-_.](0[1-9]|[12]\d|3[01])(?!\d)/g, (m) => `${currentYear}-${m[1]}-${m[2]}`);
+    return candidates.sort((left, right) => left.index - right.index).pop()?.date || "";
   }
 
   const KNOWN_STORES = ["INSPIRE PURIFY", "Miniyaya", "PETTOS", "yaya thailand tth", "yaya112"];
