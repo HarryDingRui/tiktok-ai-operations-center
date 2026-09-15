@@ -356,7 +356,14 @@
 
   function addImportScope(records, fileName) {
     const store = storeFromFilename(fileName);
-    return records.map((record) => (record.store || !store ? record : { ...record, store }));
+    return records.map((record) => {
+      const recordStore = String(record.store || "")
+        .trim()
+        .replace(/^店铺(?:名)?\s*[_\-:：]+/i, "")
+        .trim();
+      const resolvedStore = recordStore || store;
+      return resolvedStore && resolvedStore !== record.store ? { ...record, store: resolvedStore } : record;
+    });
   }
   // 读工作簿：返回 [{sheetName, rows}]
   async function readWorkbook(file) {

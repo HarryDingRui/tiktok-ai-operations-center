@@ -205,8 +205,15 @@
 
   function parseStoreFromFilename(fileName) {
     const match = String(fileName).match(/^店铺名[:：](.+?)-product_list_\d{8}\.(?:xlsx|xls|csv)$/i);
-    if (match) return match[1].trim();
+    if (match) return canonicalStoreName(match[1]);
     return "";
+  }
+
+  function canonicalStoreName(value) {
+    return String(value ?? "")
+      .trim()
+      .replace(/^店铺(?:名)?\s*[_\-:：]+/i, "")
+      .trim();
   }
 
   // 店铺名推断：文件名「店铺名：X-...」→ 表内店铺列唯一值 → 文件名主体（去掉日期与扩展名）
@@ -219,7 +226,7 @@
       if (values.length === 1) return values[0];
     }
     const stem = String(fileName).replace(/\.(?:xlsx|xls|csv)$/i, "").replace(/[-_]?\d{8}$/, "").replace(/[-_]?\d{4}[-_.]\d{2}[-_.]\d{2}$/, "").replace(/[-_]?product_list$/i, "").trim();
-    return stem;
+    return canonicalStoreName(stem);
   }
 
   function headerIndex(headers, names) {
@@ -354,11 +361,22 @@
     const snapshots = Array.isArray(store.snapshots) && store.snapshots.length
       ? store.snapshots.map((snapshot) => normalizeSnapshot(snapshot, store.reportDate, store.sourceFile))
       : [normalizeSnapshot(store, store.reportDate, store.sourceFile)];
-    return { name: store.name, snapshots };
+    return { name: canonicalStoreName(store.name), snapshots };
   }
 
   function normalizeData(data) {
-    return { ...data, version: 2, stores: data.stores.map(normalizeStore) };
+    const stores = new Map();
+    data.stores.map(normalizeStore).forEach((store) => {
+      const existing = stores.get(store.name) || { name: store.name, snapshots: [] };
+      store.snapshots.forEach((snapshot) => {
+        existing.snapshots = [
+          ...existing.snapshots.filter((item) => item.reportDate !== snapshot.reportDate),
+          snapshot,
+        ].sort((left, right) => left.reportDate.localeCompare(right.reportDate));
+      });
+      stores.set(store.name, existing);
+    });
+    return { ...data, version: 2, stores: [...stores.values()] };
   }
 
   function openDatabase() {
@@ -441,7 +459,9 @@
       }
     }
     if (!savedData || !Array.isArray(savedData.stores)) return false;
-    currentData = normalizeData(savedData);
+    const normalizedData = normalizeData(savedData);
+    currentData = normalizedData;
+    if (JSON.stringify(normalizedData) !== JSON.stringify(savedData)) await saveCurrentData();
     return true;
   }
 
