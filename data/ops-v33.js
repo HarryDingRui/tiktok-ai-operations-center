@@ -768,7 +768,14 @@
     creatorDaily: { label: "达人订单", parser: parseCreatorDaily, keyOf: (r) => `${r.store || ""}|${r.date}|${r.creator}`, dateOf: (r) => r.date },
     affOrders: { label: "联盟订单", parser: parseAffOrders, keyOf: (r) => `${r.store || ""}|${r.orderId}|${r.skuId}`, dateOf: (r) => r.date },
     samples: { label: "样品订单", parser: parseSamples, keyOf: (r) => `${r.store || ""}|${r.orderId}|${r.skuId}`, dateOf: (r) => r.date },
-    affVideos: { label: "全部视频订单", parser: parseAffVideos, keyOf: (r) => `${r.store || ""}|${r.date}|${r.videoId}|${r.productId}`, dateOf: (r) => r.date },
+    affVideos: {
+      label: "全部视频订单",
+      parser: parseAffVideos,
+      keyOf: (r) => `${r.store || ""}|${r.date}|${r.videoId}|${r.productId}`,
+      // 旧版本曾把店铺留空；重新导入同一视频时，先移除对应的旧未归属记录，避免全店视图重复。
+      legacyKeyOf: (r) => `${r.date}|${r.videoId}|${r.productId}`,
+      dateOf: (r) => r.date,
+    },
     selfVideos: { label: "自营账号数据", parser: parseSelfVideos, keyOf: (r) => `${r.store || ""}|${r.date}|${r.account}|${r.videoId}`, dateOf: (r) => r.date },
     orders: { label: "订单明细", parser: parseOrderLines, keyOf: (r) => `${r.store || ""}|${r.orderId}|${r.skuId}`, dateOf: (r) => r.date },
   };
@@ -804,6 +811,12 @@
         const fallbackStore = fallbackToSelectedStore && selectedStore !== "all" && !storeFromFile(file) ? selectedStore : "";
         const scopedRecords = addImportScope(result.records, file, fallbackStore);
         unassignedCount += scopedRecords.filter((record) => !record.store).length;
+        if (spec.legacyKeyOf) {
+          const assignedLegacyKeys = new Set(scopedRecords.filter((record) => record.store).map(spec.legacyKeyOf));
+          for (const [key, existing] of merged) {
+            if (!existing.store && assignedLegacyKeys.has(spec.legacyKeyOf(existing))) merged.delete(key);
+          }
+        }
         scopedRecords.forEach((r) => merged.set(spec.keyOf(r), r)); // 同键覆盖，重复导入不双计
         v33[datasetKey] = [...merged.values()];
         invalidateLatestDataDate();
