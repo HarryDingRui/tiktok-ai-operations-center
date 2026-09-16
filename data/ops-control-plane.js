@@ -342,6 +342,17 @@
     zone.addEventListener("click", () => input.click());
     input.addEventListener("change", async (event) => { const file = event.target.files?.[0]; if (!file) return; const status = actionModule.querySelector(".tag"); if (status) status.textContent = "正在解析…"; try { const result = await importActions(file); if (status) { status.textContent = `已导入 ${result.actions.length} 条 · 跳过 ${result.errors.length} 条`; status.className = `tag ${result.errors.length ? "tag-yellow" : "tag-green"}`; } window.dispatchEvent(new CustomEvent("real-data-imported")); renderAll(); } catch (error) { if (status) { status.textContent = `导入失败：${error.message}`; status.className = "tag tag-red"; } } finally { event.target.value = ""; } });
   }
+  function ensureValidationUploadEntry() {
+    const root = document.querySelector("#page-validation [data-control-plane-root]");
+    if (!root || root.querySelector("#cp-validation-upload-entry")) return;
+    const card = document.createElement("div");
+    card.id = "cp-validation-upload-entry";
+    card.className = "card";
+    card.style.borderLeft = "4px solid #38bdf8";
+    card.innerHTML = '<div class="card-title">📤 导入动作验证记录 <span>CSV / XLSX · 日期、商品、动作、T+1/T+3/T+7 节点</span></div><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:#475569;"><span>这个页面的动作记录从「数据接入」统一导入，导入后会自动回到本页生成验证结果。</span><button class="btn btn-primary" type="button" onclick="showPage(\'data\', null)">去数据接入上传动作文件</button></div>';
+    root.insertBefore(card, root.children[1] || null);
+  }
+
   function createKnowledgeFromAction(actionId) {
     const item = getActions().map(evaluateAction).find((entry) => entry.action.id === actionId);
     if (!item || item.verdict !== "有效") return;
@@ -351,7 +362,7 @@
   }
   function approveKnowledge(id) { const records = readJson(KNOWLEDGE_KEY, []).map((record) => record.id === id ? { ...record, status: "approved", approvedAt: new Date().toISOString() } : record); writeJson(KNOWLEDGE_KEY, records); renderKnowledge(); }
   function clearDataset(key) { if (key === "actions") writeJson(ACTIONS_KEY, []); if (key === "knowledge") writeJson(KNOWLEDGE_KEY, []); renderAll(); window.dispatchEvent(new CustomEvent("real-data-deleted")); }
-  function renderAll() { renderValidation(); renderKnowledge(); renderAgents(); bindDataUpload(); }
+  function renderAll() { renderValidation(); renderKnowledge(); renderAgents(); bindDataUpload(); ensureValidationUploadEntry(); window.dispatchEvent(new CustomEvent("control-plane-rendered")); }
 
   document.addEventListener("click", (event) => {
     const actionButton = event.target.closest?.(".cp-create-knowledge"); if (actionButton) { createKnowledgeFromAction(actionButton.dataset.actionId); return; }

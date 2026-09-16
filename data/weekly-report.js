@@ -100,6 +100,20 @@
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (_) { return null; }
   }
 
+  function ensureValidationPanel() {
+    let panel = document.getElementById('weekly-report-validation-panel');
+    if (panel) return panel;
+    const root = document.querySelector('#page-validation [data-control-plane-root]');
+    if (!root) return null;
+    panel = document.createElement('div');
+    panel.id = 'weekly-report-validation-panel';
+    panel.className = 'card';
+    panel.style.borderLeft = '4px solid #0ea5e9';
+    panel.innerHTML = '<div class="card-title">📘 调价验证周报快照 <span>只展示表内结论，不自动替换真实动作验证</span> <button class="btn" type="button" onclick="showPage(\'data\', null)">去数据接入上传周报</button></div><div id="weekly-report-validation-content"><div class="ops-empty">暂无已导入的周报成品数据</div></div>';
+    root.insertBefore(panel, root.firstChild);
+    return panel;
+  }
+
   function setStatus(message, className) {
     const element = document.getElementById('weekly-report-upload-status');
     if (element) { element.textContent = message; element.className = `tag ${className || 'tag-yellow'}`; }
@@ -107,16 +121,17 @@
 
   function render() {
     const report = reportOrNull();
+    const validationPanel = ensureValidationPanel();
     const overview = document.getElementById('weekly-report-overview');
     const overviewMeta = document.getElementById('weekly-report-overview-meta');
     const alertPanel = document.getElementById('weekly-report-alert-panel');
     const profitPanel = document.getElementById('weekly-report-profit-panel');
     const stylePanel = document.getElementById('weekly-report-style-panel');
     const samplePanel = document.getElementById('weekly-report-sample-panel');
-    const validationPanel = document.getElementById('weekly-report-validation-panel');
+    const validationContent = document.getElementById('weekly-report-validation-content') || validationPanel;
     const preview = document.getElementById('weekly-report-preview');
     if (!report) {
-      [overview, alertPanel, profitPanel, stylePanel, samplePanel, validationPanel].forEach((element) => { if (element) element.innerHTML = '<div class="ops-empty">暂无已导入的周报成品数据</div>'; });
+      [overview, alertPanel, profitPanel, stylePanel, samplePanel, validationContent].forEach((element) => { if (element) element.innerHTML = '<div class="ops-empty">暂无已导入的周报成品数据</div>'; });
       if (overviewMeta) overviewMeta.textContent = '待导入';
       if (preview) preview.innerHTML = '<div class="ops-empty">选择 xlsx 文件后先预览映射和行数，确认后才会写入本机浏览器。</div>';
       setStatus('待导入', 'tag-yellow');
@@ -129,7 +144,7 @@
     if (profitPanel) profitPanel.innerHTML = profitHtml(report);
     if (stylePanel) stylePanel.innerHTML = renderTable(['货号', 'Seller SKU', '在售店铺', 'SKU销量', 'SKU成交额', '货号GMV'], (report.styleAnalysis || []).slice(0, 20).map((record) => { const v = record.raw || []; return `<tr><td style="${CELL_STYLE}">${escapeHtml(record.cargoNumber)}</td><td style="${CELL_STYLE}">${escapeHtml(v[1])}</td><td style="${CELL_STYLE}">${escapeHtml(record.storeLabel)}</td><td style="${CELL_STYLE}">${integer(v[3])}</td><td style="${CELL_STYLE}">${money(v[4])}</td><td style="${CELL_STYLE}">${money(v[8])}</td></tr>`; }));
     if (samplePanel) samplePanel.innerHTML = samplesHtml(report);
-    if (validationPanel) validationPanel.innerHTML = validationHtml(report);
+    if (validationContent) validationContent.innerHTML = validationHtml(report);
     if (preview) preview.innerHTML = `<div class="alert alert-info"><span>✅</span><span>已导入：${escapeHtml(report.sourceFile)} · ${escapeHtml(periodLabel)} · 10 张表 · 店铺 ${report.storeSummary.length} 条 · 商品预警 ${report.alerts.length} 条 · 样品明细 ${report.samples.length} 条</span></div>`;
     setStatus(`已导入 · ${periodLabel}`, 'tag-green');
   }
@@ -178,5 +193,6 @@
   }
 
   window.OPS_WEEKLY_REPORT = { getReport: reportOrNull, hasData: () => Boolean(reportOrNull()), parseFile, render, clear: () => { localStorage.removeItem(STORAGE_KEY); render(); } };
+  window.addEventListener('control-plane-rendered', render);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind, { once: true }); else bind();
 })();
