@@ -784,6 +784,10 @@ body {
       <button class="btn" onclick="alert('🤖 已重新调用 AI日报Agent 生成新版本')">重新生成</button>
     </div>
   </div>
+  <div class="card" id="weekly-report-overview-card" style="border-left:4px solid #38bdf8;">
+    <div class="card-title">📘 周报周期对比 <span id="weekly-report-overview-meta">待导入</span></div>
+    <div id="weekly-report-overview"><div class="ops-empty">暂无已导入的周报成品数据</div></div>
+  </div>
 </div>
 
 <!-- ========== 2. 商品数据预警 ========== -->
@@ -791,6 +795,11 @@ body {
   <div class="page-header">
     <div class="page-title">🚨 商品数据预警</div>
     <div class="page-subtitle">T+1 / T+3 / T+7 预警流程样例 · 真实预警需导入同店铺多日期快照</div>
+  </div>
+
+  <div class="card" id="weekly-report-alert-panel" style="border-left:4px solid #f59e0b;">
+    <div class="card-title">📘 周报预警与涨跌榜 <span>来自《TikTok 泰国数据周报-成品数据.xlsx》</span></div>
+    <div class="ops-empty">暂无已导入的周报成品数据</div>
   </div>
 
   <!-- Agent 快捷入口 -->
@@ -1000,6 +1009,11 @@ body {
 
   <div class="stats-row" id="bd-kpi-row"></div>
 
+  <div class="card" id="weekly-report-sample-panel" style="border-left:4px solid #f97316;">
+    <div class="card-title">📘 周报样品订单快照 <span>类型一寄样成本 · 类型二买样返款</span></div>
+    <div class="ops-empty">暂无已导入的周报成品数据</div>
+  </div>
+
   <div class="card">
     <div class="card-title">📋 每日三清单 <span>新增动销 → 当天建联锁定向 · 流失预警 → 查原因唤醒 · 连续动销 → 维护</span></div>
     <div id="bd-lists-panel"></div>
@@ -1138,6 +1152,15 @@ body {
 
   <div class="stats-row" id="profit-kpi-row" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));"></div>
 
+  <div class="card" id="weekly-report-profit-panel" style="border-left:4px solid #10b981;">
+    <div class="card-title">📘 周报利润快照 <span>店铺、渠道、SKU 利润汇总</span></div>
+    <div class="ops-empty">暂无已导入的周报成品数据</div>
+  </div>
+  <div class="card" id="weekly-report-style-panel" style="border-left:4px solid #8b5cf6;">
+    <div class="card-title">📘 款式分析快照 <span>货号 → Seller SKU 分组</span></div>
+    <div class="ops-empty">暂无已导入的周报成品数据</div>
+  </div>
+
   <div class="card">
     <div class="card-title">🚨 亏损预警 <span>最新日亏损订单 + 全周期亏损价 SKU · 净利润 = 成交价 − 平台费 − 广告分摊 − 成本 − 人员成本</span></div>
     <div id="profit-loss-panel"></div>
@@ -1164,6 +1187,11 @@ body {
   <div class="page-header">
     <div class="page-title">✅ 运营动作有效性验证</div>
     <div class="page-subtitle">动作验证流程样例 · 尚未接入真实动作表和 T+1 / T+3 / T+7 证据</div>
+  </div>
+
+  <div class="card" id="weekly-report-validation-panel" style="border-left:4px solid #0ea5e9;">
+    <div class="card-title">📘 调价验证周报快照 <span>只展示表内结论，不自动替换真实动作验证</span></div>
+    <div class="ops-empty">暂无已导入的周报成品数据</div>
   </div>
 
   <div class="agent-grid" style="margin-bottom: 16px;">
@@ -1854,6 +1882,22 @@ body {
         </div>
         <input id="unified-data-directory-input" type="file" accept=".xlsx,.xls,.csv" webkitdirectory directory multiple style="display:none;">
       </div>
+      <div class="upload-module" style="grid-column:1/-1;border:2px solid #38bdf8;background:#f8fafc;">
+        <div class="upload-module-head">📘 TikTok 泰国数据周报（成品数据）</div>
+        <div class="upload-module-desc">导入你提供的周报成品 xlsx。系统会按工作表自动归位到经营总览、商品预警、利润、款式、样品订单和动作验证板块；它是独立的周报快照，不覆盖原始日表，也不会把周报数字伪装成日数据。</div>
+        <div class="upload-zone" id="weekly-report-upload-zone" onclick="document.getElementById('weekly-report-file-input').click()">
+          <div class="upload-zone-icon">📘</div>
+          <div class="upload-zone-title">选择《TikTok 泰国数据周报-成品数据.xlsx》</div>
+          <div class="upload-zone-desc">先解析预览店铺别名、周期和行数，确认后写入本机浏览器</div>
+        </div>
+        <input id="weekly-report-file-input" type="file" accept=".xlsx,.xls" style="display:none;">
+        <div class="upload-module-foot">
+          <span id="weekly-report-upload-status" class="tag tag-yellow">待导入</span>
+          <button id="weekly-report-clear" class="btn data-delete-btn" type="button">删除周报快照</button>
+          <span style="font-size:12px;color:#64748b;">确认映射：yaya113 → PETTOS · yaya thailand → yaya thailand tth · inspire/inspire Mall → INSPIRE PURIFY</span>
+        </div>
+        <div id="weekly-report-preview" style="margin-top:10px;"></div>
+      </div>
       <div class="upload-module">
         <div class="upload-module-head">🛍️ 商品 / 店铺经营数据<button class="manual-add-btn" type="button" data-manual-type="商品 / 店铺经营数据">＋ 手动添加</button></div>
         <div class="upload-module-desc">店铺后台 product_list 导出表直接传。驱动：经营总览、排行榜、数据预警、近7天趋势图。</div>
@@ -2220,6 +2264,8 @@ body {
 </script>
 <script src="./data/real-store-dashboard.js?v=ops-ext-10"></script>
 <script src="./data/ops-v33.js?v=gmvmax-native-11"></script>
+<script src="./data/weekly-report-core.js?v=weekly-report-1"></script>
+<script src="./data/weekly-report.js?v=weekly-report-1"></script>
 <script src="./data/file-categorization.js?v=auto-categorization-2"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'alert', 'bd', 'ads', 'videos', 'profit', 'validation', 'knowledge', 'agents', 'data']);
@@ -2438,7 +2484,7 @@ updateDataContextVisibility('overview');
   function pageReady(id){return id==='overview'||id==='alert'?storeReady():id==='bd'?Boolean(extReady('creators')||extReady('affOrders')||extReady('samples')):id==='ads'?extReady('ads'):id==='videos'?Boolean(extReady('videos')||extReady('assets')):id==='profit'?Boolean(extReady('orders')||extReady('pricing')):false;}
   function body(){const el=document.createElement('div');el.className='real-empty-card-body';el.textContent=message+'。导入后显示真实数据。';return el;}
   function sanitize(page){
-    const dynamic=['priority-hub','overview-ranking-grid','overview-product-value','overview-product-meta','overview-creator-value','overview-creator-meta','overview-ads-value','overview-ads-meta','overview-report-draft','real-data-summary','source-split-panel','bd-kpi-row','bd-lists-panel','bd-trend-panel','bd-ledger-panel','bd-orders-panel','ads-kpi-row','ads-lifecycle-panel','ads-action-seq-panel','ads-product-health-panel','ads-creative-boards','gmvmax-product-id-panel','asset-library-panel','videos-kpi-row','video-gmv-board','video-ads-gap-panel','self-video-panel','product-trend-panel','product-quadrant-panel','cross-diagnosis-panel','profit-kpi-row','profit-loss-panel','profit-sku-panel','profit-unmatched-panel','profit-rate-panel'];
+    const dynamic=['priority-hub','overview-ranking-grid','overview-product-value','overview-product-meta','overview-creator-value','overview-creator-meta','overview-ads-value','overview-ads-meta','overview-report-draft','weekly-report-overview-card','weekly-report-overview','weekly-report-alert-panel','weekly-report-profit-panel','weekly-report-style-panel','weekly-report-validation-panel','weekly-report-preview','weekly-report-sample-panel','real-data-summary','source-split-panel','bd-kpi-row','bd-lists-panel','bd-trend-panel','bd-ledger-panel','bd-orders-panel','ads-kpi-row','ads-lifecycle-panel','ads-action-seq-panel','ads-product-health-panel','ads-creative-boards','gmvmax-product-id-panel','asset-library-panel','videos-kpi-row','video-gmv-board','video-ads-gap-panel','self-video-panel','product-trend-panel','product-quadrant-panel','cross-diagnosis-panel','profit-kpi-row','profit-loss-panel','profit-sku-panel','profit-unmatched-panel','profit-rate-panel'];
        page.querySelectorAll('.card').forEach(card=>{
        const insideDynamic=dynamic.some(id=>card.closest('#'+id));
        if(card.dataset.realSanitized||card.dataset.fileCatalogCard||insideDynamic||dynamic.some(id=>card.querySelector('#'+id))||card.querySelector('.upload-zone'))return;
