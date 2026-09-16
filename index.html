@@ -1190,7 +1190,7 @@ body {
   </div>
 
   <div class="card" id="weekly-report-validation-panel" style="border-left:4px solid #0ea5e9;">
-    <div class="card-title">📘 调价验证周报快照 <span>只展示表内结论，不自动替换真实动作验证</span> <button class="btn" type="button" onclick="showPage('data', null)">去数据接入上传周报</button></div>
+    <div class="card-title">📘 调价验证周报快照 <span>只展示表内结论，不自动替换真实动作验证</span> <button class="btn" type="button" onclick="document.getElementById('weekly-report-file-input')?.click()">直接选择周报文件</button></div>
     <div id="weekly-report-validation-content"><div class="ops-empty">暂无已导入的周报成品数据</div></div>
   </div>
 
@@ -2265,7 +2265,7 @@ body {
 <script src="./data/real-store-dashboard.js?v=ops-ext-10"></script>
 <script src="./data/ops-v33.js?v=gmvmax-native-11"></script>
 <script src="./data/weekly-report-core.js?v=weekly-report-1"></script>
-<script src="./data/weekly-report.js?v=weekly-report-2"></script>
+<script src="./data/weekly-report.js?v=weekly-report-3"></script>
 <script src="./data/file-categorization.js?v=auto-categorization-2"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'alert', 'bd', 'ads', 'videos', 'profit', 'validation', 'knowledge', 'agents', 'data']);
@@ -2507,6 +2507,6 @@ updateDataContextVisibility('overview');
   apply();['real-data-ready','real-store-ready','real-data-imported','real-data-deleted'].forEach(e=>window.addEventListener(e,apply));
 })();
 </script>
-<script src="./data/ops-control-plane.js?v=control-plane-3"></script>
+<script src="./data/ops-control-plane.js?v=control-plane-4"></script>
 </body>
 </html>

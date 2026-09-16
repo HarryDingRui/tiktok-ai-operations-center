@@ -109,7 +109,7 @@
     panel.id = 'weekly-report-validation-panel';
     panel.className = 'card';
     panel.style.borderLeft = '4px solid #0ea5e9';
-    panel.innerHTML = '<div class="card-title">📘 调价验证周报快照 <span>只展示表内结论，不自动替换真实动作验证</span> <button class="btn" type="button" onclick="showPage(\'data\', null)">去数据接入上传周报</button></div><div id="weekly-report-validation-content"><div class="ops-empty">暂无已导入的周报成品数据</div></div>';
+    panel.innerHTML = '<div class="card-title">📘 调价验证周报快照 <span>只展示表内结论，不自动替换真实动作验证</span> <button class="btn" type="button" onclick="document.getElementById(\'weekly-report-file-input\')?.click()">直接选择周报文件</button></div><div id="weekly-report-validation-content"><div class="ops-empty">暂无已导入的周报成品数据</div></div>';
     root.insertBefore(panel, root.firstChild);
     return panel;
   }

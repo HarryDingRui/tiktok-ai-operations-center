@@ -349,7 +349,7 @@
     card.id = "cp-validation-upload-entry";
     card.className = "card";
     card.style.borderLeft = "4px solid #38bdf8";
-    card.innerHTML = '<div class="card-title">📤 导入动作验证记录 <span>CSV / XLSX · 日期、商品、动作、T+1/T+3/T+7 节点</span></div><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:#475569;"><span>这个页面的动作记录从「数据接入」统一导入，导入后会自动回到本页生成验证结果。</span><button class="btn btn-primary" type="button" onclick="showPage(\'data\', null)">去数据接入上传动作文件</button></div>';
+    card.innerHTML = '<div class="card-title">📤 导入动作验证记录 <span>CSV / XLSX · 日期、商品、动作、T+1/T+3/T+7 节点</span></div><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:#475569;"><span>这个页面的动作记录从「数据接入」统一导入，导入后会自动回到本页生成验证结果。</span><button class="btn btn-primary" type="button" onclick="const input=document.getElementById(\'cp-actions-file\'); if(input) input.click(); else showPage(\'data\', null)">直接选择动作文件</button></div>';
     root.insertBefore(card, root.children[1] || null);
   }
 
