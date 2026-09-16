@@ -317,6 +317,12 @@
     return KNOWN_STORES.find((store) => normalized.includes(normalizeHeaderText(store))) || "";
   }
 
+  // 目录导入时，浏览器把店铺目录保存在 webkitRelativePath，而 file.name 只有文件名。
+  // 先看相对路径，才能把“店铺/视频订单/xxx.xlsx”路由到正确店铺；单文件导入仍兼容文件名识别。
+  function storeFromFile(file) {
+    return storeFromFilename(file?.webkitRelativePath || "") || storeFromFilename(file?.name || "");
+  }
+
   function selectedScopeBounds() {
     const preset = document.getElementById("date-range-preset")?.value || "all";
     if (preset === "all") return null;
@@ -354,8 +360,8 @@
     return rows;
   }
 
-  function addImportScope(records, fileName) {
-    const store = storeFromFilename(fileName);
+  function addImportScope(records, file, fallbackStore = "") {
+    const store = storeFromFile(file) || fallbackStore;
     return records.map((record) => {
       const recordStore = String(record.store || "")
         .trim()
@@ -765,7 +771,7 @@
   }
 
   /* ================= 导入处理 ================= */
-  async function handleV33Import(event, datasetKey, statusId, { notify = true } = {}) {
+  async function handleV33Import(event, datasetKey, statusId, { notify = true, fallbackToSelectedStore = true } = {}) {
     const files = [...(event.target.files || [])];
     if (!files.length) return;
     const spec = DATASETS[datasetKey];
@@ -779,26 +785,37 @@
     try {
       const notes = [];
       let parsedCount = 0;
+      let unassignedCount = 0;
+      const selectedStore = document.getElementById("store-filter")?.value || "all";
       for (const file of files) {
         const result = await spec.parser(file);
         const merged = new Map((v33[datasetKey] || []).map((r) => [spec.keyOf(r), r]));
-        addImportScope(result.records, file.name).forEach((r) => merged.set(spec.keyOf(r), r)); // 同键覆盖，重复导入不双计
+        const fallbackStore = fallbackToSelectedStore && selectedStore !== "all" && !storeFromFile(file) ? selectedStore : "";
+        const scopedRecords = addImportScope(result.records, file, fallbackStore);
+        unassignedCount += scopedRecords.filter((record) => !record.store).length;
+        scopedRecords.forEach((r) => merged.set(spec.keyOf(r), r)); // 同键覆盖，重复导入不双计
         v33[datasetKey] = [...merged.values()];
         invalidateLatestDataDate();
         parsedCount += result.records.length;
-        notes.push(`${file.name}：${result.note}`);
+        const scopeNote = storeFromFile(file) || fallbackStore || "未识别店铺";
+        notes.push(`${file.name}：${result.note} · 店铺：${scopeNote}`);
       }
       meta.lastImport[datasetKey] = new Date().toISOString();
       await saveV33();
       window.localStorage.setItem("tiktok-real-data-state-v4", "imported");
       window.dispatchEvent(new CustomEvent("real-data-imported"));
       const coverage = datasetCoverage(datasetKey);
-      setStatus(`已导入 · 累计 ${v33[datasetKey].length} 条 · 数据至 ${coverage || "?"}`, "tag-green");
+      setStatus(`已导入 · 累计 ${v33[datasetKey].length} 条 · 数据至 ${coverage || "?"}`, unassignedCount ? "tag-yellow" : "tag-green");
       renderAllV33();
       renderFreshnessBadges();
       bridge.renderPriorityPanel();
-      if (notify) window.alert(`✅ ${spec.label}导入完成\n\n${notes.join("\n")}\n\n累计存储 ${v33[datasetKey].length} 条（同键自动去重，重复导入不双计）。`);
-      return { datasetKey, records: parsedCount, stored: v33[datasetKey].length, notes };
+      if (notify) {
+        const warning = unassignedCount
+          ? `\n\n⚠️ ${unassignedCount} 条记录未识别店铺，因此不会出现在具体店铺筛选中。请使用“导入整个导出文件夹”，或先选择店铺再用该板块导入。`
+          : "";
+        window.alert(`✅ ${spec.label}导入完成\n\n${notes.join("\n")}\n\n累计存储 ${v33[datasetKey].length} 条（同键自动去重，重复导入不双计）。${warning}`);
+      }
+      return { datasetKey, records: parsedCount, stored: v33[datasetKey].length, unassigned: unassignedCount, notes };
     } catch (error) {
       setStatus("导入失败", "tag-red");
       if (notify) window.alert(`❌ 导入失败\n\n${error.message || "无法识别该文件"}`);
@@ -908,11 +925,12 @@
       }
       for (const [datasetKey, datasetFiles] of groups) {
         if (datasetKey === "products") continue;
-        const result = await handleV33Import({ target: { files: datasetFiles, value: "" } }, datasetKey, null, { notify: false });
+        const result = await handleV33Import({ target: { files: datasetFiles, value: "" } }, datasetKey, null, { notify: false, fallbackToSelectedStore: false });
         if (result && result.error) issues.push(`${UNIFIED_DATASET_LABELS[datasetKey]}：${result.error}`);
         else if (result) {
           importedFileCount += datasetFiles.length;
           results.push(`${UNIFIED_DATASET_LABELS[datasetKey]}：解析 ${result.records} 条，当前累计 ${result.stored} 条，${datasetFiles.length} 个文件`);
+          if (result.unassigned) issues.push(`${UNIFIED_DATASET_LABELS[datasetKey]}：${result.unassigned} 条记录未识别店铺，请确认目录路径包含店铺名`);
         }
       }
       if (!results.length) setStatus("未找到可导入文件", "tag-red");
