@@ -7,6 +7,7 @@
 
   const bridge = window.OPS_BRIDGE;
   if (!bridge) return;
+  const recommendationEngine = window.OPS_RECOMMENDATIONS;
 
   const ACTIONS_KEY = "ops-control-plane-actions-v1";
   const KNOWLEDGE_KEY = "ops-control-plane-knowledge-v1";
@@ -298,6 +299,19 @@
     return rows;
   }
   function tasks() { return readJson(TASKS_KEY, []); }
+  function currentRecommendations() {
+    const report = window.OPS_WEEKLY_REPORT?.getReport ? window.OPS_WEEKLY_REPORT.getReport() : null;
+    return recommendationEngine?.buildWeeklyRecommendations ? recommendationEngine.buildWeeklyRecommendations(report) : { source: "规则模块未加载", periodLabel: "—", items: [], summary: "数据波动规则模块未加载。", unmappedStores: [] };
+  }
+  function recommendationSeverity(severity) { return severity === "high" ? "#ef4444" : severity === "good" ? "#10b981" : "#f59e0b"; }
+  function recommendationLabel(kind) { return ({ decline: "下滑", growth: "增长", alert: "预警", profit: "利润", channel: "渠道" })[kind] || "建议"; }
+  function renderRecommendations() {
+    const result = currentRecommendations();
+    if (!result.items.length) return `<div class="card" style="border-left:4px solid #38bdf8;margin-bottom:16px;"><div class="card-title">📊 数据波动操盘建议 <span>${esc(result.periodLabel)}</span></div><div style="font-size:13px;color:#475569;line-height:1.7;">${esc(result.summary)} <button class="btn btn-primary cp-open-weekly-report" type="button" style="margin-left:8px;">导入周报成品数据</button></div></div>`;
+    const unmapped = result.unmappedStores.length ? `<div class="alert alert-warning" style="margin:10px 0 0;"><span>⚠️</span><span>未映射店铺：${esc(result.unmappedStores.join("、"))}。这些记录不会被改名或合并。</span></div>` : "";
+    const cards = result.items.map((recommendation) => `<div style="border:1px solid #e2e8f0;border-left:4px solid ${recommendationSeverity(recommendation.severity)};border-radius:10px;padding:12px 14px;background:#fff;"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;"><strong>${esc(recommendation.title)}</strong><span class="tag ${recommendation.severity === "high" ? "tag-red" : recommendation.severity === "good" ? "tag-green" : "tag-yellow"}">${esc(recommendationLabel(recommendation.kind))}</span></div><div style="font-size:12px;color:#64748b;margin-top:6px;">证据：${esc(recommendation.evidence)}</div><div style="font-size:13px;color:#0f172a;line-height:1.6;margin-top:6px;">建议：${esc(recommendation.action)}</div><div style="font-size:11px;color:#94a3b8;margin-top:6px;">来源：${esc(recommendation.source)} · ${esc(recommendation.tags.join(" / "))}</div></div>`).join("");
+    return `<div class="card" style="border-left:4px solid #8b5cf6;margin-bottom:16px;"><div class="card-title">📊 数据波动操盘建议 <span>${esc(result.periodLabel)} · ${esc(result.source)}</span></div><div style="font-size:13px;color:#475569;margin-bottom:10px;">${esc(result.summary)}<span style="margin-left:10px;color:#64748b;">规则依据：分析、广告、转化、定价、达人数据闭环</span></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">${cards}</div>${unmapped}</div>`;
+  }
   function curateVerifiedActions() {
     const verified = getActions().map(evaluateAction).filter((item) => item.verdict === "有效");
     const records = readJson(KNOWLEDGE_KEY, []);
@@ -312,11 +326,13 @@
   function taskOutput(type) {
     const actions = getActions().map(evaluateAction);
     const knowledge = getKnowledge();
+    const recommendations = currentRecommendations();
     if (type === "track-actions") return `扫描 ${actions.length} 条动作：有效 ${actions.filter((item) => item.verdict === "有效").length}，无效 ${actions.filter((item) => item.verdict === "无效").length}，待验证 ${actions.filter((item) => item.verdict === "待验证").length}。`;
     if (type === "knowledge-curation") { const created = curateVerifiedActions(); return `发现 ${actions.filter((item) => item.verdict === "有效").length} 条有效动作，新生成 ${created} 条知识待审核；当前知识记录 ${getKnowledge().length} 条。`; }
-    if (type === "diagnose") { const datasets = ["creatorDaily", "affOrders", "samples", "adCreatives", "affVideos", "selfVideos", "orders"].map((key) => `${key}:${getRows(key).length}`).join("，"); return `当前筛选范围数据：${datasets}。结论仅用于定位缺口，不替代人工决策。`; }
+    if (type === "diagnose") { const datasets = ["creatorDaily", "affOrders", "samples", "adCreatives", "affVideos", "selfVideos", "orders"].map((key) => `${key}:${getRows(key).length}`).join("，"); return `当前筛选范围数据：${datasets}。${recommendations.summary} 结论仅用于定位缺口，不替代人工决策。`; }
     const summaries = latestStoreSummary();
-    return summaries.length ? `已读取 ${summaries.length} 个店铺的最新快照：${summaries.map((item) => `${item.store} ${item.date} GMV ${item.gmv == null ? "待导入" : item.gmv}`).join("；")}。` : "暂无有效日期快照，日报任务未生成经营结论。";
+    if (!summaries.length) return `暂无有效日期快照，日报任务未生成经营结论。${recommendations.summary}`;
+    return `已读取 ${summaries.length} 个店铺的最新快照：${summaries.map((item) => `${item.store} ${item.date} GMV ${item.gmv == null ? "待导入" : item.gmv}`).join("；")}。${recommendations.summary}`;
   }
   function runAgent(type, label) {
     const record = { id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, agent: label, type, status: "running", createdAt: new Date().toISOString(), output: "本地规则引擎正在读取当前筛选范围…" };
@@ -327,7 +343,7 @@
     const history = tasks();
     const running = history.filter((task) => task.status === "running").length;
     const definitions = [{ type: "daily-report", label: "日报汇总 Agent", icon: "📊", desc: "读取当前店铺快照，生成可追溯的日报摘要。" }, { type: "diagnose", label: "经营诊断 Agent", icon: "🔍", desc: "检查各模块数据覆盖，明确缺口，不对缺失字段做推断。" }, { type: "track-actions", label: "效果追踪 Agent", icon: "📈", desc: "按动作记录和 T+1/T+3/T+7 快照验证效果。" }, { type: "knowledge-curation", label: "知识沉淀 Agent", icon: "📚", desc: "把已验证有效动作整理成待审核知识记录。" }];
-    replacePage("agents", `${notice("当前 Agent 在 GitHub Pages 上运行本地规则引擎：会真实读取本机导入数据并保存任务历史，但不会冒充已连接外部 LLM、WPS/Kdocs 或 Seller Center。") }<div class="stats-row"><div class="stat-card"><div class="stat-label">运行中 Agent</div><div class="stat-value" style="color:#10b981;">${running}</div></div><div class="stat-card"><div class="stat-label">待执行队列</div><div class="stat-value">0</div></div><div class="stat-card"><div class="stat-label">已完成任务</div><div class="stat-value">${history.filter((task) => task.status === "completed").length}</div></div><div class="stat-card"><div class="stat-label">执行模式</div><div class="stat-value" style="font-size:18px;">本地规则</div></div></div><div class="agent-grid" style="margin-bottom:16px;">${definitions.map((definition) => `<div class="agent-card"><div class="agent-card-status ${running ? "running" : "idle"}"></div><div class="agent-card-icon">${definition.icon}</div><div class="agent-card-body"><div class="agent-card-title">${definition.label}</div><div class="agent-card-desc">${definition.desc}</div><button class="btn btn-primary cp-run-agent" data-agent-type="${definition.type}" data-agent-label="${definition.label}" style="margin-top:10px;">运行</button></div></div>`).join("")}</div><div class="card"><div class="card-title">📈 Agent 执行历史 <span>最近 ${Math.min(history.length, 20)} 条</span></div>${history.length ? `<div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>时间</th><th>Agent</th><th>任务</th><th>状态</th><th>输出</th></tr></thead><tbody>${history.slice(0, 20).map((task) => `<tr><td>${esc(new Date(task.createdAt).toLocaleString())}</td><td>${esc(task.agent)}</td><td>${esc(task.type)}</td><td><span class="tag ${task.status === "completed" ? "tag-green" : "tag-yellow"}">${esc(task.status)}</span></td><td>${esc(task.output || "")}</td></tr>`).join("")}</tbody></table></div>` : `<div class="ops-empty">暂无任务。运行一个 Agent 后，这里会留下真实执行记录。</div>`}</div>`);
+    replacePage("agents", `${notice("当前 Agent 在 GitHub Pages 上运行本地规则引擎：会真实读取本机导入数据并保存任务历史，但不会冒充已连接外部 LLM、WPS/Kdocs 或 Seller Center。") }<div class="stats-row"><div class="stat-card"><div class="stat-label">运行中 Agent</div><div class="stat-value" style="color:#10b981;">${running}</div></div><div class="stat-card"><div class="stat-label">待执行队列</div><div class="stat-value">0</div></div><div class="stat-card"><div class="stat-label">已完成任务</div><div class="stat-value">${history.filter((task) => task.status === "completed").length}</div></div><div class="stat-card"><div class="stat-label">执行模式</div><div class="stat-value" style="font-size:18px;">本地规则</div></div></div><div class="agent-grid" style="margin-bottom:16px;">${definitions.map((definition) => `<div class="agent-card"><div class="agent-card-status ${running ? "running" : "idle"}"></div><div class="agent-card-icon">${definition.icon}</div><div class="agent-card-body"><div class="agent-card-title">${definition.label}</div><div class="agent-card-desc">${definition.desc}</div><button class="btn btn-primary cp-run-agent" data-agent-type="${definition.type}" data-agent-label="${definition.label}" style="margin-top:10px;">运行</button></div></div>`).join("")}</div>${renderRecommendations()}<div class="card"><div class="card-title">📈 Agent 执行历史 <span>最近 ${Math.min(history.length, 20)} 条</span></div>${history.length ? `<div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>时间</th><th>Agent</th><th>任务</th><th>状态</th><th>输出</th></tr></thead><tbody>${history.slice(0, 20).map((task) => `<tr><td>${esc(new Date(task.createdAt).toLocaleString())}</td><td>${esc(task.agent)}</td><td>${esc(task.type)}</td><td><span class="tag ${task.status === "completed" ? "tag-green" : "tag-yellow"}">${esc(task.status)}</span></td><td>${esc(task.output || "")}</td></tr>`).join("")}</tbody></table></div>` : `<div class="ops-empty">暂无任务。运行一个 Agent 后，这里会留下真实执行记录。</div>`}</div>`);
   }
 
   function bindDataUpload() {
@@ -368,9 +384,10 @@
     const actionButton = event.target.closest?.(".cp-create-knowledge"); if (actionButton) { createKnowledgeFromAction(actionButton.dataset.actionId); return; }
     const approveButton = event.target.closest?.(".cp-approve-knowledge"); if (approveButton) { approveKnowledge(approveButton.dataset.knowledgeId); return; }
     const agentButton = event.target.closest?.(".cp-run-agent"); if (agentButton) { runAgent(agentButton.dataset.agentType, agentButton.dataset.agentLabel); }
+    const weeklyButton = event.target.closest?.(".cp-open-weekly-report"); if (weeklyButton) { document.getElementById("weekly-report-file-input")?.click(); }
   });
   document.addEventListener("change", (event) => { if (["store-filter", "date-range-preset", "date-range-start", "date-range-end"].includes(event.target.id)) renderAll(); });
-  ["real-data-ready", "real-store-ready", "real-data-imported", "real-data-deleted"].forEach((eventName) => window.addEventListener(eventName, () => window.setTimeout(renderAll, 0)));
+  ["real-data-ready", "real-store-ready", "real-data-imported", "real-data-deleted", "weekly-report-ready", "weekly-report-deleted"].forEach((eventName) => window.addEventListener(eventName, () => window.setTimeout(renderAll, 0)));
   document.getElementById("manual-entry-form")?.addEventListener("submit", () => window.setTimeout(renderAll, 0));
   window.OPS_CONTROL_PLANE = { render: renderAll, getActions, getKnowledge, getTasks: tasks, clearDataset };
   window.setTimeout(renderAll, 0);
