@@ -4,6 +4,7 @@
 
   const CATEGORIES = ["广告", "商品", "达人视频", "达人", "样品订单", "联盟订单"];
   const KNOWN_STORES = ["INSPIRE PURIFY", "Miniyaya", "PETTOS", "yaya thailand tth", "yaya112"];
+  const STORE_DIRECTORY_ALIASES = { inspire: "INSPIRE PURIFY", inspirepurify: "INSPIRE PURIFY" };
   const CATALOG_KEY = "tiktok-data-file-catalog-v1";
   const DIRECTORY_DB = "tiktok-ai-operations-center";
   const DIRECTORY_STORE = "datasets";
@@ -48,7 +49,9 @@
 
   function storeFromPath(relativePath) {
     const parts = String(relativePath || "").split(/[\\/]/).filter(Boolean);
-    return KNOWN_STORES.find((store) => parts.some((part) => normalize(part) === normalize(store))) || "";
+    return KNOWN_STORES.find((store) => parts.some((part) => normalize(part) === normalize(store)))
+      || parts.map((part) => STORE_DIRECTORY_ALIASES[normalize(part)] || "").find(Boolean)
+      || "";
   }
 
   function storeFromFilename(fileName) {

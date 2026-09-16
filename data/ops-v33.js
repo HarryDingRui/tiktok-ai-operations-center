@@ -312,6 +312,13 @@
   }
 
   const KNOWN_STORES = ["INSPIRE PURIFY", "Miniyaya", "PETTOS", "yaya thailand tth", "yaya112"];
+  const STORE_DIRECTORY_ALIASES = { inspire: "INSPIRE PURIFY", inspirepurify: "INSPIRE PURIFY" };
+  function canonicalStoreSegment(segment) {
+    const normalized = normalizeHeaderText(segment || "");
+    return KNOWN_STORES.find((store) => normalizeHeaderText(store) === normalized)
+      || STORE_DIRECTORY_ALIASES[normalized]
+      || "";
+  }
   function storeFromFilename(name) {
     const normalized = normalizeHeaderText(name || "");
     return KNOWN_STORES.find((store) => normalized.includes(normalizeHeaderText(store))) || "";
@@ -320,7 +327,11 @@
   // 目录导入时，浏览器把店铺目录保存在 webkitRelativePath，而 file.name 只有文件名。
   // 先看相对路径，才能把“店铺/视频订单/xxx.xlsx”路由到正确店铺；单文件导入仍兼容文件名识别。
   function storeFromFile(file) {
-    return storeFromFilename(file?.webkitRelativePath || "") || storeFromFilename(file?.name || "");
+    const pathStore = String(file?.webkitRelativePath || "")
+      .split(/[\\/]/)
+      .map(canonicalStoreSegment)
+      .find(Boolean);
+    return pathStore || storeFromFilename(file?.name || "");
   }
 
   function selectedScopeBounds() {
