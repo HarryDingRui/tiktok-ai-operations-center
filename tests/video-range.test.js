@@ -25,4 +25,13 @@ assert.deepStrictEqual(
 );
 assert.deepStrictEqual(summary.byGmv.map((row) => row.videoId), ['video-1', 'video-3']);
 assert.deepStrictEqual(summary.byGpm.map((row) => row.videoId), ['video-1', 'video-3']);
+
+const deduplicatedSummary = videoRange.summarizeVideoRows([
+  { date: '2026-09-10', videoId: 'video-1', productId: 'product-1', orders: 1, gmv: 40, exposure: 100 },
+  { date: '2026-09-11', videoId: 'video-1', productId: 'product-1', orders: 2, gmv: 60, exposure: 200 },
+]);
+assert.strictEqual(deduplicatedSummary.total, 1);
+assert.strictEqual(deduplicatedSummary.sellingCount, 1);
+assert.strictEqual(deduplicatedSummary.gmv, 100);
+assert.strictEqual(deduplicatedSummary.byGmv[0].orders, 3);
 console.log('video-range tests passed');

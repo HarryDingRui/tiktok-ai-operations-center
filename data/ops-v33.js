@@ -1433,9 +1433,9 @@
   // 出单但还没被广告利用的视频（视频模块 × 广告模块的联动）
   function videosNotInAds() {
     const adVideoIds = new Set(scopedRows("adCreatives").map((r) => r.videoId).filter(Boolean));
-    return scopedRows("affVideos")
-      .filter((r) => (r.orders || 0) > 0 && r.videoId && !adVideoIds.has(r.videoId))
-      .sort((a, b) => (b.gmv || 0) - (a.gmv || 0));
+    if (!videoTools?.summarizeVideoRows) return [];
+    return videoTools.summarizeVideoRows(scopedRows("affVideos")).sellingRows
+      .filter((r) => r.videoId && !adVideoIds.has(r.videoId));
   }
   // 自营账号拼接：前台播放 + 联盟归因 GMV
   function selfVideoRows() {
