@@ -393,14 +393,17 @@
     return rows.filter((row) => row.date === date);
   }
 
-  function addImportScope(records, file, fallbackStore = "") {
+  function addImportScope(records, file, fallbackStore = "", datasetKey = "") {
     const store = storeFromFile(file) || fallbackStore;
-    return records.map((record) => {
+    const inferredStores = datasetKey === "affVideos" && !store && videoTools?.inferStoresByProduct
+      ? videoTools.inferStoresByProduct(records, bridge.getData?.()?.stores)
+      : [];
+    return records.map((record, index) => {
       const recordStore = String(record.store || "")
         .trim()
         .replace(/^店铺(?:名)?\s*[_\-:：]+/i, "")
         .trim();
-      const resolvedStore = recordStore || store;
+      const resolvedStore = recordStore || store || inferredStores[index] || "";
       return resolvedStore && resolvedStore !== record.store ? { ...record, store: resolvedStore } : record;
     });
   }
@@ -830,7 +833,7 @@
       for (const file of files) {
         const result = await spec.parser(file);
         const fallbackStore = fallbackToSelectedStore && selectedStore !== "all" && !storeFromFile(file) ? selectedStore : "";
-        const scopedRecords = addImportScope(result.records, file, fallbackStore);
+        const scopedRecords = addImportScope(result.records, file, fallbackStore, datasetKey);
         const mergedRecords = datasetKey === "affVideos" && videoTools?.mergeVideoRecords
           ? videoTools.mergeVideoRecords(v33[datasetKey] || [], scopedRecords)
           : [...(v33[datasetKey] || []), ...scopedRecords];

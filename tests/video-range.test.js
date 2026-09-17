@@ -70,4 +70,15 @@ const crossStoreSummary = videoRange.summarizeVideoRows([
 ]);
 assert.strictEqual(crossStoreSummary.total, 2);
 assert.strictEqual(crossStoreSummary.gmv, 100);
+
+const inferredStores = videoRange.inferStoresByProduct([
+  { productId: 'product-a' },
+  { productId: 'product-b, product-a' },
+  { productId: 'unknown-product' },
+], [
+  { name: 'Store A', productIds: ['product-a'] },
+  { name: 'Store B', productIds: ['product-b'] },
+]);
+assert.deepStrictEqual(inferredStores, ['Store A', '', '']);
+
 console.log('video-range tests passed');

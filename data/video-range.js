@@ -15,6 +15,37 @@
     return COMMERCIAL_FIELDS.some((field) => (Number(row?.[field]) || 0) > 0);
   }
 
+  function productIdsFromValue(value) {
+    return String(value || "")
+      .split(/[,，]/)
+      .map((id) => id.trim())
+      .filter(Boolean);
+  }
+
+  function inferStoresByProduct(records, stores) {
+    const productStores = new Map();
+    (Array.isArray(stores) ? stores : []).forEach((store) => {
+      const storeName = String(store?.name || "").trim();
+      if (!storeName) return;
+      const productIds = [
+        ...(store.productIds || []),
+        ...(store.snapshots || []).flatMap((snapshot) => (snapshot.products || []).map((product) => product.id)),
+      ];
+      productIdsFromValue(productIds.join(",")).forEach((productId) => {
+        const candidates = productStores.get(productId) || new Set();
+        candidates.add(storeName);
+        productStores.set(productId, candidates);
+      });
+    });
+    return (Array.isArray(records) ? records : []).map((record) => {
+      const candidates = new Set();
+      productIdsFromValue(record?.productId).forEach((productId) => {
+        (productStores.get(productId) || []).forEach((storeName) => candidates.add(storeName));
+      });
+      return candidates.size === 1 ? [...candidates][0] : "";
+    });
+  }
+
   function mergeVideoRecords(existingRows, incomingRows) {
     const merged = new Map();
     const append = (rows, source) => {
@@ -88,5 +119,5 @@
     };
   }
 
-  return { mergeVideoRecords, summarizeVideoRows };
+  return { inferStoresByProduct, mergeVideoRecords, summarizeVideoRows };
 }));
