@@ -381,6 +381,14 @@
     return rows;
   }
 
+  function rowsAtBoundary(datasetKey, bounds, position) {
+    const rows = rowsForBounds(datasetKey, bounds);
+    const dates = [...new Set(rows.map((row) => row.date).filter(Boolean))].sort();
+    if (dates.length < 2) return [];
+    const date = position === "start" ? dates[0] : dates[dates.length - 1];
+    return rows.filter((row) => row.date === date);
+  }
+
   function addImportScope(records, file, fallbackStore = "") {
     const store = storeFromFile(file) || fallbackStore;
     return records.map((record) => {
@@ -2786,7 +2794,6 @@
     if (!el) return;
     const scope = window.OPS_V33?.getScope?.() || { bounds: selectedScopeBounds() };
     const currentBounds = scope.bounds;
-    const previousBounds = periodTools?.previousPeriodBounds ? periodTools.previousPeriodBounds(currentBounds) : null;
     const creatorRows = rowsForBounds("creatorDaily", currentBounds);
     if (!creatorRows.length) {
       const loading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY;
@@ -2805,19 +2812,22 @@
       parts.push({ label: "📦 其他/未拆分", value: Math.max(0, total - known), color: "#94a3b8" });
       return { parts, total };
     };
-    const previousRows = rowsForBounds("creatorDaily", previousBounds);
+    const startRows = rowsAtBoundary("creatorDaily", currentBounds, "start");
+    const endRows = rowsAtBoundary("creatorDaily", currentBounds, "end");
     const current = summarize(creatorRows);
-    const previous = summarize(previousRows);
+    const start = summarize(startRows);
+    const end = summarize(endRows);
     if (current.total <= 0) {
       const latest = [...new Set(creatorRows.map((row) => row.date).filter(Boolean))].sort().pop() || "当前区间";
       el.innerHTML = `<div class="ops-empty">${latest} 达人订单 GMV 为 0，暂无成交来源可拆分。</div>`;
       return;
     }
-    const previousLabel = previousBounds?.start && previousBounds?.end
-      ? `上期 ${previousBounds.start} 至 ${previousBounds.end}`
-      : "上期暂无可用日期";
+    const endpointDates = [...new Set(creatorRows.map((row) => row.date).filter(Boolean))].sort();
+    const endpointLabel = endpointDates.length >= 2
+      ? `区间首日 ${endpointDates[0]} → 末日 ${endpointDates[endpointDates.length - 1]}`
+      : "区间不足两个可用日期";
     const changeText = (value, previousValue) => {
-      if (!previousBounds?.start || !previousBounds?.end || !previousRows.length) return "上期暂无可比数据";
+      if (endpointDates.length < 2 || !startRows.length || !endRows.length) return "暂无可比起止日";
       const delta = value - previousValue;
       if (periodTools?.absoluteDeltaText) return periodTools.absoluteDeltaText(delta, fmtThb);
       return delta > 0 ? `增加 ${fmtThb(delta)}` : delta < 0 ? `减少 ${fmtThb(Math.abs(delta))}` : "持平";
@@ -2829,10 +2839,10 @@
     el.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px;padding-top:6px;">` +
       current.parts.map((part, index) => {
         const scale = Math.round((part.value / current.total) * 100);
-        const change = changeText(part.value, previous.parts[index]?.value || 0);
+        const change = changeText(end.parts[index]?.value || 0, start.parts[index]?.value || 0);
         return `<div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;font-size:13px;"><span>${part.label}</span><span style="font-weight:700;">${fmtThb(part.value)} <small style="font-weight:600;color:#64748b;">（${change}）</small></span></div><div class="progress-bar"><div class="progress-fill" style="width:${scale}%;background:${part.color};"></div></div></div>`;
       }).join("") +
-      `</div><div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:#64748b;">${rangeLabel} · 本期达人订单合计 ${fmtThb(current.total)}；${previousLabel} · 来源金额按联盟订单拆分，不含自营与其他渠道。</div>`;
+      `</div><div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:#64748b;">${rangeLabel} · 本期达人订单合计 ${fmtThb(current.total)}；${endpointLabel} · 来源金额按联盟订单拆分，不含自营与其他渠道。</div>`;
   }
   function latestRowsPerStore(rows) {
     const latestByStore = new Map();

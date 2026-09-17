@@ -651,10 +651,6 @@
     return { start: available.min, end: available.max };
   }
 
-  function previousPeriodBounds() {
-    return periodTools?.previousPeriodBounds ? periodTools.previousPeriodBounds(selectedDateBounds()) : { start: "", end: "" };
-  }
-
   function snapshotsInBounds(store, bounds) {
     if (!bounds?.start || !bounds?.end) return [];
     return store.snapshots
@@ -662,36 +658,53 @@
       .sort((left, right) => left.reportDate.localeCompare(right.reportDate));
   }
 
-  function productsInBounds(bounds) {
-    if (!bounds?.start || !bounds?.end) return [];
-    return storesForDateAnchor().flatMap((store) => snapshotsInBounds(store, bounds).flatMap((snapshot) => snapshot.products));
+  function comparisonDateBounds() {
+    const bounds = selectedDateBounds();
+    const dates = availableDateKeys().filter((date) => date >= bounds.start && date <= bounds.end);
+    return periodTools?.selectedPeriodEndpoints
+      ? periodTools.selectedPeriodEndpoints(bounds, dates)
+      : { start: dates[0] || bounds.start, end: dates[dates.length - 1] || bounds.end };
   }
 
-  function totalsForBounds(bounds) { return summarizeProducts(productsInBounds(bounds)); }
-
   function comparisonPeriodLabel() {
-    const bounds = previousPeriodBounds();
-    return bounds.start && bounds.end ? `上期 ${bounds.start} 至 ${bounds.end}` : "上期暂无可用日期";
+    const bounds = comparisonDateBounds();
+    if (!bounds.start || !bounds.end) return "区间暂无可用日期";
+    return bounds.start === bounds.end ? `区间日期 ${bounds.start}` : `区间首日 ${bounds.start} → 末日 ${bounds.end}`;
   }
 
   function absoluteChange(current, previous, formatter) {
     if (periodTools?.absoluteDeltaText) return periodTools.absoluteDeltaText(current, previous, formatter);
-    if (current == null || previous == null) return "上期暂无数据";
+    if (current == null || previous == null) return "区间首日暂无数据";
     const delta = Number(current) - Number(previous);
     return delta === 0 ? "持平" : `${delta > 0 ? "增加" : "减少"} ${formatter(Math.abs(delta))}`;
   }
 
-  function productMapForBounds(store, bounds) {
-    const grouped = new Map();
-    snapshotsInBounds(store, bounds).forEach((snapshot) => {
-      snapshot.products.forEach((product) => {
-        const key = String(product.id || "");
-        if (!key) return;
-        if (!grouped.has(key)) grouped.set(key, []);
-        grouped.get(key).push(product);
-      });
+  function productMapForSnapshot(snapshot) {
+    return new Map((snapshot?.products || []).map((product) => [String(product.id || ""), product]).filter(([key]) => key));
+  }
+
+  function comparisonSnapshotsForStore(store, bounds = selectedDateBounds()) {
+    const snapshots = snapshotsInBounds(store, bounds);
+    if (snapshots.length < 2 || snapshots[0].reportDate === snapshots[snapshots.length - 1].reportDate) return null;
+    const first = snapshots[0];
+    const last = snapshots[snapshots.length - 1];
+    return {
+      startDate: first.reportDate,
+      endDate: last.reportDate,
+      start: productMapForSnapshot(first),
+      end: productMapForSnapshot(last),
+    };
+  }
+
+  function endpointProducts(position) {
+    return storesForDateAnchor().flatMap((store) => {
+      const comparison = comparisonSnapshotsForStore(store);
+      return comparison ? [...comparison[position].values()] : [];
     });
-    return new Map([...grouped.entries()].map(([key, products]) => [key, { ...products[products.length - 1], ...summarizeProducts(products), id: key }]));
+  }
+
+  function endpointTotals(position) {
+    return summarizeProducts(endpointProducts(position));
   }
 
   function dateRangeLabel() {
@@ -859,15 +872,16 @@
     if (!statsRow) return;
     const cards = [...statsRow.querySelectorAll(".stat-card")];
     const totals = periodTotalsInScope();
-    const previousTotals = totalsForBounds(previousPeriodBounds());
+    const comparisonStartTotals = endpointTotals("start");
+    const comparisonEndTotals = endpointTotals("end");
     const scope = scopeLabel();
     const range = dateRangeLabel();
     const values = [formatMoney(totals.gmv), `${formatNumber(totals.orders, 0)} 单`, formatCompact(totals.exposure), `${formatNumber(totals.orders, 0)} 单`];
     const descriptions = [
-      `${scope} · 所选区间累计 · ${range}<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(totals.gmv, previousTotals.gmv, formatMoney)}</span>`,
-      `${scope} · 所选区间成交规模<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(totals.orders, previousTotals.orders, (value) => `${formatNumber(value, 0)} 单`)}</span>`,
-      `${scope} · 所选区间累计<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(totals.exposure, previousTotals.exposure, (value) => `${formatCompact(value)} 次`)}</span>`,
-      `${scope} · 点击 ${formatCompact(totals.clicks)} · 转化率 ${formatPercent(totals.cvr)}<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(totals.orders, previousTotals.orders, (value) => `${formatNumber(value, 0)} 单`)}</span>`,
+      `${scope} · 所选区间累计 · ${range}<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(comparisonEndTotals.gmv, comparisonStartTotals.gmv, formatMoney)}</span>`,
+      `${scope} · 所选区间成交规模<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(comparisonEndTotals.orders, comparisonStartTotals.orders, (value) => `${formatNumber(value, 0)} 单`)}</span>`,
+      `${scope} · 所选区间累计<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(comparisonEndTotals.exposure, comparisonStartTotals.exposure, (value) => `${formatCompact(value)} 次`)}</span>`,
+      `${scope} · 点击 ${formatCompact(totals.clicks)} · 转化率 ${formatPercent(totals.cvr)}<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(comparisonEndTotals.orders, comparisonStartTotals.orders, (value) => `${formatNumber(value, 0)} 单`)}</span>`,
     ];
     cards.forEach((card, index) => {
       const value = card.querySelector(".stat-value");
@@ -896,37 +910,36 @@
   ];
   let activePriorityCategory = "product";
 
-  // 商品优先处理：把所选区间与上一个等长区间按商品汇总后对比，避免固定使用“昨日”。
+  // 商品优先处理：比较所选区间首日与末日，避免固定使用“昨日”或区间外的历史数据。
   function productPriorityData() {
     const items = [];
     let comparableStores = 0;
-    const currentBounds = selectedDateBounds();
-    const baselineBounds = previousPeriodBounds();
     storesInScope().forEach((store) => {
-      const currentMap = productMapForBounds(store, currentBounds);
-      const previousMap = productMapForBounds(store, baselineBounds);
-      if (!currentMap.size || !previousMap.size) return;
+      const comparison = comparisonSnapshotsForStore(store);
+      if (!comparison) return;
       comparableStores += 1;
-      const intervalText = `本期 ${currentBounds.start} 至 ${currentBounds.end} · 对比上期 ${baselineBounds.start} 至 ${baselineBounds.end}`;
-      currentMap.forEach((product) => {
-        const prev = previousMap.get(product.id);
+      const intervalText = `所选区间 ${comparison.startDate} → ${comparison.endDate}`;
+      comparison.end.forEach((product, productId) => {
+        const prev = comparison.start.get(productId);
         if (!prev) return;
-        const exposureDelta = product.exposure != null && prev.exposure != null ? product.exposure - prev.exposure : null;
-        const exposureChg = exposureDelta != null && prev.exposure ? exposureDelta / prev.exposure * 100 : null;
-        const gmvDelta = product.gmv != null && prev.gmv != null ? product.gmv - prev.gmv : null;
-        const gmvChg = gmvDelta != null && prev.gmv ? gmvDelta / prev.gmv * 100 : null;
-        const ctrChgPp = product.ctr != null && prev.ctr != null ? product.ctr - prev.ctr : null;
-        const cvrNow = product.ctor ?? product.uniqueClickCvr;
-        const cvrPrev = prev.ctor ?? prev.uniqueClickCvr;
+        const currentProduct = { ...product, id: productId };
+        const previousProduct = { ...prev, id: productId };
+        const exposureDelta = currentProduct.exposure != null && previousProduct.exposure != null ? currentProduct.exposure - previousProduct.exposure : null;
+        const exposureChg = exposureDelta != null && previousProduct.exposure ? exposureDelta / previousProduct.exposure * 100 : null;
+        const gmvDelta = currentProduct.gmv != null && previousProduct.gmv != null ? currentProduct.gmv - previousProduct.gmv : null;
+        const gmvChg = gmvDelta != null && previousProduct.gmv ? gmvDelta / previousProduct.gmv * 100 : null;
+        const ctrChgPp = currentProduct.ctr != null && previousProduct.ctr != null ? currentProduct.ctr - previousProduct.ctr : null;
+        const cvrNow = currentProduct.ctor ?? currentProduct.uniqueClickCvr;
+        const cvrPrev = previousProduct.ctor ?? previousProduct.uniqueClickCvr;
         const cvrChgPp = cvrNow != null && cvrPrev != null ? cvrNow - cvrPrev : null;
         const metricLines = [
-          `曝光 ${formatCompact(prev.exposure)} → ${formatCompact(product.exposure)}（${exposureDelta == null ? "待导入" : exposureDelta > 0 ? `增加 ${formatCompact(exposureDelta)}` : exposureDelta < 0 ? `减少 ${formatCompact(Math.abs(exposureDelta))}` : "持平"}）`,
-          `点击 ${formatCompact(prev.clicks)} → ${formatCompact(product.clicks)}（${prev.clicks != null && product.clicks != null ? absoluteChange(product.clicks, prev.clicks, (value) => formatCompact(value)) : "待导入"}）`,
-          `成交件数 ${formatNumber(prev.units, 0)} → ${formatNumber(product.units, 0)}（${prev.units != null && product.units != null ? absoluteChange(product.units, prev.units, (value) => `${formatNumber(value, 0)} 件`) : "待导入"}）`,
-          `GMV ${formatMoney(prev.gmv)} → ${formatMoney(product.gmv)}（${gmvDelta == null ? "待导入" : gmvDelta > 0 ? `增加 ${formatMoney(gmvDelta)}` : gmvDelta < 0 ? `减少 ${formatMoney(Math.abs(gmvDelta))}` : "持平"}）`,
+          `曝光 ${formatCompact(previousProduct.exposure)} → ${formatCompact(currentProduct.exposure)}（${exposureDelta == null ? "待导入" : exposureDelta > 0 ? `增加 ${formatCompact(exposureDelta)}` : exposureDelta < 0 ? `减少 ${formatCompact(Math.abs(exposureDelta))}` : "持平"}）`,
+          `点击 ${formatCompact(previousProduct.clicks)} → ${formatCompact(currentProduct.clicks)}（${previousProduct.clicks != null && currentProduct.clicks != null ? absoluteChange(currentProduct.clicks, previousProduct.clicks, (value) => formatCompact(value)) : "待导入"}）`,
+          `成交件数 ${formatNumber(previousProduct.units, 0)} → ${formatNumber(currentProduct.units, 0)}（${previousProduct.units != null && currentProduct.units != null ? absoluteChange(currentProduct.units, previousProduct.units, (value) => `${formatNumber(value, 0)} 件`) : "待导入"}）`,
+          `GMV ${formatMoney(previousProduct.gmv)} → ${formatMoney(currentProduct.gmv)}（${gmvDelta == null ? "待导入" : gmvDelta > 0 ? `增加 ${formatMoney(gmvDelta)}` : gmvDelta < 0 ? `减少 ${formatMoney(Math.abs(gmvDelta))}` : "持平"}）`,
         ].join("；");
         const impactText = gmvDelta != null && gmvDelta < 0
-          ? `本期较上期少 ${formatMoney(Math.abs(gmvDelta))}。`
+          ? `末日较首日少 ${formatMoney(Math.abs(gmvDelta))}。`
           : "";
         const header = `<b>${escapeHtml(store.name)}</b> · ${escapeHtml(product.name)} · 商品 ID <b>${escapeHtml(product.id)}</b> · ${intervalText}`;
 
@@ -936,7 +949,7 @@
             sev: "high", score: Math.abs(exposureChg) * 2,
             title: `❗ ${product.id} · 曝光大幅下降 ${formatCompact(Math.abs(exposureDelta))}`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${ctrStable ? "CTR 基本稳定而曝光骤降，初步判断是推荐流量入口变化或分发减少，<b>不是主图问题</b>；建议优先核查流量来源。" : "曝光与 CTR 同步下滑，疑似商品整体权重下降或触发风控限流，需同时排查流量入口与商品状态。"}<br>【建议动作】1) 检查商品是否仍在推荐池 / 是否掉出搜索排名；2) 核对是否有违规、下架、类目调整记录；3) 用广告或短视频补量验证承接是否正常。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
-            tags: ["高优先级", `对比上期 ${baselineBounds.start} 至 ${baselineBounds.end}`],
+            tags: ["高优先级", `区间首日 → 末日`],
           });
         } else if (exposureChg != null && exposureChg <= -8) {
           items.push({
@@ -953,7 +966,7 @@
             sev: "high", score: Math.abs(gmvChg) * 1.5,
             title: `💰 ${product.id} · GMV 减少 ${formatMoney(Math.abs(gmvDelta))}`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${driver}<br>【建议动作】1) 按上述方向定位主因；2) 恢复动作执行后记录到"运营调整记录"，T+1/T+3 自动验证效果。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
-            tags: ["高优先级", `对比上期 ${baselineBounds.start} 至 ${baselineBounds.end}`],
+            tags: ["高优先级", `区间首日 → 末日`],
           });
         }
         if (ctrChgPp != null && ctrChgPp <= -0.5 && (exposureChg == null || exposureChg > -20)) {
@@ -985,7 +998,7 @@
     if (!comparableStores) {
       return {
         items: [],
-        emptyHtml: `当前所选区间或上一个等长区间缺少可匹配的商品规模，无法生成真实对比。请选择包含两个周期数据的范围，或继续导入历史快照。<br>缺数据不做假：这是本中控台的硬规则。`,
+         emptyHtml: `所选区间内需要至少两个可用日期，系统会比较区间首日与末日。当前数据不足时不生成真实对比。<br>缺数据不做假：这是本中控台的硬规则。`,
       };
     }
     const severityOrder = { high: 0, medium: 1, low: 2, good: 3 };
@@ -1043,55 +1056,53 @@
   }
 
   function comparisonItems() {
-    const currentBounds = selectedDateBounds();
-    const baselineBounds = previousPeriodBounds();
     return storesForDateAnchor().flatMap((store) => {
-      const current = productMapForBounds(store, currentBounds);
-      const baseline = productMapForBounds(store, baselineBounds);
-      if (!current.size || !baseline.size) return [];
-      return [...current.values()].map((product) => {
-        const previous = baseline.get(product.id);
+      const comparison = comparisonSnapshotsForStore(store);
+      if (!comparison) return [];
+      return [...comparison.end.entries()].map(([productId, product]) => {
+        const previous = comparison.start.get(productId);
         if (!previous) return null;
         const currentCvr = product.ctor ?? product.uniqueClickCvr;
         const previousCvr = previous.ctor ?? previous.uniqueClickCvr;
         const gmvChange = product.gmv != null && previous.gmv != null ? product.gmv - previous.gmv : null;
         const gmvChangePct = gmvChange != null && previous.gmv ? gmvChange / previous.gmv * 100 : null;
         const cvrChangePp = currentCvr != null && previousCvr != null ? currentCvr - previousCvr : null;
-        return { ...product, store: store.name, reportDate: currentBounds.end, baselineDate: baselineBounds.start, baselineGmv: previous.gmv, baselineOrders: previous.orders, baselineClicks: previous.clicks, gmvChange, gmvChangePct, cvrChangePp };
+        return { ...product, id: productId, store: store.name, reportDate: comparison.endDate, baselineDate: comparison.startDate, baselineGmv: previous.gmv, baselineOrders: previous.orders, baselineClicks: previous.clicks, gmvChange, gmvChangePct, cvrChangePp };
       }).filter(Boolean);
     });
   }
 
   function comparisonStatus() {
-    const currentBounds = selectedDateBounds();
-    const baselineBounds = previousPeriodBounds();
     let currentProductCount = 0;
-    let baselineProductCount = 0;
+    let startProductCount = 0;
+    let endProductCount = 0;
     let matchedProductCount = 0;
     storesForDateAnchor().forEach((store) => {
-      const current = productMapForBounds(store, currentBounds);
-      const baseline = productMapForBounds(store, baselineBounds);
-      currentProductCount += current.size;
-      baselineProductCount += baseline.size;
-      for (const productId of current.keys()) {
-        if (baseline.has(productId)) matchedProductCount += 1;
+      const snapshots = snapshotsInBounds(store, selectedDateBounds());
+      if (snapshots.length) currentProductCount += productMapForSnapshot(snapshots[snapshots.length - 1]).size;
+      const comparison = comparisonSnapshotsForStore(store);
+      if (!comparison) return;
+      startProductCount += comparison.start.size;
+      endProductCount += comparison.end.size;
+      for (const productId of comparison.end.keys()) {
+        if (comparison.start.has(productId)) matchedProductCount += 1;
       }
     });
-    return { currentBounds, baselineBounds, currentProductCount, baselineProductCount, matchedProductCount };
+    return { currentProductCount, startProductCount, endProductCount, matchedProductCount };
   }
 
   function rankingEmptyMessage(config) {
     if (config.mode === "sales" || config.mode === "gmv") return "当前范围暂无真实商品数据。";
     const status = comparisonStatus();
-    if (!status.currentProductCount) return "当前所选区间暂无商品快照，无法生成真实对比。";
-    const previousLabel = status.baselineBounds?.start && status.baselineBounds?.end
-      ? `上期 ${status.baselineBounds.start} 至 ${status.baselineBounds.end}`
-      : "上期暂无可用日期";
-    if (!status.baselineProductCount) {
-      return `当前区间已有 ${formatNumber(status.currentProductCount, 0)} 个商品数据，但${previousLabel}没有商品快照；${config.title}暂不计算，不会把当前数据误判为增长或下降。`;
+    const bounds = comparisonDateBounds();
+    const rangeLabel = bounds.start && bounds.end ? `${bounds.start} 至 ${bounds.end}` : "当前所选区间";
+    if (!status.currentProductCount) return `${rangeLabel}暂无商品快照，无法生成真实对比。`;
+    if (!status.endProductCount) return `${rangeLabel}只有一个可用日期或缺少末日快照；${config.title}需要比较区间首日与末日，暂不计算。`;
+    if (!status.startProductCount) {
+      return `${rangeLabel}已有 ${formatNumber(status.endProductCount, 0)} 个商品数据，但区间首日没有商品快照；${config.title}暂不计算，不会把当前数据误判为增长或下降。`;
     }
     if (!status.matchedProductCount) {
-      return `本期与${previousLabel}各有商品数据，但没有相同商品 ID 可匹配；${config.title}暂不计算，请检查历史文件是否完整。`;
+      return `区间首日与末日各有商品数据，但没有相同商品 ID 可匹配；${config.title}暂不计算，请检查两端文件是否完整。`;
     }
     return `已有 ${formatNumber(status.matchedProductCount, 0)} 个商品完成区间对比，当前没有满足“${config.title}”条件的商品。`;
   }
@@ -1145,8 +1156,8 @@
     grid.innerHTML = [
       renderRankingCard({ mode: "sales", className: "", icon: "📊", title: "销量 Top5", subtitle: "按区间内最新快照成交件数" }),
       renderRankingCard({ mode: "gmv", className: "gmv", icon: "💰", title: "全店 GMV Top5", subtitle: "按区间内最新快照 GMV" }),
-       renderRankingCard({ mode: "up", className: "up", icon: "📈", title: "GMV 增长 Top5", subtitle: "所选区间对比上一个等长区间" }),
-       renderRankingCard({ mode: "down", className: "down", icon: "📉", title: "GMV 减少 Top5", subtitle: "所选区间对比上一个等长区间" }),
+       renderRankingCard({ mode: "up", className: "up", icon: "📈", title: "GMV 增长 Top5", subtitle: "所选区间末日对比首日" }),
+       renderRankingCard({ mode: "down", className: "down", icon: "📉", title: "GMV 减少 Top5", subtitle: "所选区间末日对比首日" }),
        renderRankingCard({ mode: "cvrDown", className: "cvr", icon: "⚠️", title: "成交转化预警 Top5", subtitle: "按成交规模与点击规模判断" }),
     ].join("");
   }
@@ -1183,7 +1194,7 @@
     container.innerHTML = `<div class="card real-data-card">
       <div class="card-title">✅ 已导入真实店铺数据 <span>${escapeHtml(scopeLabel())} · ${escapeHtml(dateRangeLabel())}</span></div>
       <div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>店铺</th><th>最新快照</th><th>商品数</th><th>GMV</th><th>订单数</th><th>曝光</th><th>成交转化率</th><th>状态</th></tr></thead><tbody>${storeRows}</tbody></table></div>
-      <div class="real-data-note">当前页面按每个店铺在所选日期范围内的最新可用快照汇总，避免把快照重复相加；趋势榜单按所选区间与上一个等长区间、同一店铺同一商品 ID 匹配计算。缺少上期数据时不生成趋势结论。</div>
+      <div class="real-data-note">当前页面按每个店铺在所选日期范围内的最新可用快照汇总，避免把快照重复相加；趋势榜单按所选区间首日与末日、同一店铺同一商品 ID 匹配计算。区间不足两个可用日期时不生成趋势结论。</div>
     </div>
     <div class="card real-data-card">
       <div class="card-title">📌 product_list 全字段经营视图 <span>${escapeHtml(scopeLabel())} · ${sourceFieldCount || "待导入"} 个来源字段 · 当前范围最新可用快照</span></div>
