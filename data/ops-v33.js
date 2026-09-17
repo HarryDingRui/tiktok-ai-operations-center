@@ -194,7 +194,7 @@
     try {
       const row = await idbGet(V33_DATA_KEY);
       if (row && typeof row === "object") {
-        // 本地导入优先；仅当某个数据集没有本地记录时，才用云端快照补齐。
+        // 本地导入优先；视频数据按唯一键合并，避免本地残留的全零记录覆盖云端有效记录。
         Object.keys(base).forEach((k) => {
           if (!Array.isArray(row[k]) || row[k].length === 0) return;
           base[k] = k === "affVideos" && videoTools?.mergeVideoRecords
@@ -1440,10 +1440,12 @@
   }
   // 出单但还没被广告利用的视频（视频模块 × 广告模块的联动）
   function videosNotInAds() {
-    const adVideoIds = new Set(scopedRows("adCreatives").map((r) => r.videoId).filter(Boolean));
+    const adVideoIds = new Set(scopedRows("adCreatives")
+      .filter((r) => r.videoId)
+      .map((r) => `${r.store || ""}|${r.videoId}`));
     if (!videoTools?.summarizeVideoRows) return [];
     return videoTools.summarizeVideoRows(scopedRows("affVideos")).sellingRows
-      .filter((r) => r.videoId && !adVideoIds.has(r.videoId));
+      .filter((r) => r.videoId && !adVideoIds.has(`${r.store || ""}|${r.videoId}`));
   }
   // 自营账号拼接：前台播放 + 联盟归因 GMV
   function selfVideoRows() {

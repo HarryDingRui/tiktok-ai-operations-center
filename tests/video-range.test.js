@@ -63,4 +63,11 @@ const restoredRecords = videoRange.mergeVideoRecords([
 ]);
 assert.strictEqual(restoredRecords[0].gmv, 89);
 assert.strictEqual(restoredRecords[0].orders, 1);
+
+const crossStoreSummary = videoRange.summarizeVideoRows([
+  { store: 'Store A', date: '2026-09-10', videoId: 'shared-video', orders: 1, gmv: 40 },
+  { store: 'Store B', date: '2026-09-10', videoId: 'shared-video', orders: 1, gmv: 60 },
+]);
+assert.strictEqual(crossStoreSummary.total, 2);
+assert.strictEqual(crossStoreSummary.gmv, 100);
 console.log('video-range tests passed');

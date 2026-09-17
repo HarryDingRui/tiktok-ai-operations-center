@@ -47,7 +47,8 @@
     const byVideo = new Map();
     rangeRows.forEach((row, index) => {
       const videoId = String(row.videoId || "").trim();
-      const key = videoId || `row-${index}`;
+      const store = String(row.store || "").trim();
+      const key = videoId ? `${store}|${videoId}` : `row-${index}`;
       const current = byVideo.get(key);
       if (!current) {
         byVideo.set(key, { ...row, _productIds: new Set(row.productId ? [row.productId] : []) });
