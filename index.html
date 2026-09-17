@@ -163,9 +163,25 @@ body {
   border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .stat-label { font-size: 11px; color: #64748b; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-.stat-value { font-size: 24px; font-weight: 700; color: #0f172a; line-height: 1.2; }
-.stat-trend { font-size: 12px; margin-top: 3px; }
-.stat-comparison { display: inline-block; margin-top: 4px; color: #64748b; font-size: 11px; font-weight: 600; }
+.stat-value-row { display: flex; align-items: center; gap: 9px; min-width: 0; flex-wrap: wrap; }
+.stat-value { font-size: 24px; font-weight: 750; color: #0f172a; line-height: 1.2; letter-spacing: -0.02em; }
+.stat-direction { display: inline-flex; align-items: center; gap: 5px; min-height: 26px; padding: 3px 8px 3px 4px; border: 1px solid transparent; border-radius: 999px; font-size: 11px; font-weight: 750; line-height: 1; white-space: nowrap; }
+.stat-direction[hidden] { display: none; }
+.stat-direction-icon { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 13px; line-height: 1; }
+.stat-direction-up { color: #047857; background: #ecfdf5; border-color: #a7f3d0; }
+.stat-direction-up .stat-direction-icon { color: #fff; background: #059669; }
+.stat-direction-down { color: #b91c1c; background: #fef2f2; border-color: #fecaca; }
+.stat-direction-down .stat-direction-icon { color: #fff; background: #dc2626; }
+.stat-direction-flat { color: #475569; background: #f8fafc; border-color: #cbd5e1; }
+.stat-direction-flat .stat-direction-icon { color: #fff; background: #64748b; }
+.stat-trend { margin-top: 7px; color: #475569; font-size: 12px; line-height: 1.45; }
+.stat-comparison { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 7px; padding-top: 7px; border-top: 1px solid #eef2f7; color: #64748b; font-size: 10px; font-weight: 600; }
+.stat-comparison-period { min-width: 0; }
+.stat-comparison strong { flex: 0 0 auto; font-size: 11px; font-weight: 750; white-space: nowrap; }
+.stat-comparison-up strong { color: #047857; }
+.stat-comparison-down strong { color: #b91c1c; }
+.stat-comparison-flat strong { color: #475569; }
+.stat-comparison-unavailable strong { color: #64748b; }
 .trend-up { color: #10b981; }
 .trend-down { color: #ef4444; }
 
@@ -452,6 +468,9 @@ body {
   .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .stat-card { padding: 12px; }
   .stat-value { font-size: 20px; }
+  .stat-value-row { align-items: flex-start; gap: 7px; }
+  .stat-direction { min-height: 24px; padding-right: 7px; }
+  .stat-comparison { align-items: flex-start; flex-direction: column; gap: 3px; }
   .stat-label { font-size: 10px; }
   .page-title { font-size: 18px; }
   .page-subtitle { font-size: 12px; }
@@ -699,10 +718,10 @@ body {
   </div>
 
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-label">店铺 GMV</div><div class="stat-value">0</div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
-    <div class="stat-card"><div class="stat-label">成交订单</div><div class="stat-value">0</div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
-    <div class="stat-card"><div class="stat-label">店铺总曝光</div><div class="stat-value">0</div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
-    <div class="stat-card"><div class="stat-label">成交转化率</div><div class="stat-value">0</div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
+    <div class="stat-card"><div class="stat-label">店铺 GMV</div><div class="stat-value-row"><div class="stat-value">0</div><div class="stat-direction" hidden></div></div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
+    <div class="stat-card"><div class="stat-label">成交订单</div><div class="stat-value-row"><div class="stat-value">0</div><div class="stat-direction" hidden></div></div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
+    <div class="stat-card"><div class="stat-label">店铺总曝光</div><div class="stat-value-row"><div class="stat-value">0</div><div class="stat-direction" hidden></div></div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
+    <div class="stat-card"><div class="stat-label">成交转化率</div><div class="stat-value-row"><div class="stat-value">0</div><div class="stat-direction" hidden></div></div><div class="stat-trend">全部店铺 · 当前范围汇总</div></div>
   </div>
 
   <div class="two-col">
@@ -2277,8 +2296,9 @@ body {
   renderCloudStatuses();
 })();
 </script>
-<script src="./data/period-comparison.js?v=period-comparison-2"></script>
-<script src="./data/real-store-dashboard.js?v=ops-ext-12"></script>
+<script src="./data/period-comparison.js?v=period-comparison-3"></script>
+<script src="./data/overview-metrics.js?v=overview-metrics-1"></script>
+<script src="./data/real-store-dashboard.js?v=ops-ext-13"></script>
 <script src="./data/video-range.js?v=video-range-2"></script>
 <script src="./data/ops-v33.js?v=gmvmax-native-15"></script>
 <script src="./data/weekly-report-core.js?v=weekly-report-1"></script>

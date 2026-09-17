@@ -25,6 +25,7 @@
   let xlsxLibraryPromise = null;
   let xlsxApi = null;
   const periodTools = window.OPS_PERIOD_COMPARISON;
+  const overviewMetricTools = window.OPS_OVERVIEW_METRICS;
 
   const STORAGE_KEY = "tiktok-real-store-data-v2";
   const LEGACY_STORAGE_KEY = "tiktok-real-store-data-v1";
@@ -876,17 +877,46 @@
     const comparisonEndTotals = endpointTotals("end");
     const scope = scopeLabel();
     const range = dateRangeLabel();
-    const values = [formatMoney(totals.gmv), `${formatNumber(totals.orders, 0)} 单`, formatCompact(totals.exposure), `${formatNumber(totals.orders, 0)} 单`];
+    const models = overviewMetricTools.buildOverviewMetricModels(totals, comparisonStartTotals, comparisonEndTotals, {
+      money: formatMoney,
+      number: (value) => formatNumber(value, 0),
+      compact: formatCompact,
+      percent: formatPercent,
+      percentagePoint: (value) => `${Number(value).toFixed(2)} 个百分点`,
+    });
+    const trendHtml = (trend) => {
+      const detail = trend.state === "unavailable"
+        ? trend.action
+        : `${trend.symbol} ${trend.action}${trend.value ? ` ${trend.value}` : ""}`;
+      return `<span class="stat-comparison stat-comparison-${trend.state}"><span class="stat-comparison-period">${comparisonPeriodLabel()}</span><strong>${detail}</strong></span>`;
+    };
     const descriptions = [
-      `${scope} · 所选区间累计 · ${range}<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(comparisonEndTotals.gmv, comparisonStartTotals.gmv, formatMoney)}</span>`,
-      `${scope} · 所选区间成交规模<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(comparisonEndTotals.orders, comparisonStartTotals.orders, (value) => `${formatNumber(value, 0)} 单`)}</span>`,
-      `${scope} · 所选区间累计<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(comparisonEndTotals.exposure, comparisonStartTotals.exposure, (value) => `${formatCompact(value)} 次`)}</span>`,
-      `${scope} · 点击 ${formatCompact(totals.clicks)} · 转化率 ${formatPercent(totals.cvr)}<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(comparisonEndTotals.orders, comparisonStartTotals.orders, (value) => `${formatNumber(value, 0)} 单`)}</span>`,
+      `${scope} · 所选区间累计 · ${range}${trendHtml(models[0].trend)}`,
+      `${scope} · 所选区间成交规模${trendHtml(models[1].trend)}`,
+      `${scope} · 所选区间累计${trendHtml(models[2].trend)}`,
+      `${scope} · 点击 ${formatCompact(totals.clicks)} · 区间累计转化率${trendHtml(models[3].trend)}`,
     ];
     cards.forEach((card, index) => {
       const value = card.querySelector(".stat-value");
+      const direction = card.querySelector(".stat-direction");
       const trend = card.querySelector(".stat-trend");
-      if (value) value.textContent = values[index];
+      const model = models[index];
+      if (value) value.textContent = model.value;
+      if (direction) {
+        const isAvailable = model.trend.state !== "unavailable";
+        direction.hidden = !isAvailable;
+        direction.className = `stat-direction stat-direction-${model.trend.state}`;
+        if (isAvailable) {
+          const directionValue = model.trend.value || model.trend.action;
+          direction.innerHTML = `<span class="stat-direction-icon" aria-hidden="true">${model.trend.symbol}</span><span>${directionValue}</span>`;
+          direction.setAttribute("aria-label", `${model.trend.action}${model.trend.value ? ` ${model.trend.value}` : ""}`);
+          direction.title = `较区间首日${model.trend.action}${model.trend.value ? ` ${model.trend.value}` : ""}`;
+        } else {
+          direction.replaceChildren();
+          direction.removeAttribute("aria-label");
+          direction.removeAttribute("title");
+        }
+      }
       if (trend) trend.innerHTML = descriptions[index];
     });
 
