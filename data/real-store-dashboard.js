@@ -24,6 +24,7 @@
   let customEndDate = "";
   let xlsxLibraryPromise = null;
   let xlsxApi = null;
+  const periodTools = window.OPS_PERIOD_COMPARISON;
 
   const STORAGE_KEY = "tiktok-real-store-data-v2";
   const LEGACY_STORAGE_KEY = "tiktok-real-store-data-v1";
@@ -650,6 +651,49 @@
     return { start: available.min, end: available.max };
   }
 
+  function previousPeriodBounds() {
+    return periodTools?.previousPeriodBounds ? periodTools.previousPeriodBounds(selectedDateBounds()) : { start: "", end: "" };
+  }
+
+  function snapshotsInBounds(store, bounds) {
+    if (!bounds?.start || !bounds?.end) return [];
+    return store.snapshots
+      .filter((snapshot) => isDateKey(snapshot.reportDate) && snapshot.reportDate >= bounds.start && snapshot.reportDate <= bounds.end)
+      .sort((left, right) => left.reportDate.localeCompare(right.reportDate));
+  }
+
+  function productsInBounds(bounds) {
+    if (!bounds?.start || !bounds?.end) return [];
+    return storesForDateAnchor().flatMap((store) => snapshotsInBounds(store, bounds).flatMap((snapshot) => snapshot.products));
+  }
+
+  function totalsForBounds(bounds) { return summarizeProducts(productsInBounds(bounds)); }
+
+  function comparisonPeriodLabel() {
+    const bounds = previousPeriodBounds();
+    return bounds.start && bounds.end ? `上期 ${bounds.start} 至 ${bounds.end}` : "上期暂无可用日期";
+  }
+
+  function absoluteChange(current, previous, formatter) {
+    if (periodTools?.absoluteDeltaText) return periodTools.absoluteDeltaText(current, previous, formatter);
+    if (current == null || previous == null) return "上期暂无数据";
+    const delta = Number(current) - Number(previous);
+    return delta === 0 ? "持平" : `${delta > 0 ? "增加" : "减少"} ${formatter(Math.abs(delta))}`;
+  }
+
+  function productMapForBounds(store, bounds) {
+    const grouped = new Map();
+    snapshotsInBounds(store, bounds).forEach((snapshot) => {
+      snapshot.products.forEach((product) => {
+        const key = String(product.id || "");
+        if (!key) return;
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key).push(product);
+      });
+    });
+    return new Map([...grouped.entries()].map(([key, products]) => [key, { ...products[products.length - 1], ...summarizeProducts(products), id: key }]));
+  }
+
   function dateRangeLabel() {
     const bounds = selectedDateBounds();
     if (!bounds.start) return "暂无可用日期";
@@ -815,20 +859,21 @@
     if (!statsRow) return;
     const cards = [...statsRow.querySelectorAll(".stat-card")];
     const totals = periodTotalsInScope();
+    const previousTotals = totalsForBounds(previousPeriodBounds());
     const scope = scopeLabel();
     const range = dateRangeLabel();
-    const values = [formatMoney(totals.gmv), formatNumber(totals.orders, 0), formatCompact(totals.exposure), formatPercent(totals.cvr)];
+    const values = [formatMoney(totals.gmv), `${formatNumber(totals.orders, 0)} 单`, formatCompact(totals.exposure), `${formatNumber(totals.orders, 0)} 单`];
     const descriptions = [
-      `${scope} · 所选区间累计 · ${range}`,
-      `${scope} · 所选区间累计`,
-      `${scope} · 所选区间累计`,
-      `${scope} · 区间订单数 ÷ 区间商品点击量`,
+      `${scope} · 所选区间累计 · ${range}<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(totals.gmv, previousTotals.gmv, formatMoney)}</span>`,
+      `${scope} · 所选区间成交规模<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(totals.orders, previousTotals.orders, (value) => `${formatNumber(value, 0)} 单`)}</span>`,
+      `${scope} · 所选区间累计<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(totals.exposure, previousTotals.exposure, (value) => `${formatCompact(value)} 次`)}</span>`,
+      `${scope} · 点击 ${formatCompact(totals.clicks)} · 转化率 ${formatPercent(totals.cvr)}<br><span class="stat-comparison">${comparisonPeriodLabel()}：${absoluteChange(totals.orders, previousTotals.orders, (value) => `${formatNumber(value, 0)} 单`)}</span>`,
     ];
     cards.forEach((card, index) => {
       const value = card.querySelector(".stat-value");
       const trend = card.querySelector(".stat-trend");
       if (value) value.textContent = values[index];
-      if (trend) trend.textContent = descriptions[index];
+      if (trend) trend.innerHTML = descriptions[index];
     });
 
     const productCard = [...page.querySelectorAll(".card")].find((card) => card.textContent.includes("🛍️ 商品经营"));
@@ -851,48 +896,37 @@
   ];
   let activePriorityCategory = "product";
 
-  function changeLabel(value, digits = 1) {
-    if (value == null) return "待导入";
-    return `${value > 0 ? "+" : ""}${value.toFixed(digits)}%`;
-  }
-
-  function daysBetween(fromDate, toDate) {
-    const from = new Date(`${fromDate}T00:00:00Z`);
-    const to = new Date(`${toDate}T00:00:00Z`);
-    const days = Math.round((to - from) / 86400000);
-    return days > 0 ? days : 1;
-  }
-
-  // 商品优先处理：用相邻两个真实快照逐项对比，生成带完整说明的处理项
+  // 商品优先处理：把所选区间与上一个等长区间按商品汇总后对比，避免固定使用“昨日”。
   function productPriorityData() {
     const items = [];
     let comparableStores = 0;
+    const currentBounds = selectedDateBounds();
+    const baselineBounds = previousPeriodBounds();
     storesInScope().forEach((store) => {
-      const snapshots = snapshotsInRange(store);
-      if (snapshots.length < 2) return;
+      const currentMap = productMapForBounds(store, currentBounds);
+      const previousMap = productMapForBounds(store, baselineBounds);
+      if (!currentMap.size || !previousMap.size) return;
       comparableStores += 1;
-      const previous = snapshots[snapshots.length - 2];
-      const current = snapshots[snapshots.length - 1];
-      const intervalDays = daysBetween(previous.reportDate, current.reportDate);
-      const intervalText = intervalDays === 1 ? "环比昨日" : `对比 ${previous.reportDate}（相隔 ${intervalDays} 天）`;
-      const previousMap = new Map(previous.products.map((product) => [product.id, product]));
-      current.products.forEach((product) => {
+      const intervalText = `本期 ${currentBounds.start} 至 ${currentBounds.end} · 对比上期 ${baselineBounds.start} 至 ${baselineBounds.end}`;
+      currentMap.forEach((product) => {
         const prev = previousMap.get(product.id);
         if (!prev) return;
-        const exposureChg = product.exposure != null && prev.exposure ? (product.exposure - prev.exposure) / prev.exposure * 100 : null;
-        const gmvChg = product.gmv != null && prev.gmv ? (product.gmv - prev.gmv) / prev.gmv * 100 : null;
+        const exposureDelta = product.exposure != null && prev.exposure != null ? product.exposure - prev.exposure : null;
+        const exposureChg = exposureDelta != null && prev.exposure ? exposureDelta / prev.exposure * 100 : null;
+        const gmvDelta = product.gmv != null && prev.gmv != null ? product.gmv - prev.gmv : null;
+        const gmvChg = gmvDelta != null && prev.gmv ? gmvDelta / prev.gmv * 100 : null;
         const ctrChgPp = product.ctr != null && prev.ctr != null ? product.ctr - prev.ctr : null;
         const cvrNow = product.ctor ?? product.uniqueClickCvr;
         const cvrPrev = prev.ctor ?? prev.uniqueClickCvr;
         const cvrChgPp = cvrNow != null && cvrPrev != null ? cvrNow - cvrPrev : null;
         const metricLines = [
-          `曝光 ${formatCompact(prev.exposure)} → ${formatCompact(product.exposure)}（${changeLabel(exposureChg)}）`,
-          `CTR ${formatPercent(prev.ctr)} → ${formatPercent(product.ctr)}（${ctrChgPp == null ? "待导入" : `${ctrChgPp > 0 ? "+" : ""}${ctrChgPp.toFixed(2)}pp`}）`,
-          `CVR ${formatPercent(cvrPrev)} → ${formatPercent(cvrNow)}（${cvrChgPp == null ? "待导入" : `${cvrChgPp > 0 ? "+" : ""}${cvrChgPp.toFixed(2)}pp`}）`,
-          `GMV ${formatMoney(prev.gmv)} → ${formatMoney(product.gmv)}（${changeLabel(gmvChg)}）`,
+          `曝光 ${formatCompact(prev.exposure)} → ${formatCompact(product.exposure)}（${exposureDelta == null ? "待导入" : exposureDelta > 0 ? `增加 ${formatCompact(exposureDelta)}` : exposureDelta < 0 ? `减少 ${formatCompact(Math.abs(exposureDelta))}` : "持平"}）`,
+          `点击 ${formatCompact(prev.clicks)} → ${formatCompact(product.clicks)}（${prev.clicks != null && product.clicks != null ? absoluteChange(product.clicks, prev.clicks, (value) => formatCompact(value)) : "待导入"}）`,
+          `成交件数 ${formatNumber(prev.units, 0)} → ${formatNumber(product.units, 0)}（${prev.units != null && product.units != null ? absoluteChange(product.units, prev.units, (value) => `${formatNumber(value, 0)} 件`) : "待导入"}）`,
+          `GMV ${formatMoney(prev.gmv)} → ${formatMoney(product.gmv)}（${gmvDelta == null ? "待导入" : gmvDelta > 0 ? `增加 ${formatMoney(gmvDelta)}` : gmvDelta < 0 ? `减少 ${formatMoney(Math.abs(gmvDelta))}` : "持平"}）`,
         ].join("；");
-        const impactText = prev.gmv != null && product.gmv != null && prev.gmv > product.gmv
-          ? `若趋势延续，每 ${intervalDays} 天影响 GMV 约 <b>${formatMoney(prev.gmv - product.gmv)}</b>。`
+        const impactText = gmvDelta != null && gmvDelta < 0
+          ? `本期较上期少 ${formatMoney(Math.abs(gmvDelta))}。`
           : "";
         const header = `<b>${escapeHtml(store.name)}</b> · ${escapeHtml(product.name)} · 商品 ID <b>${escapeHtml(product.id)}</b> · ${intervalText}`;
 
@@ -900,15 +934,15 @@
           const ctrStable = ctrChgPp != null && Math.abs(ctrChgPp) < 0.5;
           items.push({
             sev: "high", score: Math.abs(exposureChg) * 2,
-            title: `❗ ${product.id} · 曝光大幅下降 ${Math.abs(exposureChg).toFixed(1)}%`,
+            title: `❗ ${product.id} · 曝光大幅下降 ${formatCompact(Math.abs(exposureDelta))}`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${ctrStable ? "CTR 基本稳定而曝光骤降，初步判断是推荐流量入口变化或分发减少，<b>不是主图问题</b>；建议优先核查流量来源。" : "曝光与 CTR 同步下滑，疑似商品整体权重下降或触发风控限流，需同时排查流量入口与商品状态。"}<br>【建议动作】1) 检查商品是否仍在推荐池 / 是否掉出搜索排名；2) 核对是否有违规、下架、类目调整记录；3) 用广告或短视频补量验证承接是否正常。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
-            tags: ["高优先级", `基线 ${previous.reportDate}`],
+            tags: ["高优先级", `对比上期 ${baselineBounds.start} 至 ${baselineBounds.end}`],
           });
         } else if (exposureChg != null && exposureChg <= -8) {
           items.push({
             sev: "medium", score: Math.abs(exposureChg),
-            title: `📉 ${product.id} · 曝光下降 ${Math.abs(exposureChg).toFixed(1)}%`,
-            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】曝光降幅未达高风险线（20%），${cvrChgPp != null && cvrChgPp > 0 ? "且 CVR 逆势上涨，转化效率改善正在对冲曝光损失。" : "需观察是否为短期波动。"}<br>【建议动作】先观察 T+1 数据，暂不调整主图与价格；若连续两期下降再介入。`,
+            title: `📉 ${product.id} · 曝光下降 ${formatCompact(Math.abs(exposureDelta))}`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】曝光下降但未达到高风险线，${cvrChgPp != null && cvrChgPp > 0 ? "且 CVR 逆势上涨，转化效率改善正在对冲曝光损失。" : "需观察是否为短期波动。"}<br>【建议动作】先观察 T+1 数据，暂不调整主图与价格；若连续两期下降再介入。`,
             tags: ["中优先级", "观察"],
           });
         }
@@ -917,15 +951,15 @@
             : (cvrChgPp != null && cvrChgPp <= -0.3 ? "曝光基本稳定但 CVR 下滑，问题在转化承接：重点核查价格、评价与详情页。" : "多指标联动变化，建议逐层排查流量与转化。");
           items.push({
             sev: "high", score: Math.abs(gmvChg) * 1.5,
-            title: `💰 ${product.id} · GMV 下降 ${Math.abs(gmvChg).toFixed(1)}%`,
+            title: `💰 ${product.id} · GMV 减少 ${formatMoney(Math.abs(gmvDelta))}`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${driver}<br>【建议动作】1) 按上述方向定位主因；2) 恢复动作执行后记录到"运营调整记录"，T+1/T+3 自动验证效果。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
-            tags: ["高优先级", `基线 ${previous.reportDate}`],
+            tags: ["高优先级", `对比上期 ${baselineBounds.start} 至 ${baselineBounds.end}`],
           });
         }
         if (ctrChgPp != null && ctrChgPp <= -0.5 && (exposureChg == null || exposureChg > -20)) {
           items.push({
             sev: "medium", score: Math.abs(ctrChgPp),
-            title: `👆 ${product.id} · CTR 下降 ${Math.abs(ctrChgPp).toFixed(2)}pp`,
+            title: `👆 ${product.id} · 点击效率下降`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】曝光基本稳定但点击率下降，通常是主图 / 标题 / 价格展示吸引力下降，或同质竞品分流。<br>【建议动作】对比竞品前排链接的主图与价格带；可小步测试替换首图，改动后记录动作等 T+3 验证。`,
             tags: ["中优先级", "主图/标题"],
           });
@@ -933,7 +967,7 @@
         if (cvrChgPp != null && cvrChgPp <= -0.3 && (gmvChg == null || gmvChg > -15)) {
           items.push({
             sev: "medium", score: Math.abs(cvrChgPp),
-            title: `🛒 ${product.id} · CVR 下降 ${Math.abs(cvrChgPp).toFixed(2)}pp`,
+            title: `🛒 ${product.id} · 成交转化规模变弱`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】点击后的成交转化走弱，优先核查：价格变动、差评增加、详情页信息缺失、运费/优惠变化。<br>【建议动作】核对近期待价格与评价；如是价格测试导致，回滚或调整组合装策略。`,
             tags: ["中优先级", "转化承接"],
           });
@@ -941,7 +975,7 @@
         if (gmvChg != null && gmvChg >= 15) {
           items.push({
             sev: "good", score: gmvChg,
-            title: `↗ ${product.id} · GMV 上涨 ${gmvChg.toFixed(1)}%（标杆）`,
+            title: `↗ ${product.id} · GMV 增加 ${formatMoney(gmvDelta)}（标杆）`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【动作建议】追溯近期对该链接做过的动作（主图 / 价格 / 标题 / 投放），如已记录则等 T+3/T+7 验证后沉淀到知识库，供同类商品复用。`,
             tags: ["标杆", "可沉淀"],
           });
@@ -951,7 +985,7 @@
     if (!comparableStores) {
       return {
         items: [],
-        emptyHtml: `当前每个店铺只有 <b>1 个日期快照</b>，无法计算变化。每天导入一次店铺导出表后，这里会自动生成商品级优先处理清单（曝光 / GMV / CTR / CVR 异常 + 原因分析 + 建议动作 + 预估影响）。<br>缺数据不做假：这是本中控台的硬规则。`,
+        emptyHtml: `当前所选区间或上一个等长区间缺少可匹配的商品规模，无法生成真实对比。请选择包含两个周期数据的范围，或继续导入历史快照。<br>缺数据不做假：这是本中控台的硬规则。`,
       };
     }
     const severityOrder = { high: 0, medium: 1, low: 2, good: 3 };
@@ -1009,12 +1043,13 @@
   }
 
   function comparisonItems() {
-    return storesInScope().flatMap((store) => {
-      const snapshots = snapshotsInRange(store);
-      if (snapshots.length < 2 || snapshots[0].reportDate === snapshots[snapshots.length - 1].reportDate) return [];
-      const baseline = new Map(snapshots[0].products.map((product) => [product.id, product]));
-      const current = snapshots[snapshots.length - 1];
-      return current.products.map((product) => {
+    const currentBounds = selectedDateBounds();
+    const baselineBounds = previousPeriodBounds();
+    return storesForDateAnchor().flatMap((store) => {
+      const current = productMapForBounds(store, currentBounds);
+      const baseline = productMapForBounds(store, baselineBounds);
+      if (!current.size || !baseline.size) return [];
+      return [...current.values()].map((product) => {
         const previous = baseline.get(product.id);
         if (!previous) return null;
         const currentCvr = product.ctor ?? product.uniqueClickCvr;
@@ -1022,7 +1057,7 @@
         const gmvChange = product.gmv != null && previous.gmv != null ? product.gmv - previous.gmv : null;
         const gmvChangePct = gmvChange != null && previous.gmv ? gmvChange / previous.gmv * 100 : null;
         const cvrChangePp = currentCvr != null && previousCvr != null ? currentCvr - previousCvr : null;
-        return { ...product, store: store.name, reportDate: current.reportDate, baselineDate: snapshots[0].reportDate, gmvChange, gmvChangePct, cvrChangePp };
+        return { ...product, store: store.name, reportDate: currentBounds.end, baselineDate: baselineBounds.start, baselineGmv: previous.gmv, baselineOrders: previous.orders, baselineClicks: previous.clicks, gmvChange, gmvChangePct, cvrChangePp };
       }).filter(Boolean);
     });
   }
@@ -1043,8 +1078,11 @@
     const items = rankingItems(config.mode);
     const body = items.length ? items.map((product, index) => {
       let value = config.mode === "sales" ? `${formatNumber(product.units, 0)} 件` : formatMoney(product.gmv);
-      if (config.mode === "up" || config.mode === "down") value = `${product.gmvChangePct > 0 ? "+" : ""}${product.gmvChangePct.toFixed(1)}%`;
-      if (config.mode === "cvrDown") value = `${product.cvrChangePp.toFixed(2)} 个百分点`;
+      if (config.mode === "up" || config.mode === "down") value = product.gmvChange > 0 ? `增加 ${formatMoney(product.gmvChange)}` : `减少 ${formatMoney(Math.abs(product.gmvChange))}`;
+      if (config.mode === "cvrDown") {
+        const orderDelta = product.orders != null && product.baselineOrders != null ? product.orders - product.baselineOrders : null;
+        value = orderDelta == null ? "成交规模待补" : orderDelta < 0 ? `少 ${formatNumber(Math.abs(orderDelta), 0)} 单` : orderDelta > 0 ? `多 ${formatNumber(orderDelta, 0)} 单` : "订单持平";
+      }
       const productId = product.id || "待导入";
       return `<div class="real-ranking-item" title="${escapeHtml(product.store)} · 商品 ID ${escapeHtml(productId)} · ${escapeHtml(product.name)}">
         <span class="real-ranking-rank">${index + 1}</span>
@@ -1055,7 +1093,7 @@
         </span>
         <span class="real-ranking-value">${value}</span>
       </div>`;
-    }).join("") : `<div class="real-ranking-empty">${config.mode === "sales" || config.mode === "gmv" ? "当前范围暂无真实商品数据。" : "需要同一店铺在当前范围内至少有两个日期快照，才生成真实对比。"}</div>`;
+    }).join("") : `<div class="real-ranking-empty">${config.mode === "sales" || config.mode === "gmv" ? "当前范围暂无真实商品数据。" : "需要所选区间与上一个等长区间都有同一商品数据，才生成真实对比。"}</div>`;
     return `<div class="real-ranking-card ${config.className}">
       <div class="real-ranking-title">${config.icon} ${config.title}</div>
       <div class="real-ranking-subtitle">${config.subtitle}</div>
@@ -1073,9 +1111,9 @@
     grid.innerHTML = [
       renderRankingCard({ mode: "sales", className: "", icon: "📊", title: "销量 Top5", subtitle: "按区间内最新快照成交件数" }),
       renderRankingCard({ mode: "gmv", className: "gmv", icon: "💰", title: "全店 GMV Top5", subtitle: "按区间内最新快照 GMV" }),
-      renderRankingCard({ mode: "up", className: "up", icon: "📈", title: "GMV 上涨 Top5", subtitle: "当前范围首个快照 → 最新快照" }),
-      renderRankingCard({ mode: "down", className: "down", icon: "📉", title: "GMV 下降 Top5", subtitle: "当前范围首个快照 → 最新快照" }),
-      renderRankingCard({ mode: "cvrDown", className: "cvr", icon: "⚠️", title: "CVR 下降 Top5", subtitle: "按区间首尾快照变化" }),
+       renderRankingCard({ mode: "up", className: "up", icon: "📈", title: "GMV 增长 Top5", subtitle: "所选区间对比上一个等长区间" }),
+       renderRankingCard({ mode: "down", className: "down", icon: "📉", title: "GMV 减少 Top5", subtitle: "所选区间对比上一个等长区间" }),
+       renderRankingCard({ mode: "cvrDown", className: "cvr", icon: "⚠️", title: "成交转化预警 Top5", subtitle: "按成交规模与点击规模判断" }),
     ].join("");
   }
 
@@ -1111,7 +1149,7 @@
     container.innerHTML = `<div class="card real-data-card">
       <div class="card-title">✅ 已导入真实店铺数据 <span>${escapeHtml(scopeLabel())} · ${escapeHtml(dateRangeLabel())}</span></div>
       <div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>店铺</th><th>最新快照</th><th>商品数</th><th>GMV</th><th>订单数</th><th>曝光</th><th>成交转化率</th><th>状态</th></tr></thead><tbody>${storeRows}</tbody></table></div>
-      <div class="real-data-note">当前页面按每个店铺在所选日期范围内的最新可用快照汇总，避免把快照重复相加；GMV 上涨/下降和 CVR 下降按范围内首个与最新快照、同一店铺同一商品 ID 匹配计算。范围内只有一个日期时，不生成趋势结论。</div>
+      <div class="real-data-note">当前页面按每个店铺在所选日期范围内的最新可用快照汇总，避免把快照重复相加；趋势榜单按所选区间与上一个等长区间、同一店铺同一商品 ID 匹配计算。缺少上期数据时不生成趋势结论。</div>
     </div>
     <div class="card real-data-card">
       <div class="card-title">📌 product_list 全字段经营视图 <span>${escapeHtml(scopeLabel())} · ${sourceFieldCount || "待导入"} 个来源字段 · 当前范围最新可用快照</span></div>

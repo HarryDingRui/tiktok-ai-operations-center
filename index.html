@@ -165,6 +165,7 @@ body {
 .stat-label { font-size: 11px; color: #64748b; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
 .stat-value { font-size: 24px; font-weight: 700; color: #0f172a; line-height: 1.2; }
 .stat-trend { font-size: 12px; margin-top: 3px; }
+.stat-comparison { display: inline-block; margin-top: 4px; color: #64748b; font-size: 11px; font-weight: 600; }
 .trend-up { color: #10b981; }
 .trend-down { color: #ef4444; }
 
@@ -711,7 +712,7 @@ body {
       </div>
     </div>
     <div class="card">
-      <div class="card-title">📈 成交来源占比 <span>联盟口径 · 达人订单驱动</span></div>
+    <div class="card-title">📈 成交来源规模 <span>联盟口径 · 按 GMV 金额展示</span></div>
       <div id="source-split-panel">
         <div class="ops-empty">正在读取云端达人日快照，请稍候…</div>
       </div>
@@ -2262,8 +2263,9 @@ body {
   renderCloudStatuses();
 })();
 </script>
-<script src="./data/real-store-dashboard.js?v=ops-ext-10"></script>
-<script src="./data/ops-v33.js?v=gmvmax-native-11"></script>
+<script src="./data/period-comparison.js?v=period-comparison-1"></script>
+<script src="./data/real-store-dashboard.js?v=ops-ext-11"></script>
+<script src="./data/ops-v33.js?v=gmvmax-native-12"></script>
 <script src="./data/weekly-report-core.js?v=weekly-report-1"></script>
 <script src="./data/weekly-report.js?v=weekly-report-3"></script>
 <script src="./data/ops-recommendations.js?v=ops-recommendations-1"></script>

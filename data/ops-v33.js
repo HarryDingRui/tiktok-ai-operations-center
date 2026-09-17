@@ -29,6 +29,7 @@
   const {
     formatNumber, formatCompact, escapeHtml, isDateKey, addDays, normalizeHeaderText,
   } = bridge;
+  const periodTools = window.OPS_PERIOD_COMPARISON;
 
   /* ================= 可配置阈值（看板上可改，存本机） ================= */
   const THRESHOLDS_KEY = "tiktok-v33-thresholds";
@@ -367,6 +368,15 @@
     const store = document.getElementById("store-filter")?.value || "all";
     if (store !== "all") rows = rows.filter((row) => row.store === store);
     const bounds = selectedScopeBounds();
+    if (bounds?.start) rows = rows.filter((row) => row.date >= bounds.start && (!bounds.end || row.date <= bounds.end));
+    return rows;
+  }
+
+  function rowsForBounds(datasetKey, bounds) {
+    let rows = [...(window.TIKTOK_CLOUD_SNAPSHOT?.overview?.[datasetKey] || [])];
+    if (!rows.length) rows = [...(v33[datasetKey] || [])];
+    const store = document.getElementById("store-filter")?.value || "all";
+    if (store !== "all") rows = rows.filter((row) => row.store === store);
     if (bounds?.start) rows = rows.filter((row) => row.date >= bounds.start && (!bounds.end || row.date <= bounds.end));
     return rows;
   }
@@ -2770,41 +2780,59 @@
   };
 
   /* ================= OPS_EXT 契约（供 dashboard / index 调用） ================= */
-  /* ================= 渲染：经营总览 · 成交来源占比 ================= */
+  /* ================= 渲染：经营总览 · 成交来源规模 ================= */
   function renderSourceSplit() {
     const el = document.getElementById("source-split-panel");
     if (!el) return;
-    const overviewRows = scopedOverviewRows("creatorDaily");
-    const detailedRows = scopedRows("creatorDaily");
-    const creatorRows = overviewRows.length ? overviewRows : detailedRows;
+    const scope = window.OPS_V33?.getScope?.() || { bounds: selectedScopeBounds() };
+    const currentBounds = scope.bounds;
+    const previousBounds = periodTools?.previousPeriodBounds ? periodTools.previousPeriodBounds(currentBounds) : null;
+    const creatorRows = rowsForBounds("creatorDaily", currentBounds);
     if (!creatorRows.length) {
       const loading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY;
       el.innerHTML = `<div class="ops-empty">${loading ? "正在读取云端达人日快照，请稍候…" : "当前店铺和日期范围暂无可拆分的达人订单。"}</div>`;
       return;
     }
-    const dates = [...new Set(creatorRows.map((r) => r.date).filter(Boolean))].sort();
-    const first = dates[0];
-    const latest = dates[dates.length - 1];
-    const rows = creatorRows;
-    const sum = (k) => rows.reduce((s, r) => s + (r[k] || 0), 0);
-    const total = sum("gmv");
-    const parts = [
-      { label: "🎬 短视频", value: sum("videoGmv"), color: "#38bdf8" },
-      { label: "📺 直播", value: sum("liveGmv"), color: "#8b5cf6" },
-      { label: "🛒 商品卡", value: sum("cardGmv"), color: "#10b981" },
-    ];
-    const known = parts.reduce((s, p) => s + p.value, 0);
-    parts.push({ label: "📦 其他/未拆分", value: Math.max(0, total - known), color: "#94a3b8" });
-    if (total <= 0) {
+    const summarize = (rows) => {
+      const sum = (key) => rows.reduce((total, row) => total + Number(row[key] || 0), 0);
+      const parts = [
+        { label: "🎬 短视频", value: sum("videoGmv"), color: "#38bdf8" },
+        { label: "📺 直播", value: sum("liveGmv"), color: "#8b5cf6" },
+        { label: "🛒 商品卡", value: sum("cardGmv"), color: "#10b981" },
+      ];
+      const known = parts.reduce((total, part) => total + part.value, 0);
+      const total = sum("gmv");
+      parts.push({ label: "📦 其他/未拆分", value: Math.max(0, total - known), color: "#94a3b8" });
+      return { parts, total };
+    };
+    const previousRows = rowsForBounds("creatorDaily", previousBounds);
+    const current = summarize(creatorRows);
+    const previous = summarize(previousRows);
+    if (current.total <= 0) {
+      const latest = [...new Set(creatorRows.map((row) => row.date).filter(Boolean))].sort().pop() || "当前区间";
       el.innerHTML = `<div class="ops-empty">${latest} 达人订单 GMV 为 0，暂无成交来源可拆分。</div>`;
       return;
     }
+    const previousLabel = previousBounds?.start && previousBounds?.end
+      ? `上期 ${previousBounds.start} 至 ${previousBounds.end}`
+      : "上期暂无可用日期";
+    const changeText = (value, previousValue) => {
+      if (!previousBounds?.start || !previousBounds?.end || !previousRows.length) return "上期暂无可比数据";
+      const delta = value - previousValue;
+      if (periodTools?.absoluteDeltaText) return periodTools.absoluteDeltaText(delta, fmtThb);
+      return delta > 0 ? `增加 ${fmtThb(delta)}` : delta < 0 ? `减少 ${fmtThb(Math.abs(delta))}` : "持平";
+    };
+    const currentDates = [...new Set(creatorRows.map((row) => row.date).filter(Boolean))].sort();
+    const rangeLabel = currentBounds?.start && currentBounds?.end
+      ? `${currentBounds.start} 至 ${currentBounds.end}`
+      : currentDates.length > 1 ? `${currentDates[0]} 至 ${currentDates[currentDates.length - 1]}` : currentDates[0] || "当前区间";
     el.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px;padding-top:6px;">` +
-      parts.map((p) => {
-        const pct = Math.round((p.value / total) * 100);
-        return `<div><div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px;"><span>${p.label}</span><span style="font-weight:700;">${pct}% · ${fmtThb(p.value)}</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${p.color};"></div></div></div>`;
+      current.parts.map((part, index) => {
+        const scale = Math.round((part.value / current.total) * 100);
+        const change = changeText(part.value, previous.parts[index]?.value || 0);
+        return `<div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;font-size:13px;"><span>${part.label}</span><span style="font-weight:700;">${fmtThb(part.value)} <small style="font-weight:600;color:#64748b;">（${change}）</small></span></div><div class="progress-bar"><div class="progress-fill" style="width:${scale}%;background:${part.color};"></div></div></div>`;
       }).join("") +
-      `</div><div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:#64748b;">${first === latest ? latest : `${first} 至 ${latest}`} · 区间累计联盟口径（达人订单合计 ${fmtThb(total)}），不含自营与其他渠道。</div>`;
+      `</div><div style="margin-top:12px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:#64748b;">${rangeLabel} · 本期达人订单合计 ${fmtThb(current.total)}；${previousLabel} · 来源金额按联盟订单拆分，不含自营与其他渠道。</div>`;
   }
   function latestRowsPerStore(rows) {
     const latestByStore = new Map();
@@ -2948,6 +2976,7 @@
   window.OPS_V33 = {
     getData: () => v33,
     getRows: (datasetKey) => scopedRows(datasetKey),
+    getRowsForBounds: rowsForBounds,
     getScope: () => ({
       store: document.getElementById("store-filter")?.value || "all",
       bounds: selectedScopeBounds(),
