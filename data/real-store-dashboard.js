@@ -1062,6 +1062,40 @@
     });
   }
 
+  function comparisonStatus() {
+    const currentBounds = selectedDateBounds();
+    const baselineBounds = previousPeriodBounds();
+    let currentProductCount = 0;
+    let baselineProductCount = 0;
+    let matchedProductCount = 0;
+    storesForDateAnchor().forEach((store) => {
+      const current = productMapForBounds(store, currentBounds);
+      const baseline = productMapForBounds(store, baselineBounds);
+      currentProductCount += current.size;
+      baselineProductCount += baseline.size;
+      for (const productId of current.keys()) {
+        if (baseline.has(productId)) matchedProductCount += 1;
+      }
+    });
+    return { currentBounds, baselineBounds, currentProductCount, baselineProductCount, matchedProductCount };
+  }
+
+  function rankingEmptyMessage(config) {
+    if (config.mode === "sales" || config.mode === "gmv") return "当前范围暂无真实商品数据。";
+    const status = comparisonStatus();
+    if (!status.currentProductCount) return "当前所选区间暂无商品快照，无法生成真实对比。";
+    const previousLabel = status.baselineBounds?.start && status.baselineBounds?.end
+      ? `上期 ${status.baselineBounds.start} 至 ${status.baselineBounds.end}`
+      : "上期暂无可用日期";
+    if (!status.baselineProductCount) {
+      return `当前区间已有 ${formatNumber(status.currentProductCount, 0)} 个商品数据，但${previousLabel}没有商品快照；${config.title}暂不计算，不会把当前数据误判为增长或下降。`;
+    }
+    if (!status.matchedProductCount) {
+      return `本期与${previousLabel}各有商品数据，但没有相同商品 ID 可匹配；${config.title}暂不计算，请检查历史文件是否完整。`;
+    }
+    return `已有 ${formatNumber(status.matchedProductCount, 0)} 个商品完成区间对比，当前没有满足“${config.title}”条件的商品。`;
+  }
+
   function rankingItems(mode) {
     if (isStoreDataCleared()) return [];
     const products = productsInScope();
@@ -1093,7 +1127,7 @@
         </span>
         <span class="real-ranking-value">${value}</span>
       </div>`;
-    }).join("") : `<div class="real-ranking-empty">${config.mode === "sales" || config.mode === "gmv" ? "当前范围暂无真实商品数据。" : "需要所选区间与上一个等长区间都有同一商品数据，才生成真实对比。"}</div>`;
+    }).join("") : `<div class="real-ranking-empty">${rankingEmptyMessage(config)}</div>`;
     return `<div class="real-ranking-card ${config.className}">
       <div class="real-ranking-title">${config.icon} ${config.title}</div>
       <div class="real-ranking-subtitle">${config.subtitle}</div>
