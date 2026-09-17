@@ -30,6 +30,7 @@
     formatNumber, formatCompact, escapeHtml, isDateKey, addDays, normalizeHeaderText,
   } = bridge;
   const periodTools = window.OPS_PERIOD_COMPARISON;
+  const videoTools = window.OPS_VIDEO_RANGE;
 
   /* ================= 可配置阈值（看板上可改，存本机） ================= */
   const THRESHOLDS_KEY = "tiktok-v33-thresholds";
@@ -1425,27 +1426,14 @@
   // 出单视频榜（GPM 优先）
   function videoBoards() {
     const rows = scopedRows("affVideos");
-    if (!rows.length) return null;
-    const latest = latestVideoDate();
-    const dayRows = rowsOnDate("affVideos", latest);
-    const selling = dayRows.filter((r) => (r.orders || 0) > 0);
-    const byGpm = [...selling].sort((a, b) => (b.gpm || 0) - (a.gpm || 0));
-    const byGmv = [...selling].sort((a, b) => (b.gmv || 0) - (a.gmv || 0));
-    return {
-      latest,
-      total: dayRows.length,
-      sellingCount: selling.length,
-      gmv: selling.reduce((s, r) => s + (r.gmv || 0), 0),
-      byGpm: byGpm.slice(0, 15),
-      byGmv: byGmv.slice(0, 15),
-    };
+    if (!rows.length || !videoTools?.summarizeVideoRows) return null;
+    const summary = videoTools.summarizeVideoRows(rows);
+    return { ...summary, latest: summary.end };
   }
   // 出单但还没被广告利用的视频（视频模块 × 广告模块的联动）
   function videosNotInAds() {
     const adVideoIds = new Set(scopedRows("adCreatives").map((r) => r.videoId).filter(Boolean));
-    const latest = latestVideoDate();
-    if (!latest) return [];
-    return rowsOnDate("affVideos", latest)
+    return scopedRows("affVideos")
       .filter((r) => (r.orders || 0) > 0 && r.videoId && !adVideoIds.has(r.videoId))
       .sort((a, b) => (b.gmv || 0) - (a.gmv || 0));
   }
@@ -2034,11 +2022,12 @@
     } else {
       if (kpiEl) {
         kpiEl.innerHTML =
-          kpiCard("在档视频", `${boards.total} 条`, boards.latest, "") +
-          kpiCard("出单视频", `${boards.sellingCount} 条`, `出单率 ${boards.total ? (boards.sellingCount / boards.total * 100).toFixed(1) : 0}%`, "#059669") +
-          kpiCard("视频 GMV", fmtThb(boards.gmv), "联盟视频归因口径", "");
+          kpiCard("区间视频", `${boards.total} 条`, `${boards.start} 至 ${boards.end}`, "") +
+          kpiCard("区间出单视频", `${boards.sellingCount} 条`, `出单率 ${boards.total ? (boards.sellingCount / boards.total * 100).toFixed(1) : 0}%`, "#059669") +
+          kpiCard("区间视频 GMV", fmtThb(boards.gmv), "联盟视频归因口径", "");
       }
       if (boardEl) {
+        const rangeLabel = boards.start === boards.end ? boards.end : `${boards.start} 至 ${boards.end}`;
         const mkBoard = (title, subtitle, rows, metric) => `<div class="real-ranking-card gmv">
           <div class="real-ranking-title">${title}</div>
           <div class="real-ranking-subtitle">${subtitle}</div>
@@ -2047,13 +2036,13 @@
             <span class="lb-name" style="font-family:monospace;font-size:11px;">${escapeHtml(r.videoId)}</span>
             <span class="lb-sub">${escapeHtml(r.creator || "—")} · 商品 ${escapeHtml(r.productId || "—")}</span>
             <span class="lb-value">${metric(r)}</span>
-          </div>`).join("")}</div>` : emptyBlock("当日无出单视频。")}
+          </div>`).join("")}</div>` : emptyBlock("所选区间无出单视频。")}
         </div>`;
         boardEl.innerHTML = `<div class="real-ranking-grid" style="grid-template-columns:1fr 1fr;">
-          ${mkBoard("🏆 出单视频榜（GMV）", `${boards.latest} · 按归因GMV降序`, boards.byGmv, (r) => fmtThb(r.gmv))}
-          ${mkBoard("⚡ GPM 榜（选素材放大）", "千次曝光成交金额降序", boards.byGpm, (r) => r.gmv != null && r.exposure ? `฿${formatNumber(r.gmv / r.exposure * 1000, 0)}/千曝` : (r.gpm != null ? `฿${formatNumber(r.gpm, 0)}` : "—"))}
+          ${mkBoard("🏆 区间出单视频榜（GMV）", `${rangeLabel} · 按归因GMV降序`, boards.byGmv, (r) => fmtThb(r.gmv))}
+          ${mkBoard("⚡ 区间 GPM 榜（选素材放大）", `${rangeLabel} · 千次曝光成交金额降序`, boards.byGpm, (r) => r.gmv != null && r.exposure ? `฿${formatNumber(r.gmv / r.exposure * 1000, 0)}/千曝` : (r.gpm != null ? `฿${formatNumber(r.gpm, 0)}` : "—"))}
         </div>
-        <div style="margin-top:8px;font-size:12px;color:#64748b;">完播率/互动率仅作参考列，不做内容诊断（达人素材内容不可干预，这里用于「选」不用于「改」）。</div>`;
+        <div style="margin-top:8px;font-size:12px;color:#64748b;">以上按所选日期区间汇总；完播率/互动率仅作参考列，不做内容诊断（达人素材内容不可干预，这里用于「选」不用于「改」）。</div>`;
       }
       if (gapEl) {
         if (!scopedRows("adCreatives").length) {
