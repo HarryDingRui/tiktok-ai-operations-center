@@ -26,6 +26,7 @@
   let xlsxApi = null;
   const periodTools = window.OPS_PERIOD_COMPARISON;
   const overviewMetricTools = window.OPS_OVERVIEW_METRICS;
+  const priorityCardTools = window.OPS_PRIORITY_CARD;
 
   const STORAGE_KEY = "tiktok-real-store-data-v2";
   const LEGACY_STORAGE_KEY = "tiktok-real-store-data-v1";
@@ -940,6 +941,23 @@
   ];
   let activePriorityCategory = "product";
 
+  function priorityMetric(label, previousValue, currentValue, formatter) {
+    const previous = Number(previousValue);
+    const current = Number(currentValue);
+    const comparable = previousValue != null && currentValue != null && Number.isFinite(previous) && Number.isFinite(current);
+    if (!comparable) {
+      return { label, from: "待导入", to: "待导入", delta: "暂无可比数据", direction: "unavailable" };
+    }
+    const difference = current - previous;
+    return {
+      label,
+      from: formatter(previous),
+      to: formatter(current),
+      delta: difference > 0 ? `增加 ${formatter(difference)}` : difference < 0 ? `减少 ${formatter(Math.abs(difference))}` : "持平",
+      direction: difference > 0 ? "up" : difference < 0 ? "down" : "flat",
+    };
+  }
+
   // 商品优先处理：比较所选区间首日与末日，避免固定使用“昨日”或区间外的历史数据。
   function productPriorityData() {
     const items = [];
@@ -972,55 +990,117 @@
           ? `末日较首日少 ${formatMoney(Math.abs(gmvDelta))}。`
           : "";
         const header = `<b>${escapeHtml(store.name)}</b> · ${escapeHtml(product.name)} · 商品 ID <b>${escapeHtml(product.id)}</b> · ${intervalText}`;
+        const dedupeKey = `${store.name}:${product.id}`;
+        const decisionMetrics = [
+          priorityMetric("曝光", previousProduct.exposure, currentProduct.exposure, formatCompact),
+          priorityMetric("点击", previousProduct.clicks, currentProduct.clicks, formatCompact),
+          priorityMetric("成交", previousProduct.units, currentProduct.units, (value) => `${formatNumber(value, 0)} 件`),
+          priorityMetric("GMV", previousProduct.gmv, currentProduct.gmv, formatMoney),
+        ];
+        const decision = (diagnosis, primaryAction, actions) => ({
+          storeName: store.name,
+          productName: product.name,
+          productId: product.id,
+          interval: `${comparison.startDate} → ${comparison.endDate}`,
+          metrics: decisionMetrics,
+          diagnosis,
+          primaryAction,
+          actions,
+          impact: impactText ? impactText.replace(/。$/, "") : "",
+        });
 
         if (exposureChg != null && exposureChg <= -20) {
           const ctrStable = ctrChgPp != null && Math.abs(ctrChgPp) < 0.5;
+          const diagnosis = ctrStable
+            ? "CTR 基本稳定而曝光骤降，初步判断是推荐流量入口变化或分发减少，不是主图问题。"
+            : "曝光与 CTR 同步下滑，疑似商品整体权重下降或触发风控限流。";
           items.push({
-            sev: "high", score: Math.abs(exposureChg) * 2,
-            title: `❗ ${product.id} · 曝光大幅下降 ${formatCompact(Math.abs(exposureDelta))}`,
-            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${ctrStable ? "CTR 基本稳定而曝光骤降，初步判断是推荐流量入口变化或分发减少，<b>不是主图问题</b>；建议优先核查流量来源。" : "曝光与 CTR 同步下滑，疑似商品整体权重下降或触发风控限流，需同时排查流量入口与商品状态。"}<br>【建议动作】1) 检查商品是否仍在推荐池 / 是否掉出搜索排名；2) 核对是否有违规、下架、类目调整记录；3) 用广告或短视频补量验证承接是否正常。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
+            sev: "high", score: Math.abs(exposureChg) * 2, impactValue: gmvDelta < 0 ? Math.abs(gmvDelta) : 0, dedupeKey,
+            title: `曝光大幅下降 ${formatCompact(Math.abs(exposureDelta))}`,
+            preview: `${product.id} · 曝光大幅下降 ${formatCompact(Math.abs(exposureDelta))}`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${diagnosis}<br>【建议动作】1) 检查商品是否仍在推荐池 / 是否掉出搜索排名；2) 核对是否有违规、下架、类目调整记录；3) 用广告或短视频补量验证承接是否正常。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
             tags: ["高优先级", `区间首日 → 末日`],
+            decision: decision(diagnosis, "先核查推荐池、搜索排名和商品状态", [
+              "检查商品是否仍在推荐池，是否掉出搜索排名",
+              "核对违规、下架及类目调整记录",
+              "用广告或短视频补量，验证商品承接是否正常",
+            ]),
           });
         } else if (exposureChg != null && exposureChg <= -8) {
+          const diagnosis = cvrChgPp != null && cvrChgPp > 0
+            ? "曝光下降但未达到高风险线，CVR 逆势上涨，转化效率正在对冲曝光损失。"
+            : "曝光下降但未达到高风险线，需继续观察是否为短期波动。";
           items.push({
-            sev: "medium", score: Math.abs(exposureChg),
-            title: `📉 ${product.id} · 曝光下降 ${formatCompact(Math.abs(exposureDelta))}`,
-            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】曝光下降但未达到高风险线，${cvrChgPp != null && cvrChgPp > 0 ? "且 CVR 逆势上涨，转化效率改善正在对冲曝光损失。" : "需观察是否为短期波动。"}<br>【建议动作】先观察 T+1 数据，暂不调整主图与价格；若连续两期下降再介入。`,
+            sev: "medium", score: Math.abs(exposureChg), impactValue: gmvDelta < 0 ? Math.abs(gmvDelta) : 0, dedupeKey,
+            title: `曝光下降 ${formatCompact(Math.abs(exposureDelta))}`,
+            preview: `${product.id} · 曝光下降 ${formatCompact(Math.abs(exposureDelta))}`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${diagnosis}<br>【建议动作】先观察 T+1 数据，暂不调整主图与价格；若连续两期下降再介入。`,
             tags: ["中优先级", "观察"],
+            decision: decision(diagnosis, "先观察 T+1 数据，暂不调整主图与价格", [
+              "记录当前曝光和转化基线",
+              "若连续两期下降，再检查流量入口并介入调整",
+            ]),
           });
         }
         if (gmvChg != null && gmvChg <= -15) {
           const driver = exposureChg != null && exposureChg <= -15 ? "主要由曝光下滑驱动，先解决流量问题。"
             : (cvrChgPp != null && cvrChgPp <= -0.3 ? "曝光基本稳定但 CVR 下滑，问题在转化承接：重点核查价格、评价与详情页。" : "多指标联动变化，建议逐层排查流量与转化。");
           items.push({
-            sev: "high", score: Math.abs(gmvChg) * 1.5,
-            title: `💰 ${product.id} · GMV 减少 ${formatMoney(Math.abs(gmvDelta))}`,
+            sev: "high", score: Math.abs(gmvChg) * 1.5, impactValue: Math.abs(gmvDelta), dedupeKey,
+            title: `GMV 减少 ${formatMoney(Math.abs(gmvDelta))}`,
+            preview: `${product.id} · GMV 减少 ${formatMoney(Math.abs(gmvDelta))}`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${driver}<br>【建议动作】1) 按上述方向定位主因；2) 恢复动作执行后记录到"运营调整记录"，T+1/T+3 自动验证效果。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
             tags: ["高优先级", `区间首日 → 末日`],
+            decision: decision(driver, exposureChg != null && exposureChg <= -15 ? "先恢复流量，再验证商品承接" : "先检查价格、评价和详情页承接", [
+              "按原因判断定位主要下滑环节",
+              "执行恢复动作并记录到运营调整记录",
+              "在 T+1 和 T+3 复核 GMV 是否恢复",
+            ]),
           });
         }
         if (ctrChgPp != null && ctrChgPp <= -0.5 && (exposureChg == null || exposureChg > -20)) {
+          const diagnosis = "曝光基本稳定但点击率下降，通常是主图、标题或价格展示吸引力下降，也可能是同质竞品分流。";
           items.push({
-            sev: "medium", score: Math.abs(ctrChgPp),
-            title: `👆 ${product.id} · 点击效率下降`,
-            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】曝光基本稳定但点击率下降，通常是主图 / 标题 / 价格展示吸引力下降，或同质竞品分流。<br>【建议动作】对比竞品前排链接的主图与价格带；可小步测试替换首图，改动后记录动作等 T+3 验证。`,
+            sev: "medium", score: Math.abs(ctrChgPp), impactValue: gmvDelta < 0 ? Math.abs(gmvDelta) : 0, dedupeKey,
+            title: "点击效率下降",
+            preview: `${product.id} · 点击效率下降`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${diagnosis}<br>【建议动作】对比竞品前排链接的主图与价格带；可小步测试替换首图，改动后记录动作等 T+3 验证。`,
             tags: ["中优先级", "主图/标题"],
+            decision: decision(diagnosis, "先对比竞品主图和价格带", [
+              "对比搜索前排竞品的主图、标题和价格展示",
+              "小步测试替换首图，并记录本次动作",
+              "等待 T+3 数据后判断是否有效",
+            ]),
           });
         }
         if (cvrChgPp != null && cvrChgPp <= -0.3 && (gmvChg == null || gmvChg > -15)) {
+          const diagnosis = "点击后的成交转化走弱，优先核查价格变动、差评增加、详情页信息缺失以及运费或优惠变化。";
           items.push({
-            sev: "medium", score: Math.abs(cvrChgPp),
-            title: `🛒 ${product.id} · 成交转化规模变弱`,
-            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】点击后的成交转化走弱，优先核查：价格变动、差评增加、详情页信息缺失、运费/优惠变化。<br>【建议动作】核对近期待价格与评价；如是价格测试导致，回滚或调整组合装策略。`,
+            sev: "medium", score: Math.abs(cvrChgPp), impactValue: gmvDelta < 0 ? Math.abs(gmvDelta) : 0, dedupeKey,
+            title: "成交转化规模变弱",
+            preview: `${product.id} · 成交转化规模变弱`,
+            body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${diagnosis}<br>【建议动作】核对近期价格与评价；如是价格测试导致，回滚或调整组合装策略。`,
             tags: ["中优先级", "转化承接"],
+            decision: decision(diagnosis, "先核对价格、评价、运费和优惠变化", [
+              "检查近期价格和促销调整记录",
+              "复核差评、详情页信息和运费变化",
+              "若由价格测试导致，回滚或调整组合装策略",
+            ]),
           });
         }
         if (gmvChg != null && gmvChg >= 15) {
+          const diagnosis = "GMV 较区间首日明显增加，适合作为同类商品的动作复用样本。";
           items.push({
-            sev: "good", score: gmvChg,
-            title: `↗ ${product.id} · GMV 增加 ${formatMoney(gmvDelta)}（标杆）`,
+            sev: "good", score: gmvChg, impactValue: gmvDelta, dedupeKey,
+            title: `GMV 增加 ${formatMoney(gmvDelta)}`,
+            preview: `${product.id} · GMV 增加 ${formatMoney(gmvDelta)}（标杆）`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【动作建议】追溯近期对该链接做过的动作（主图 / 价格 / 标题 / 投放），如已记录则等 T+3/T+7 验证后沉淀到知识库，供同类商品复用。`,
             tags: ["标杆", "可沉淀"],
+            decision: decision(diagnosis, "追溯近期有效动作，准备沉淀复用", [
+              "检查近期主图、价格、标题和投放动作记录",
+              "等待 T+3 和 T+7 复核增长是否持续",
+              "验证有效后沉淀到知识库供同类商品复用",
+            ]),
           });
         }
       });
@@ -1031,9 +1111,10 @@
          emptyHtml: `所选区间内需要至少两个可用日期，系统会比较区间首日与末日。当前数据不足时不生成真实对比。<br>缺数据不做假：这是本中控台的硬规则。`,
       };
     }
-    const severityOrder = { high: 0, medium: 1, low: 2, good: 3 };
-    items.sort((left, right) => severityOrder[left.sev] - severityOrder[right.sev] || right.score - left.score);
-    return { items: items.slice(0, 8) };
+    const sortedItems = priorityCardTools && typeof priorityCardTools.selectPriorityItems === "function"
+      ? priorityCardTools.selectPriorityItems(items, 8)
+      : items.sort((left, right) => ({ high: 0, medium: 1, low: 2, good: 3 })[left.sev] - ({ high: 0, medium: 1, low: 2, good: 3 })[right.sev] || right.score - left.score);
+    return { items: sortedItems.slice(0, 8) };
   }
 
   function priorityCategoryData(key) {
@@ -1053,6 +1134,9 @@
   function priorityDetailHtml(data) {
     if (!data || !Array.isArray(data.items)) return `<div class="ops-empty">模块加载中…</div>`;
     if (!data.items.length) return `<div class="ops-empty">${data.emptyHtml || "当前没有待处理事项。"}</div>`;
+    if (priorityCardTools && typeof priorityCardTools.renderPriorityCard === "function") {
+      return data.items.map((item) => priorityCardTools.renderPriorityCard(item)).join("");
+    }
     const tagClass = { high: "tag-red", medium: "tag-yellow", low: "tag-blue", good: "tag-green" };
     return data.items.map((item) => `<div class="priority-item sev-${item.sev}">
       <div class="priority-item-title">${item.title}</div>
@@ -1061,16 +1145,55 @@
     </div>`).join("");
   }
 
+  async function copyPriorityProductId(productId) {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      await navigator.clipboard.writeText(productId);
+      return;
+    }
+    const input = document.createElement("textarea");
+    input.value = productId;
+    input.setAttribute("readonly", "");
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    input.remove();
+  }
+
+  function bindPriorityCopy(hub) {
+    if (hub.dataset.copyProductIdBound === "1") return;
+    hub.dataset.copyProductIdBound = "1";
+    hub.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-copy-product-id]");
+      if (!button || !hub.contains(button)) return;
+      const originalText = button.textContent;
+      try {
+        await copyPriorityProductId(button.getAttribute("data-copy-product-id") || "");
+        button.textContent = "已复制";
+        button.classList.add("copied");
+      } catch (error) {
+        console.warn("copy product id failed:", error);
+        button.textContent = "复制失败";
+      }
+      window.setTimeout(() => {
+        button.textContent = originalText;
+        button.classList.remove("copied");
+      }, 1400);
+    });
+  }
+
   function renderPriorityPanel() {
     const hub = document.getElementById("priority-hub");
     if (!hub) return;
+    bindPriorityCopy(hub);
     const dataByCategory = Object.fromEntries(PRIORITY_CATEGORIES.map((category) => [category.key, priorityCategoryData(category.key)]));
     if (!dataByCategory[activePriorityCategory]) activePriorityCategory = "product";
     hub.innerHTML = `
       <div class="priority-hub-tabs">${PRIORITY_CATEGORIES.map((category) => {
         const data = dataByCategory[category.key];
         const count = data && Array.isArray(data.items) ? data.items.length : 0;
-        const preview = count ? data.items[0].title.replace(/<[^>]*>/g, "") : "暂无待处理";
+        const preview = count ? (data.items[0].preview || data.items[0].title).replace(/<[^>]*>/g, "") : "暂无待处理";
         return `<div class="priority-tab ${activePriorityCategory === category.key ? "active" : ""}" data-priority-cat="${category.key}" role="button" tabindex="0">
           <div class="priority-tab-head"><span>${category.icon}</span><span>${category.label}</span><span class="priority-tab-count ${count ? "" : "zero"}">${count}</span></div>
           <div class="priority-tab-desc">${escapeHtml(preview)}</div>
