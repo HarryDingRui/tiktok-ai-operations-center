@@ -618,7 +618,8 @@ body {
   <div class="nav-item" onclick="showPage('alert', this)"><span class="nav-icon">🚨</span> <span>商品数据预警</span><span class="nav-badge" hidden>0</span></div>
   <div class="nav-item" onclick="showPage('bd', this)"><span class="nav-icon">🤝</span> <span>BD / 达人</span></div>
   <div class="nav-item" onclick="showPage('ads', this)"><span class="nav-icon">🎯</span> <span>广告投放</span></div>
-  <div class="nav-item" onclick="showPage('videos', this)"><span class="nav-icon">🎬</span> <span>视频</span></div>
+  <div class="nav-item" onclick="showPage('videos', this)"><span class="nav-icon">🎬</span> <span>总视频</span></div>
+  <div class="nav-item" onclick="showPage('self-videos', this)"><span class="nav-icon">📱</span> <span>自营视频</span></div>
   <div class="nav-item" onclick="showPage('profit', this)"><span class="nav-icon">💰</span> <span>价格利润</span></div>
   <div class="nav-item" onclick="showPage('validation', this)"><span class="nav-icon">✅</span> <span>动作验证</span></div>
   <div class="nav-item" onclick="showPage('knowledge', this)"><span class="nav-icon">📚</span> <span>运营知识库</span></div>
@@ -1096,10 +1097,10 @@ body {
   </div>
 </div>
 
-<!-- ========== 5. 自营短视频（合并商品与发布） ========== -->
+<!-- ========== 5. 总视频 ========== -->
 <div id="page-videos" class="page">
   <div class="page-header">
-    <div class="page-title">🎬 视频</div>
+    <div class="page-title">🎬 总视频</div>
     <div class="page-subtitle">出单视频榜 + 广告联动 · 自营账号 GMV 从联盟视频订单按 Video ID 归因</div>
   </div>
 
@@ -1144,7 +1145,20 @@ body {
   </div>
 </div>
 
-<!-- ========== 5.5 价格利润（成交价扫码 + 亏损预警） ========== -->
+<!-- ========== 5.5 自营视频（功能待确认） ========== -->
+<div id="page-self-videos" class="page">
+  <div class="page-header">
+    <div class="page-title">📱 自营视频</div>
+    <div class="page-subtitle">自营账号视频运营</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📱 自营视频板块</div>
+    <div class="empty-state">板块已建立，等待你确认具体内容后再接入数据和功能。</div>
+  </div>
+</div>
+
+<!-- ========== 6. 价格利润（成交价扫码 + 亏损预警） ========== -->
 <div id="page-profit" class="page">
   <div class="page-header">
     <div class="page-title">💰 价格利润</div>
@@ -2271,7 +2285,7 @@ body {
 <script src="./data/ops-recommendations.js?v=ops-recommendations-1"></script>
 <script src="./data/file-categorization.js?v=auto-categorization-2"></script>
 <script>
-const FILTERED_DATA_PAGES = new Set(['overview', 'alert', 'bd', 'ads', 'videos', 'profit', 'validation', 'knowledge', 'agents', 'data']);
+const FILTERED_DATA_PAGES = new Set(['overview', 'alert', 'bd', 'ads', 'videos', 'self-videos', 'profit', 'validation', 'knowledge', 'agents', 'data']);
 const DEMO_PAGE_NOTICES = {};
 
 function updateDataContextVisibility(pageId) {
@@ -2340,7 +2354,7 @@ function showPage(pageId, el) {
   if (el && el.classList.contains('nav-item')) {
     el.classList.add('active');
   } else {
-    const navMap = { 'overview': 0, 'alert': 1, 'bd': 2, 'ads': 3, 'videos': 4, 'profit': 5, 'validation': 6, 'knowledge': 7, 'agents': 8, 'data': 9 };
+    const navMap = { 'overview': 0, 'alert': 1, 'bd': 2, 'ads': 3, 'videos': 4, 'self-videos': 5, 'profit': 6, 'validation': 7, 'knowledge': 8, 'agents': 9, 'data': 10 };
     const sidebarItems = document.querySelectorAll('.sidebar .nav-item');
     if (sidebarItems[navMap[pageId]]) sidebarItems[navMap[pageId]].classList.add('active');
   }
