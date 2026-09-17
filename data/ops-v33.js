@@ -196,7 +196,10 @@
       if (row && typeof row === "object") {
         // 本地导入优先；仅当某个数据集没有本地记录时，才用云端快照补齐。
         Object.keys(base).forEach((k) => {
-          if (Array.isArray(row[k]) && row[k].length > 0) base[k] = row[k];
+          if (!Array.isArray(row[k]) || row[k].length === 0) return;
+          base[k] = k === "affVideos" && videoTools?.mergeVideoRecords
+            ? videoTools.mergeVideoRecords(base[k], row[k])
+            : row[k];
         });
       }
     } catch (e) { console.warn("v3.3 本地数据读取失败，继续使用云端快照", e); }
@@ -826,9 +829,12 @@
       const selectedStore = document.getElementById("store-filter")?.value || "all";
       for (const file of files) {
         const result = await spec.parser(file);
-        const merged = new Map((v33[datasetKey] || []).map((r) => [spec.keyOf(r), r]));
         const fallbackStore = fallbackToSelectedStore && selectedStore !== "all" && !storeFromFile(file) ? selectedStore : "";
         const scopedRecords = addImportScope(result.records, file, fallbackStore);
+        const mergedRecords = datasetKey === "affVideos" && videoTools?.mergeVideoRecords
+          ? videoTools.mergeVideoRecords(v33[datasetKey] || [], scopedRecords)
+          : [...(v33[datasetKey] || []), ...scopedRecords];
+        const merged = new Map(mergedRecords.map((r) => [spec.keyOf(r), r]));
         unassignedCount += scopedRecords.filter((record) => !record.store).length;
         if (spec.legacyKeyOf) {
           const assignedLegacyKeys = new Set(scopedRecords.filter((record) => record.store).map(spec.legacyKeyOf));
@@ -836,7 +842,9 @@
             if (!existing.store && assignedLegacyKeys.has(spec.legacyKeyOf(existing))) merged.delete(key);
           }
         }
-        scopedRecords.forEach((r) => merged.set(spec.keyOf(r), r)); // 同键覆盖，重复导入不双计
+        if (datasetKey !== "affVideos" || !videoTools?.mergeVideoRecords) {
+          scopedRecords.forEach((r) => merged.set(spec.keyOf(r), r)); // 同键覆盖，重复导入不双计
+        }
         v33[datasetKey] = [...merged.values()];
         invalidateLatestDataDate();
         parsedCount += result.records.length;

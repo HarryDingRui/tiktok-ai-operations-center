@@ -8,6 +8,7 @@
   const bridge = window.OPS_BRIDGE;
   if (!bridge) return;
   const recommendationEngine = window.OPS_RECOMMENDATIONS;
+  const validationView = window.OPS_ACTION_VALIDATION_VIEW;
 
   const ACTIONS_KEY = "ops-control-plane-actions-v1";
   const KNOWLEDGE_KEY = "ops-control-plane-knowledge-v1";
@@ -155,6 +156,25 @@
     return result;
   }
 
+  async function handleActionFile(file, status) {
+    if (!file) return;
+    if (status) status.textContent = "正在解析…";
+    try {
+      const result = await importActions(file);
+      if (status) {
+        status.textContent = `已导入 ${result.actions.length} 条 · 跳过 ${result.errors.length} 条`;
+        status.className = `tag ${result.errors.length ? "tag-yellow" : "tag-green"}`;
+      }
+      window.dispatchEvent(new CustomEvent("real-data-imported"));
+      renderAll();
+    } catch (error) {
+      if (status) {
+        status.textContent = `导入失败：${error.message}`;
+        status.className = "tag tag-red";
+      }
+    }
+  }
+
   const KNOWLEDGE_ALIASES = {
     title: ["标题", "知识标题", "title"], store: ["店铺", "店铺名称", "store"], productId: ["商品ID", "Product ID", "productId"], category: ["类目", "分类", "category"], actionType: ["动作类型", "动作", "actionType"],
     verificationNode: ["验证节点", "验证周期", "node"], period: ["时间段", "周期", "period"], owner: ["负责人", "owner"], description: ["描述", "方法论", "问题与方法", "description"],
@@ -274,7 +294,8 @@
     const invalid = actions.filter((item) => item.verdict === "无效").length;
     const pending = actions.length - valid - invalid;
     const cards = actions.length ? actions.map((item) => `<div class="card" style="margin-bottom:12px;border-left:4px solid ${item.verdict === "有效" ? "#10b981" : item.verdict === "无效" ? "#ef4444" : "#f59e0b"};"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;"><div><strong>${esc(item.action.date)} · ${esc(item.action.productId || "未填商品")}</strong><div style="font-size:13px;color:#475569;margin-top:3px;">${esc(item.action.actionType || item.action.detail)}</div></div><span class="tag ${actionStatus(item.verdict)}">${esc(item.verdict)}</span></div><div style="font-size:12px;color:#64748b;margin-top:8px;">负责人：${esc(item.action.owner || "未填写")} · 指标：${esc(item.action.metric || "GMV")} · 数据源：${esc(item.action.source || "本地记录")}</div><div class="desktop-table-wrap" style="margin-top:10px;"><table class="desktop-table"><thead><tr><th>节点</th><th>目标日期</th><th>基线</th><th>观测</th><th>变化</th><th>结论</th></tr></thead><tbody>${item.checks.map((check) => `<tr><td>T+${check.node}</td><td>${esc(check.targetDate || "—")}</td><td>${check.baseValue == null ? "待导入" : check.baseValue}</td><td>${check.observedValue == null ? "待导入" : check.observedValue}</td><td>${check.changePct == null ? "待导入" : `${check.changePct.toFixed(1)}%`}</td><td><span class="tag ${actionStatus(check.verdict)}">${esc(check.verdict)}</span></td></tr>`).join("")}</tbody></table></div>${item.verdict === "有效" ? `<button class="btn btn-primary cp-create-knowledge" data-action-id="${esc(item.action.id)}" style="margin-top:10px;">📚 沉淀到知识库</button>` : ""}</div>`).join("") : `<div class="card"><div class="ops-empty">暂无真实动作记录。请在「数据接入」上传动作 CSV，或通过手动添加录入日期、商品、动作和验证节点。</div></div>`;
-    replacePage("validation", `${notice("当前结果只来自本地导入的动作记录与店铺快照；缺少 T+1/T+3/T+7 对应日期时保持“待验证”，不会用样例结论填充。") }<div class="stats-row"><div class="stat-card"><div class="stat-label">已验证有效</div><div class="stat-value" style="color:#10b981;">${valid}</div></div><div class="stat-card"><div class="stat-label">待验证</div><div class="stat-value" style="color:#f59e0b;">${pending}</div></div><div class="stat-card"><div class="stat-label">已证伪</div><div class="stat-value" style="color:#ef4444;">${invalid}</div></div><div class="stat-card"><div class="stat-label">动作记录</div><div class="stat-value">${actions.length}</div></div></div><div id="cp-validation-list">${cards}</div>`);
+    const table = validationView?.renderValidationTable ? validationView.renderValidationTable(actions, esc) : '';
+    replacePage("validation", `${notice("当前结果只来自本地导入的动作记录与店铺快照；缺少 T+1/T+3/T+7 对应日期时保持“待验证”，不会用样例结论填充。") }<div class="stats-row"><div class="stat-card"><div class="stat-label">已验证有效</div><div class="stat-value" style="color:#10b981;">${valid}</div></div><div class="stat-card"><div class="stat-label">待验证</div><div class="stat-value" style="color:#f59e0b;">${pending}</div></div><div class="stat-card"><div class="stat-label">已证伪</div><div class="stat-value" style="color:#ef4444;">${invalid}</div></div><div class="stat-card"><div class="stat-label">动作记录</div><div class="stat-value">${actions.length}</div></div></div>${table}<div id="cp-validation-list">${cards}</div>`);
   }
 
   function knowledgeCard(record, allowApprove) { return `<div class="card" style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;"><strong>${esc(record.title)}</strong><span class="tag ${record.status === "approved" ? "tag-green" : "tag-yellow"}">${record.status === "approved" ? "对外已审" : "待审核"}</span></div><div style="font-size:13px;color:#334155;margin-top:8px;white-space:pre-wrap;">${esc(record.description)}</div><div style="font-size:12px;color:#64748b;margin-top:8px;">商品：${esc(record.productId || "未指定")} · 动作：${esc(record.actionType || "未指定")} · 来源：${esc(record.source || "本地记录")}</div>${allowApprove && record.status !== "approved" ? `<button class="btn btn-primary cp-approve-knowledge" data-knowledge-id="${esc(record.id)}" style="margin-top:10px;">审核入库</button>` : ""}</div>`; }
@@ -356,7 +377,7 @@
     zone.removeAttribute("onclick");
     const input = document.createElement("input"); input.type = "file"; input.accept = ".csv,.xlsx,.xls"; input.hidden = true; input.id = "cp-actions-file"; zone.after(input);
     zone.addEventListener("click", () => input.click());
-    input.addEventListener("change", async (event) => { const file = event.target.files?.[0]; if (!file) return; const status = actionModule.querySelector(".tag"); if (status) status.textContent = "正在解析…"; try { const result = await importActions(file); if (status) { status.textContent = `已导入 ${result.actions.length} 条 · 跳过 ${result.errors.length} 条`; status.className = `tag ${result.errors.length ? "tag-yellow" : "tag-green"}`; } window.dispatchEvent(new CustomEvent("real-data-imported")); renderAll(); } catch (error) { if (status) { status.textContent = `导入失败：${error.message}`; status.className = "tag tag-red"; } } finally { event.target.value = ""; } });
+    input.addEventListener("change", async (event) => { await handleActionFile(event.target.files?.[0], actionModule.querySelector(".tag")); event.target.value = ""; });
   }
   function ensureValidationUploadEntry() {
     const root = document.querySelector("#page-validation [data-control-plane-root]");
@@ -365,8 +386,12 @@
     card.id = "cp-validation-upload-entry";
     card.className = "card";
     card.style.borderLeft = "4px solid #38bdf8";
-    card.innerHTML = '<div class="card-title">📤 导入动作验证记录 <span>CSV / XLSX · 日期、商品、动作、T+1/T+3/T+7 节点</span></div><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:#475569;"><span>这个页面的动作记录从「数据接入」统一导入，导入后会自动回到本页生成验证结果。</span><button class="btn btn-primary" type="button" onclick="const input=document.getElementById(\'cp-actions-file\'); if(input) input.click(); else showPage(\'data\', null)">直接选择动作文件</button></div>';
+    card.innerHTML = '<div class="card-title">📤 导入动作验证记录 <span>CSV / XLSX · 日期、商品、动作、T+1/T+3/T+7 节点</span></div><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:#475569;"><span>员工可直接在这里上传动作文件；导入后自动写入本机并刷新下方真实表格。</span><button id="cp-validation-select" class="btn btn-primary" type="button">直接选择动作文件</button><input id="cp-validation-file" type="file" accept=".csv,.xlsx,.xls" hidden><span id="cp-validation-status" class="tag tag-yellow">待导入</span></div>';
     root.insertBefore(card, root.children[1] || null);
+    const input = card.querySelector("#cp-validation-file");
+    const status = card.querySelector("#cp-validation-status");
+    card.querySelector("#cp-validation-select")?.addEventListener("click", () => input?.click());
+    input?.addEventListener("change", async (event) => { await handleActionFile(event.target.files?.[0], status); event.target.value = ""; });
   }
 
   function createKnowledgeFromAction(actionId) {

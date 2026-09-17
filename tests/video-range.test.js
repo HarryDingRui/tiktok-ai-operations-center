@@ -34,4 +34,33 @@ assert.strictEqual(deduplicatedSummary.total, 1);
 assert.strictEqual(deduplicatedSummary.sellingCount, 1);
 assert.strictEqual(deduplicatedSummary.gmv, 100);
 assert.strictEqual(deduplicatedSummary.byGmv[0].orders, 3);
+
+const mergedRecords = videoRange.mergeVideoRecords([
+  {
+    store: 'yaya thailand tth', date: '2026-09-01', videoId: 'video-4', productId: 'product-4',
+    orders: 1, gmv: 591.2,
+  },
+], [
+  {
+    store: 'yaya thailand tth', date: '2026-09-01', videoId: 'video-4', productId: 'product-4',
+    orders: 0, gmv: 0,
+  },
+]);
+assert.strictEqual(mergedRecords.length, 1);
+assert.strictEqual(mergedRecords[0].gmv, 591.2);
+assert.strictEqual(mergedRecords[0].orders, 1);
+
+const restoredRecords = videoRange.mergeVideoRecords([
+  {
+    store: 'yaya thailand tth', date: '2026-09-01', videoId: 'video-5', productId: 'product-5',
+    orders: 0, gmv: 0,
+  },
+], [
+  {
+    store: 'yaya thailand tth', date: '2026-09-01', videoId: 'video-5', productId: 'product-5',
+    orders: 1, gmv: 89,
+  },
+]);
+assert.strictEqual(restoredRecords[0].gmv, 89);
+assert.strictEqual(restoredRecords[0].orders, 1);
 console.log('video-range tests passed');

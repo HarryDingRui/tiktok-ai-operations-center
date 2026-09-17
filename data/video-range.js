@@ -9,6 +9,38 @@
     "exposure", "clicks", "views", "commission",
   ];
 
+  const COMMERCIAL_FIELDS = ["gmv", "orders"];
+
+  function hasCommercialValue(row) {
+    return COMMERCIAL_FIELDS.some((field) => (Number(row?.[field]) || 0) > 0);
+  }
+
+  function mergeVideoRecords(existingRows, incomingRows) {
+    const merged = new Map();
+    const append = (rows, source) => {
+      (Array.isArray(rows) ? rows : []).filter(Boolean).forEach((row, index) => {
+        const store = String(row.store || "").trim();
+        const date = String(row.date || "").trim();
+        const videoId = String(row.videoId || "").trim();
+        const productId = String(row.productId || "").trim();
+        const key = videoId
+          ? `${store}|${date}|${videoId}|${productId}`
+          : `${source}-unkeyed-${index}`;
+        const previous = merged.get(key);
+        if (!previous) {
+          merged.set(key, row);
+          return;
+        }
+        // 同一日同一视频的重复导出不应累加；有效 GMV/订单不能被后来的全零行覆盖。
+        if (hasCommercialValue(previous) && !hasCommercialValue(row)) return;
+        merged.set(key, row);
+      });
+    };
+    append(existingRows, "existing");
+    append(incomingRows, "incoming");
+    return [...merged.values()];
+  }
+
   function summarizeVideoRows(rows) {
     const rangeRows = Array.isArray(rows) ? rows.filter(Boolean) : [];
     const dates = [...new Set(rangeRows.map((row) => row.date).filter((date) => /^20\d{2}-\d{2}-\d{2}$/.test(String(date || ""))))].sort();
@@ -55,5 +87,5 @@
     };
   }
 
-  return { summarizeVideoRows };
+  return { mergeVideoRecords, summarizeVideoRows };
 }));
