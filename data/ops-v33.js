@@ -890,9 +890,11 @@
       }
       return { datasetKey, records: parsedCount, stored: v33[datasetKey].length, unassigned: unassignedCount, notes };
     } catch (error) {
-      setStatus("导入失败", "tag-red");
+      const message = error.message || "无法识别该文件";
+      setStatus(`导入失败 · ${message}`, "tag-red");
+      console.error(`[${spec.label}] import failed`, error);
       if (notify) window.alert(`❌ 导入失败\n\n${error.message || "无法识别该文件"}`);
-      if (!notify) return { datasetKey, error: error.message || "无法识别该文件" };
+      if (!notify) return { datasetKey, error: message };
     } finally {
       event.target.value = "";
     }
