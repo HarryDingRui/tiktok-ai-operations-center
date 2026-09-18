@@ -27,5 +27,6 @@ assert.ok(source.includes('profitTools.findShippingFee'), 'shipping lookup must 
 assert.ok(source.includes('profitTools.normalizeSkuKey'), 'Seller SKU matching must ignore harmless whitespace and Unicode-width differences');
 assert.ok(source.indexOf('const sheets = await readWorkbook(file);') < source.indexOf('const hinted = unifiedFilenameHint(file.name);'), 'unified import must inspect headers before trusting an ambiguous filename');
 assert.ok(source.includes('bounds?.start && bounds?.end'), 'profit rendering must support the all-dates scope where bounds is null');
+assert.ok(source.includes('restoreProfitUploadStatuses'), 'saved pricing and order data must restore their imported status after reload');
 console.log('profit ops integration tests passed');
 

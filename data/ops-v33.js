@@ -1079,6 +1079,20 @@
     });
   }
 
+  function restoreProfitUploadStatuses() {
+    const pricingStatus = document.getElementById("pricing-upload-status");
+    if (pricingStatus && pricing?.skus?.length) {
+      pricingStatus.className = "tag tag-green";
+      pricingStatus.textContent = `已导入 · ${pricing.skus.length} 个 SKU`;
+    }
+
+    const orderStatus = document.getElementById("order-upload-status");
+    if (orderStatus && v33.orders.length) {
+      orderStatus.className = "tag tag-green";
+      orderStatus.textContent = `已导入 · 累计 ${v33.orders.length} 条 · 数据至 ${datasetCoverage("orders") || "?"}`;
+    }
+  }
+
   /* ================= 广告分析引擎 ================= */
   // 计划命名解析：172*2P(SKU)-手动(模式)-200/12(预算/目标ROI)-0716(建计划日期)-5862(商品后4位)
   function parsePlanName(name, refDate) {
@@ -3473,6 +3487,7 @@
     window.OPS_V33_READY = true;
     renderAllV33();
     renderFreshnessBadges();
+    restoreProfitUploadStatuses();
     window.dispatchEvent(new CustomEvent("real-data-ready"));
     bridge.renderPriorityPanel();
   });
