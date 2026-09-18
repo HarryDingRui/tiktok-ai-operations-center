@@ -26,5 +26,6 @@ assert.ok(source.includes('actualOrderWeightG'), 'order package weight must be t
 assert.ok(source.includes('profitTools.findShippingFee'), 'shipping lookup must use the tested range-safe helper');
 assert.ok(source.includes('profitTools.normalizeSkuKey'), 'Seller SKU matching must ignore harmless whitespace and Unicode-width differences');
 assert.ok(source.indexOf('const sheets = await readWorkbook(file);') < source.indexOf('const hinted = unifiedFilenameHint(file.name);'), 'unified import must inspect headers before trusting an ambiguous filename');
+assert.ok(source.includes('bounds?.start && bounds?.end'), 'profit rendering must support the all-dates scope where bounds is null');
 console.log('profit ops integration tests passed');
 

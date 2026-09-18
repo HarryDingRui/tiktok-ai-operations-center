@@ -2940,7 +2940,7 @@
 
     const scan = profitScan();
     const bounds = selectedScopeBounds();
-    const periodLabel = bounds.start && bounds.end ? `${bounds.start} 至 ${bounds.end}` : "所选日期范围";
+    const periodLabel = bounds?.start && bounds?.end ? `${bounds.start} 至 ${bounds.end}` : "全部可用日期";
     const exactOrders = scan.orders.filter((order) => order.exactRevenue);
     const grossOrders = scan.orders.filter((order) => order.completeGross);
     const netOrders = scan.orders.filter((order) => order.completeNet);
