@@ -15,6 +15,24 @@
     return quantity != null && quantity > 0 ? quantity : 1;
   }
 
+  function normalizeSkuKey(value) {
+    return String(value ?? "")
+      .normalize("NFKC")
+      .replace(/\s+/g, "")
+      .toLowerCase();
+  }
+
+  function findShippingFee(weightGrams, tiers) {
+    const weight = numberOrNull(weightGrams);
+    if (weight == null || weight < 0 || !Array.isArray(tiers) || !tiers.length) return null;
+    const tier = tiers.find((entry) => {
+      const lower = numberOrNull(entry?.lo) ?? 0;
+      const upper = entry?.hi === Infinity ? Infinity : numberOrNull(entry?.hi);
+      return upper != null && weight >= lower && weight <= upper;
+    });
+    return tier ? numberOrNull(tier.net) : null;
+  }
+
   function isIncludedOrderStatus(value) {
     const status = String(value ?? "").trim();
     return !/取消|cancel(?:led|ed)?/i.test(status);
@@ -175,5 +193,7 @@
     calculateProfit,
     calculateBreakevenPrice,
     assessPriceRisk,
+    normalizeSkuKey,
+    findShippingFee,
   };
 }));

@@ -5,6 +5,8 @@ const {
   calculateProfit,
   calculateBreakevenPrice,
   assessPriceRisk,
+  normalizeSkuKey,
+  findShippingFee,
 } = require('../data/profit-analysis-core.js');
 
 assert.strictEqual(isIncludedOrderStatus(''), true);
@@ -148,6 +150,18 @@ assert.ok(lowMarginRisk.reasons.some((reason) => reason.includes('目标价')));
 const pendingRisk = assessPriceRisk({ exactRevenue: false, hasCost: false, shippingKnown: false });
 assert.strictEqual(pendingRisk.level, 'pending');
 assert.ok(pendingRisk.reasons.some((reason) => reason.includes('重新导入')));
+
+assert.strictEqual(normalizeSkuKey(' TH020141\n king*10 '), 'th020141king*10');
+assert.strictEqual(normalizeSkuKey('ＴＨ ０２０１４１'), 'th020141');
+
+const shippingTiers = [
+  { lo: 0, hi: 1000, net: 2.5 },
+  { lo: 1000.01, hi: 5000, net: 5 },
+];
+assert.strictEqual(findShippingFee(850, shippingTiers), 2.5);
+assert.strictEqual(findShippingFee(3200, shippingTiers), 5);
+assert.strictEqual(findShippingFee(6000, shippingTiers), null, 'out-of-range shipping must stay unknown');
+assert.strictEqual(findShippingFee(null, shippingTiers), null);
 
 console.log('profit-analysis-core tests passed');
 

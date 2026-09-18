@@ -21,5 +21,10 @@ assert.ok(
   source.includes('sourceType === "cost-map" ? ["SKU", "成本价"] : ["SKU", "成本价", "活动价"]'),
   'cost-only mapping workbooks must not require an activity-price column',
 );
+assert.ok(!source.includes('if (!(amounts.sellerRevenue > 0)) return;'), 'zero-revenue gift lines must not be discarded');
+assert.ok(source.includes('actualOrderWeightG'), 'order package weight must be tracked independently from per-SKU estimates');
+assert.ok(source.includes('profitTools.findShippingFee'), 'shipping lookup must use the tested range-safe helper');
+assert.ok(source.includes('profitTools.normalizeSkuKey'), 'Seller SKU matching must ignore harmless whitespace and Unicode-width differences');
+assert.ok(source.indexOf('const sheets = await readWorkbook(file);') < source.indexOf('const hinted = unifiedFilenameHint(file.name);'), 'unified import must inspect headers before trusting an ambiguous filename');
 console.log('profit ops integration tests passed');
 

@@ -328,7 +328,8 @@
   }
   function storeFromFilename(name) {
     const normalized = normalizeHeaderText(name || "");
-    return KNOWN_STORES.find((store) => normalized.includes(normalizeHeaderText(store))) || "";
+    return KNOWN_STORES.find((store) => normalized.includes(normalizeHeaderText(store)))
+      || (normalized.includes("inspire") ? "INSPIRE PURIFY" : "");
   }
 
   // 目录导入时，浏览器把店铺目录保存在 webkitRelativePath，而 file.name 只有文件名。
@@ -943,17 +944,17 @@
   }
 
   async function detectUnifiedDataset(file) {
-    const hinted = unifiedFilenameHint(file.name);
-    if (hinted) return { key: hinted.key };
     const sheets = await readWorkbook(file);
+    const hinted = unifiedFilenameHint(file.name);
     const matches = UNIFIED_DATASET_SIGNATURES
       .map((signature) => ({ key: signature.key, score: Math.max(...sheets.map((sheet) => signatureScore(sheet.rows, signature.keywords))) }))
       .filter((match) => match.score >= 2);
-    if (!matches.length) return { key: null, reason: "未识别到支持的表头" };
+    if (!matches.length) return hinted ? { key: hinted.key } : { key: null, reason: "未识别到支持的表头" };
     const bestScore = Math.max(...matches.map((match) => match.score));
     const best = matches.filter((match) => match.score === bestScore);
-    if (best.length !== 1) return { key: null, reason: `表头同时符合：${best.map((match) => UNIFIED_DATASET_LABELS[match.key]).join("、")}` };
-    return { key: best[0].key };
+    if (best.length === 1) return { key: best[0].key };
+    if (hinted && best.some((match) => match.key === hinted.key)) return { key: hinted.key };
+    return { key: null, reason: `表头同时符合：${best.map((match) => UNIFIED_DATASET_LABELS[match.key]).join("、")}` };
   }
 
   async function handleUnifiedImport(event) {
@@ -2323,7 +2324,7 @@
     try { return JSON.parse(window.localStorage.getItem(COST_PATCH_KEY) || "{}") || {}; } catch (e) { return {}; }
   }
   function setCostPatch(sellerSku, cost, weightKg) {
-    const key = cleanText(sellerSku).toLowerCase();
+    const key = profitTools.normalizeSkuKey(sellerSku);
     if (!key) return;
     const patches = getCostPatches();
     patches[key] = { cost, weightKg: weightKg ?? null, at: new Date().toISOString() };
@@ -2446,19 +2447,20 @@
       return score(right) - score(left);
     })[0] || parsed[0];
     const costMaps = parsed.filter((entry) => entry.sourceType === "cost-map");
-    const costByBase = new Map();
+    const costBySku = new Map();
     costMaps.forEach((entry) => entry.skus.forEach((sku) => {
-      if (sku.base && sku.cost != null) costByBase.set(sku.base.toLowerCase(), { cost: sku.cost, source: entry.fileName, record: sku });
+      const key = profitTools.normalizeSkuKey(sku.sku);
+      if (key && sku.cost != null) costBySku.set(key, { cost: sku.cost, source: entry.fileName, record: sku });
     }));
-    const primaryBases = new Set();
+    const primarySkuKeys = new Set();
     const skus = primary.skus.map((sku) => {
-      const base = (sku.base || "").toLowerCase();
-      if (base) primaryBases.add(base);
-      const override = costByBase.get(base);
+      const key = profitTools.normalizeSkuKey(sku.sku);
+      if (key) primarySkuKeys.add(key);
+      const override = costBySku.get(key);
       return override ? Object.assign({}, sku, { cost: override.cost, costSource: override.source }) : Object.assign({}, sku);
     });
-    costByBase.forEach((override, base) => {
-      if (!primaryBases.has(base)) skus.push(Object.assign({}, override.record, { costSource: override.source }));
+    costBySku.forEach((override, key) => {
+      if (!primarySkuKeys.has(key)) skus.push(Object.assign({}, override.record, { costSource: override.source }));
     });
     return Object.assign({}, primary, {
       importedAt: new Date().toISOString(),
@@ -2554,10 +2556,10 @@
     pricingIndex = { exact: new Map(), base: new Map() };
     if (!pricing) return;
     pricing.skus.forEach((rec) => {
-      const ek = rec.sku.toLowerCase();
+      const ek = profitTools.normalizeSkuKey(rec.sku);
       const prevE = pricingIndex.exact.get(ek);
       if (!prevE || (prevE.cost == null && rec.cost != null)) pricingIndex.exact.set(ek, rec);
-      const bk = (rec.base || "").toLowerCase();
+      const bk = profitTools.normalizeSkuKey(rec.base || "");
       if (!bk) return;
       const prevB = pricingIndex.base.get(bk);
       if (!prevB || (prevB.cost == null && rec.cost != null)) pricingIndex.base.set(bk, rec);
@@ -2566,15 +2568,16 @@
   function findPricing(sellerSku) {
     const s = cleanText(sellerSku);
     if (!s) return { rec: null, via: null };
-    const patch = getCostPatches()[s.toLowerCase()];
+    const exactKey = profitTools.normalizeSkuKey(s);
+    const patch = getCostPatches()[exactKey];
     if (patch && patch.cost != null) {
       return { rec: { sku: s, base: s.split(/\s+/)[0], cost: patch.cost, weightKg: patch.weightKg, activityPrice: null, patched: true }, via: "patch" };
     }
     if (!pricing) return { rec: null, via: null };
     if (!pricingIndex) buildPricingIndex();
-    const exact = pricingIndex.exact.get(s.toLowerCase());
+    const exact = pricingIndex.exact.get(exactKey);
     if (exact) return { rec: exact, via: "exact" };
-    const baseRec = pricingIndex.base.get(s.split(/\s+/)[0].toLowerCase());
+    const baseRec = pricingIndex.base.get(profitTools.normalizeSkuKey(s.split(/\s+/)[0]));
     if (baseRec) return { rec: baseRec, via: "base" };
     return { rec: null, via: null };
   }
@@ -2592,9 +2595,7 @@
   }
   function shipFeeNet(weightGrams) {
     if (!pricing || !pricing.tiers.length || pricing.hasShippingTiers === false || weightGrams == null) return null;
-    const w = Math.max(0, weightGrams);
-    const tier = pricing.tiers.find((t) => w >= t.lo && w <= t.hi) || pricing.tiers[pricing.tiers.length - 1];
-    return tier && tier.net != null ? tier.net : null;
+    return profitTools.findShippingFee(weightGrams, pricing.tiers);
   }
 
   // —— 成交价扫码：订单级聚合（运费按订单总重只计一次；取消单 / 全退行剔除）——
@@ -2619,7 +2620,6 @@
         subtotalAfterDiscount: line.subtotalAfterDiscount ?? (line.subtotalBeforeDiscount == null ? line.dealPrice : null),
         quantity: line.qty,
       });
-      if (!(amounts.sellerRevenue > 0)) return;
       totalLines += 1;
       if (amounts.exact) exactRevenueLines += 1;
       const match = findPricing(line.sellerSku);
@@ -2631,10 +2631,8 @@
       const buyerPaidAmount = amounts.buyerPaidAmount == null ? null : amounts.buyerPaidAmount * ratio;
       const equationGap = amounts.equationGap == null ? null : amounts.equationGap * ratio;
       const matched = Boolean(match.rec && match.rec.cost != null);
-      const weightKg = line.weightKg != null && line.weightKg > 0
-        ? line.weightKg
-        : match.rec?.weightKg != null && match.rec.weightKg > 0 ? match.rec.weightKg : null;
-      const weightKnown = !requiresWeight || weightKg != null;
+      const actualOrderWeightKg = line.weightKg != null && line.weightKg > 0 ? line.weightKg : null;
+      const estimatedItemWeightKg = match.rec?.weightKg != null && match.rec.weightKg > 0 ? match.rec.weightKg : null;
 
       if (!orderMap.has(line.orderId)) {
         orderMap.set(line.orderId, {
@@ -2647,11 +2645,12 @@
           platformSubsidy: 0,
           buyerPaidAmount: 0,
           productCost: 0,
-          weightG: 0,
+          actualOrderWeightG: null,
+          estimatedItemWeightG: 0,
+          hasUnknownItemWeight: false,
           items: [],
           hasUnmatched: false,
           hasFallbackRevenue: false,
-          hasUnknownShipping: false,
         });
       }
       const order = orderMap.get(line.orderId);
@@ -2660,8 +2659,13 @@
       if (sellerDiscount != null) order.sellerDiscount += sellerDiscount;
       if (platformSubsidy != null) order.platformSubsidy += platformSubsidy;
       if (buyerPaidAmount != null) order.buyerPaidAmount += buyerPaidAmount;
-      if (weightKg != null) order.weightG += weightKg * 1000 * effectiveQty;
-      if (!weightKnown) order.hasUnknownShipping = true;
+      if (actualOrderWeightKg != null) {
+        order.actualOrderWeightG = Math.max(order.actualOrderWeightG || 0, actualOrderWeightKg * 1000);
+      } else if (estimatedItemWeightKg != null) {
+        order.estimatedItemWeightG += estimatedItemWeightKg * 1000 * effectiveQty;
+      } else {
+        order.hasUnknownItemWeight = true;
+      }
       if (!amounts.exact) order.hasFallbackRevenue = true;
       const item = {
         sellerSku: line.sellerSku,
@@ -2697,8 +2701,12 @@
 
     const orders = [...orderMap.values()].map((order) => {
       const exactRevenue = !order.hasFallbackRevenue;
-      const shippingKnown = !order.hasUnknownShipping && (pricing?.hasShippingTiers !== false);
-      const shippingCost = shippingKnown ? (requiresWeight ? shipFeeNet(order.weightG) : 0) : null;
+      const hasShippingModel = pricing?.hasShippingTiers !== false;
+      const weightG = order.actualOrderWeightG != null
+        ? order.actualOrderWeightG
+        : order.hasUnknownItemWeight ? null : order.estimatedItemWeightG;
+      const shippingCost = hasShippingModel ? (requiresWeight ? shipFeeNet(weightG) : 0) : null;
+      const shippingKnown = shippingCost != null;
       const fixedPlatformFee = order.sellerRevenue * R.fixed;
       const affiliateFee = order.sellerRevenue * R.affRate;
       const adCost = order.sellerRevenue * R.adsShare;
@@ -2715,6 +2723,7 @@
       const completeGross = exactRevenue && !order.hasUnmatched && result.grossProfit != null;
       const completeNet = completeGross && shippingKnown && result.netProfit != null;
       return Object.assign(order, result, {
+        weightG,
         revenue: order.sellerRevenue,
         cost: order.productCost,
         exactRevenue,
