@@ -1,8 +1,8 @@
 # 运营中控台云端数据文档
 
-网站保留 `data/real-store-data.js` 中的真实店铺名称、商品名称和商品 ID 目录；经营指标、日期快照和趋势数据默认不发布，必须重新导入真实文件后才能显示。原有旧版模块仍只允许使用浏览器本地导入数据。
+网站保留 `data/real-store-data.js` 中的真实店铺名称、商品名称和商品 ID 目录。经营指标、日期快照和趋势数据按公开快照发布；价格利润页另读取经过精简和脱敏的订单、成本与定价快照。浏览器本地重新导入的数据仍优先于公开快照。
 
-目录来源于 5 个 TikTok Shop 店铺：yaya112、yaya thailand tth、PETTOS、Miniyaya、INSPIRE PURIFY。公开文件只保留商品目录字段，不包含 GMV、订单、曝光、点击、转化、退款、日期或趋势数值。
+目录来源于 5 个 TikTok Shop 店铺：yaya112、yaya thailand tth、PETTOS、Miniyaya、INSPIRE PURIFY。`cloud-orders.json` 只保留价格利润核算所需字段，订单号会改写为 `PUB-xxxxxx`，不发布原订单号和达人账号；`cloud-pricing.json` 保留成本、活动价、建议零售价、费率和运费阶梯，供浏览器现场重算。
 
 运营填报请使用同目录的 `tiktok-ai-operations-center-wps-kdocs-template.xlsx`，不要直接让运营编辑 JSON。该模板适合上传到 WPS/Kdocs，黄色区域是填报区，蓝色区域是公式或网站使用字段；网站“数据接入”页也提供直接下载入口。
 
@@ -42,10 +42,10 @@ GitHub Pages 不能在后台监听 D 盘，也不能替用户自动读取 TikTok
 
 ### 公开快照更新（需要重新发布）
 
-1. 在 GitHub 网页打开本文件，点击编辑。
-2. 按现有字段结构替换真实数据；不要删除字段名。
-3. 提交到 `main` 分支。
-4. 后续接入后端 API 后，再由网站读取并展示更新后的数据。
+1. 运行 `scripts/generate_profit_cloud_snapshot.py`，传入订单表、SKU 成本映射表、价格利润核算表和仓库路径。
+2. 生成器会重写 `cloud-orders.json`、`cloud-pricing.json`，并更新 `cloud-import.js` 中的版本和数据地址。
+3. 运行 `tests/profit-cloud-sync.test.js` 以及项目其余测试后，提交到 `main` 分支。
+4. 公开快照是发布时的数据，不会自动读取员工电脑；后续要自动同步最新私有数据，仍需要带权限的后端服务。
 
 如果使用 WPS/Kdocs：先填写模板，再导出对应 CSV。当前 GitHub Pages 仍是静态站点，本次真实商品数据作为公开静态快照发布；后续要自动同步最新私有数据，仍需要后端 API 和权限控制。
 

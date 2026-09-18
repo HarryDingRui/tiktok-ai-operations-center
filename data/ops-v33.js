@@ -180,14 +180,28 @@
     const parsed = await response.json();
     return parsed && typeof parsed === "object" ? parsed : null;
   }
+  async function loadCloudPricing() {
+    const url = window.TIKTOK_CLOUD_SNAPSHOT?.pricingUrl;
+    if (!url) return null;
+    const response = await fetch(url, { cache: "force-cache" });
+    if (!response.ok) throw new Error(`云端价格利润数据读取失败（HTTP ${response.status}）`);
+    const parsed = await response.json();
+    return parsed && typeof parsed === "object" && Array.isArray(parsed.skus) ? parsed : null;
+  }
   async function loadV33() {
     const cloudSnapshot = window.TIKTOK_CLOUD_SNAPSHOT;
     if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared" && !cloudSnapshot?.published) return;
     let cloud = null;
+    let cloudPricing = null;
     try {
       cloud = await loadCloudV33();
     } catch (error) {
       console.warn("云端分析数据读取失败，继续使用本地数据", error);
+    }
+    try {
+      cloudPricing = await loadCloudPricing();
+    } catch (error) {
+      console.warn("云端价格利润数据读取失败，继续使用本地数据", error);
     }
     const base = EMPTY_DATA();
     if (cloud && typeof cloud === "object") {
@@ -224,6 +238,7 @@
       const p = await idbGet("ops-v33-pricing");
       if (p && typeof p === "object" && Array.isArray(p.skus)) { pricing = p; pricingIndex = null; }
     } catch (e) { console.warn("价格数据读取失败，继续使用其他云端数据", e); }
+    if (!pricing && cloudPricing) { pricing = cloudPricing; pricingIndex = null; }
   }
   async function saveV33() {
     try { await idbPut(V33_DATA_KEY, v33); await idbPut(V33_META_KEY, meta); await idbPut("ops-v33-pricing", pricing); }
