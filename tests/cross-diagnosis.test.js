@@ -5,18 +5,18 @@ const report = buildCrossDiagnosis({
   productId: 'product-1',
   bounds: { start: '2026-09-01', end: '2026-09-14' },
   productRows: [
-    { date: '2026-09-01', productId: 'product-1', name: 'Product 1', exposure: 1000, clicks: 100, orders: 20, gmv: 200, price: 10, stock: 100, status: '在售', penalty: '无' },
-    { date: '2026-09-14', productId: 'product-1', name: 'Product 1', exposure: 600, clicks: 60, orders: 12, gmv: 120, price: 10, stock: 100, status: '在售', penalty: '无' },
+    { date: '2026-09-01', productId: 'product-1', name: 'Product 1', exposure: 1000, clicks: 100, orders: 20, gmv: 200, price: 10, stock: 100, status: '在售', penalty: '无', detailVersion: 'v1' },
+    { date: '2026-09-14', productId: 'product-1', name: 'Product 1', exposure: 600, clicks: 60, orders: 12, gmv: 120, price: 10, stock: 100, status: '在售', penalty: '无', detailVersion: 'v1' },
   ],
   adRows: [
-    { date: '2026-09-01', productId: 'product-1', spend: 500, revenue: 1050, orders: 30, impressions: 10000, clicks: 500 },
-    { date: '2026-09-14', productId: 'product-1', spend: 200, revenue: 260, orders: 10, impressions: 5000, clicks: 150 },
+    { date: '2026-09-01', productId: 'product-1', spend: 500, revenue: 1050, orders: 30, impressions: 10000, clicks: 500, budget: 700, bid: 10, targeting: 'broad' },
+    { date: '2026-09-14', productId: 'product-1', spend: 200, revenue: 260, orders: 10, impressions: 5000, clicks: 150, budget: 300, bid: 8, targeting: 'interest' },
   ],
   creatorRows: [
     { date: '2026-09-01', productId: 'product-1', creator: 'creator-a', qty: 2, amount: 100 },
     { date: '2026-09-01', productId: 'product-1', creator: 'creator-b', qty: 1, amount: 80 },
     { date: '2026-09-01', productId: 'product-1', creator: 'creator-c', qty: 1, amount: 60 },
-    { date: '2026-09-14', productId: 'product-1', creator: 'creator-a', qty: 1, amount: 40 },
+    { date: '2026-09-14', productId: 'product-1', creator: 'creator-b', qty: 1, amount: 40 },
   ],
   videoRows: [
     { date: '2026-09-01', productId: 'product-1', videoId: 'video-a', gmv: 80, orders: 4, exposure: 1000, views: 900, likes: 90, comments: 10, shares: 5 },
@@ -24,9 +24,9 @@ const report = buildCrossDiagnosis({
     { date: '2026-09-14', productId: 'product-1', videoId: 'video-a', gmv: 20, orders: 1, exposure: 400, views: 350, likes: 20, comments: 2, shares: 1 },
   ],
   orderRows: [
-    { date: '2026-09-01', productId: 'product-1', orderId: 'order-a', qty: 1, orderAmount: 100, refund: 0 },
-    { date: '2026-09-01', productId: 'product-1', orderId: 'order-b', qty: 1, orderAmount: 100, refund: 0 },
-    { date: '2026-09-14', productId: 'product-1', orderId: 'order-c', qty: 1, orderAmount: 100, refund: 30 },
+    { date: '2026-09-01', productId: 'product-1', orderId: 'order-a', qty: 1, orderAmount: 100, refund: 0, addToCartRate: 0.2, orderRate: 0.1, badReviewRate: 0.01, logisticsDays: 2 },
+    { date: '2026-09-01', productId: 'product-1', orderId: 'order-b', qty: 1, orderAmount: 100, refund: 0, addToCartRate: 0.2, orderRate: 0.1, badReviewRate: 0.01, logisticsDays: 2 },
+    { date: '2026-09-14', productId: 'product-1', orderId: 'order-c', qty: 1, orderAmount: 100, refund: 30, addToCartRate: 0.1, orderRate: 0.05, badReviewRate: 0.04, logisticsDays: 4 },
   ],
 });
 
@@ -44,9 +44,25 @@ assert.strictEqual(report.conclusion.primary.module, 'ads');
 assert.deepStrictEqual(report.conclusion.excluded.map((item) => item.module), ['product']);
 assert.strictEqual(report.conclusion.pending.length, 0);
 assert.ok(report.modules.find((module) => module.key === 'ads').issues.some((issue) => issue.key === 'spend'));
-assert.ok(report.modules.find((module) => module.key === 'creators').facts.lostCreators.includes('creator-b'));
+assert.ok(report.modules.find((module) => module.key === 'creators').facts.lostCreators.includes('creator-a'));
 assert.ok(report.modules.find((module) => module.key === 'videos').issues.some((issue) => issue.key === 'videoCount'));
 assert.ok(report.modules.find((module) => module.key === 'orders').issues.some((issue) => issue.key === 'refundRate'));
+assert.ok(report.modules.find((module) => module.key === 'ads').issues.some((issue) => issue.key === 'bidChanged'));
+assert.ok(report.modules.find((module) => module.key === 'ads').issues.some((issue) => issue.key === 'targetingChanged'));
+assert.ok(report.modules.find((module) => module.key === 'creators').issues.some((issue) => issue.key === 'headCreatorLost'));
+assert.ok(report.modules.find((module) => module.key === 'videos').issues.some((issue) => issue.key === 'materialDecay'));
+assert.ok(report.modules.find((module) => module.key === 'orders').issues.some((issue) => issue.key === 'badReviewRate'));
+assert.ok(report.modules.find((module) => module.key === 'orders').issues.some((issue) => issue.key === 'logisticsDays'));
+
+const detailChangeReport = buildCrossDiagnosis({
+  productId: 'product-detail',
+  bounds: { start: '2026-09-01', end: '2026-09-14' },
+  productRows: [
+    { date: '2026-09-01', productId: 'product-detail', price: 10, stock: 10, status: '在售', penalty: '无', detailVersion: 'v1' },
+    { date: '2026-09-14', productId: 'product-detail', price: 10, stock: 10, status: '在售', penalty: '无', detailVersion: 'v2' },
+  ],
+});
+assert.ok(detailChangeReport.modules.find((module) => module.key === 'product').issues.some((issue) => issue.key === 'detailChanged'));
 
 const incompleteReport = buildCrossDiagnosis({
   productId: 'product-2',
@@ -69,5 +85,21 @@ const incompleteProductReport = buildCrossDiagnosis({
 });
 assert.strictEqual(incompleteProductReport.modules.find((module) => module.key === 'product').status, 'pending');
 assert.strictEqual(incompleteProductReport.conclusion.excluded.length, 0);
+
+const pendingFieldsReport = buildCrossDiagnosis({
+  productId: 'product-4',
+  bounds: { start: '2026-09-01', end: '2026-09-14' },
+  productRows: [
+    { date: '2026-09-01', productId: 'product-4', price: 10, stock: 10, status: '在售', penalty: '无' },
+    { date: '2026-09-14', productId: 'product-4', price: 10, stock: 10, status: '在售', penalty: '无' },
+  ],
+  adRows: [
+    { date: '2026-09-01', productId: 'product-4', spend: 10, revenue: 20, impressions: 100, clicks: 10 },
+    { date: '2026-09-14', productId: 'product-4', spend: 10, revenue: 20, impressions: 100, clicks: 10 },
+  ],
+});
+assert.ok(pendingFieldsReport.modules.find((module) => module.key === 'ads').pendingFields.includes('bid'));
+assert.ok(pendingFieldsReport.conclusion.pending.some((item) => item.module === 'ads'));
+assert.ok(!pendingFieldsReport.conclusion.excluded.some((item) => item.module === 'ads'));
 
 console.log('cross-diagnosis tests passed');

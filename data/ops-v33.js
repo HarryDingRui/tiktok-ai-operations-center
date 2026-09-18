@@ -477,6 +477,9 @@
         status: HEAD(headers, ["Status", "状态"]),
         subStatus: HEAD(headers, ["Exploration secondary status", "二级状态"]),
         auth: HEAD(headers, ["Authorization type", "授权类型"]),
+        budget: HEAD(headers, ["日预算", "预算", "Daily budget", "Budget"]),
+        bid: HEAD(headers, ["出价", "Bid", "Bid price", "Bidding"]),
+        targeting: HEAD(headers, ["定向", "定向方式", "Targeting", "Audience", "Target audience"]),
         spend: HEAD(headers, ["成本", "消耗", "Cost", "Spend"]),
         orders: HEAD(headers, ["SKU 订单数", "订单数", "Orders"]),
         cpa: HEAD(headers, ["平均下单成本"]),
@@ -506,6 +509,9 @@
           status: cleanText(r[col.status]),
           subStatus: cleanText(r[col.subStatus]),
           auth: cleanText(r[col.auth]),
+          budget: col.budget >= 0 ? cleanNum(r[col.budget]) : null,
+          bid: col.bid >= 0 ? cleanNum(r[col.bid]) : null,
+          targeting: col.targeting >= 0 ? cleanText(r[col.targeting]) : "",
           spend: spend || 0,
           orders: orders || 0,
           cpa: cleanNum(r[col.cpa]),
@@ -604,6 +610,11 @@
         estCommission: HEAD(headers, ["预计标准佣金付款"]),
         estAdCommission: HEAD(headers, ["预计店铺广告佣金付款"]),
         commissionRate: HEAD(headers, ["标准佣金率", "店铺广告佣金率", "佣金率"]),
+        refund: HEAD(headers, ["退款金额", "Refund Amount", "退款"]),
+        addToCartRate: HEAD(headers, ["加购率", "Add to cart rate", "ATC rate"]),
+        orderRate: HEAD(headers, ["下单率", "Order rate", "Conversion rate", "转化率"]),
+        badReviewRate: HEAD(headers, ["差评率", "Negative review rate", "Bad review rate"]),
+        logisticsDays: HEAD(headers, ["物流时效", "物流天数", "Logistics days", "Delivery days"]),
         createdAt: HEAD(headers, ["创建时间", "Created Time"]),
       };
       if (col.orderId < 0) continue;
@@ -633,6 +644,11 @@
             return (std || 0) + (ad || 0);
           })(),
           commissionRate: cleanNum(r[col.commissionRate]),
+          refund: col.refund >= 0 ? cleanNum(r[col.refund]) : null,
+          addToCartRate: col.addToCartRate >= 0 ? cleanNum(r[col.addToCartRate]) : null,
+          orderRate: col.orderRate >= 0 ? cleanNum(r[col.orderRate]) : null,
+          badReviewRate: col.badReviewRate >= 0 ? cleanNum(r[col.badReviewRate]) : null,
+          logisticsDays: col.logisticsDays >= 0 ? cleanNum(r[col.logisticsDays]) : null,
         });
       }
     }
@@ -2124,17 +2140,18 @@
       const coverage = module.coverage.start && module.coverage.end ? `${module.coverage.start} → ${module.coverage.end}` : "暂无完整日期";
       const facts = module.facts || {};
       let factsText = "";
-      if (module.key === "ads") factsText = `消耗 ${displayValue(facts.start?.spend, fmtUsd)} → ${displayValue(facts.end?.spend, fmtUsd)} · ROI ${displayValue(facts.start?.roi, (v) => v.toFixed(2))} → ${displayValue(facts.end?.roi, (v) => v.toFixed(2))}`;
-      if (module.key === "creators") factsText = `达人 ${displayValue(facts.startCount)} → ${displayValue(facts.endCount)}${facts.lostCreators?.length ? ` · 停带 ${escapeHtml(facts.lostCreators.slice(0, 3).join("、"))}` : ""}`;
-      if (module.key === "videos") factsText = `视频 ${displayValue(facts.start?.videoCount)} → ${displayValue(facts.end?.videoCount)} · 视频 GMV ${displayValue(facts.start?.gmv, fmtThb)} → ${displayValue(facts.end?.gmv, fmtThb)}`;
-      if (module.key === "product") factsText = `价格 ${displayValue(facts.start?.price)} → ${displayValue(facts.end?.price)} · 库存 ${displayValue(facts.start?.stock)} → ${displayValue(facts.end?.stock)}`;
-      if (module.key === "orders") factsText = `订单 ${displayValue(facts.start?.orderCount)} → ${displayValue(facts.end?.orderCount)} · 退款率 ${formatRate(facts.start?.refundRate)} → ${formatRate(facts.end?.refundRate)}`;
+      if (module.key === "ads") factsText = `消耗 ${displayValue(facts.start?.spend, fmtUsd)} → ${displayValue(facts.end?.spend, fmtUsd)} · ROI ${displayValue(facts.start?.roi, (v) => v.toFixed(2))} → ${displayValue(facts.end?.roi, (v) => v.toFixed(2))} · 出价 ${displayValue(facts.start?.bid)} → ${displayValue(facts.end?.bid)} · 定向 ${displayValue(facts.start?.targeting)} → ${displayValue(facts.end?.targeting)}`;
+      if (module.key === "creators") factsText = `达人 ${displayValue(facts.startCount)} → ${displayValue(facts.endCount)}${facts.lostCreators?.length ? ` · 停带 ${escapeHtml(facts.lostCreators.slice(0, 3).join("、"))}` : ""}${facts.headCreatorLost?.length ? ` · 头部停带 ${escapeHtml(facts.headCreatorLost.slice(0, 3).join("、"))}` : ""}`;
+      if (module.key === "videos") factsText = `视频 ${displayValue(facts.start?.videoCount)} → ${displayValue(facts.end?.videoCount)} · 视频 GMV ${displayValue(facts.start?.gmv, fmtThb)} → ${displayValue(facts.end?.gmv, fmtThb)} · 重复素材 ${displayValue(facts.repeatVideoCount)} · 衰退 ${displayValue(facts.decayedMaterials?.length)}`;
+      if (module.key === "product") factsText = `价格 ${displayValue(facts.start?.price)} → ${displayValue(facts.end?.price)} · 库存 ${displayValue(facts.start?.stock)} → ${displayValue(facts.end?.stock)} · 详情页 ${displayValue(facts.start?.detail)} → ${displayValue(facts.end?.detail)}`;
+      if (module.key === "orders") factsText = `订单 ${displayValue(facts.start?.orderCount)} → ${displayValue(facts.end?.orderCount)} · 退款率 ${formatRate(facts.start?.refundRate)} → ${formatRate(facts.end?.refundRate)} · 加购率 ${formatRate(facts.start?.addToCartRate)} → ${formatRate(facts.end?.addToCartRate)} · 差评率 ${formatRate(facts.start?.badReviewRate)} → ${formatRate(facts.end?.badReviewRate)}`;
       return `<div class="real-ranking-card" style="border-top-color:${module.status === "problem" ? "#ef4444" : module.status === "normal" ? "#10b981" : "#f59e0b"};">
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;"><strong>${module.label}</strong><span class="tag ${meta.cls}">${meta.label}</span></div>
         <div style="font-size:11px;color:#64748b;margin-top:6px;">覆盖 ${coverage} · ${module.coverage.count || 0} 条记录</div>
         <div style="font-size:12px;color:#334155;margin-top:8px;">${factsText || "暂无可展示指标"}</div>
         <div style="font-size:12px;color:#475569;margin-top:8px;">${module.evidence.map((item) => escapeHtml(item)).join("；")}</div>
         ${module.issues.length ? `<div style="font-size:12px;color:#b91c1c;margin-top:8px;">${module.issues.map((issue) => escapeHtml(issue.label)).join("、")}</div>` : ""}
+        ${module.pendingFields?.length ? `<div style="font-size:12px;color:#a16207;margin-top:8px;">待补充字段：${module.pendingFields.map((field) => escapeHtml(field)).join("、")}</div>` : ""}
       </div>`;
     };
     const primary = report.conclusion.primary
@@ -2417,6 +2434,7 @@
       const headers = (rows[hi] || []).map((c) => String(c ?? "").trim());
       const col = {
         orderId: HEAD(headers, ["Order ID", "订单号", "订单ID"]),
+        productId: HEAD(headers, ["Product ID", "商品 ID", "商品ID", "ProductID"]),
         status: HEAD(headers, ["Order Status", "订单状态"]),
         skuId: HEAD(headers, ["SKU ID", "SKUID"]),
         sellerSku: HEAD(headers, ["Seller SKU", "商家SKU", "商家 SKU"]),
@@ -2427,6 +2445,11 @@
         dealPrice: HEAD(headers, ["SKU Subtotal After Discount", "折后小计", "成交价"]),
         orderAmount: HEAD(headers, ["Order Amount", "订单金额"]),
         refund: HEAD(headers, ["Order Refund Amount", "退款金额"]),
+        addToCartRate: HEAD(headers, ["加购率", "Add to cart rate", "ATC rate"]),
+        orderRate: HEAD(headers, ["下单率", "Order rate", "Conversion rate", "转化率"]),
+        badReviewRate: HEAD(headers, ["差评率", "Negative review rate", "Bad review rate"]),
+        logisticsDays: HEAD(headers, ["物流时效", "物流天数", "Logistics days", "Delivery days"]),
+        logisticsTimeliness: HEAD(headers, ["物流及时率", "Logistics timeliness"]),
         created: HEAD(headers, ["Created Time", "创建时间", "下单时间"]),
         weight: HEAD(headers, ["Weight(kg)", "Weight", "重量"]),
         creator: HEAD(headers, ["Creator Handle", "达人账号", "达人"]),
@@ -2438,6 +2461,7 @@
         if (!/^\d{6,}$/.test(orderId)) continue; // 跳过说明行/空行
         out.push({
           orderId,
+          productId: col.productId >= 0 ? cleanId(r[col.productId]) : "",
           status: col.status >= 0 ? cleanText(r[col.status]) : "",
           skuId: col.skuId >= 0 ? cleanText(r[col.skuId]) : "",
           sellerSku: col.sellerSku >= 0 ? cleanText(r[col.sellerSku]) : "",
@@ -2448,6 +2472,11 @@
           dealPrice: cleanNum(r[col.dealPrice]),
           orderAmount: col.orderAmount >= 0 ? cleanNum(r[col.orderAmount]) : null,
           refund: col.refund >= 0 ? cleanNum(r[col.refund]) : null,
+          addToCartRate: col.addToCartRate >= 0 ? cleanNum(r[col.addToCartRate]) : null,
+          orderRate: col.orderRate >= 0 ? cleanNum(r[col.orderRate]) : null,
+          badReviewRate: col.badReviewRate >= 0 ? cleanNum(r[col.badReviewRate]) : null,
+          logisticsDays: col.logisticsDays >= 0 ? cleanNum(r[col.logisticsDays]) : null,
+          logisticsTimeliness: col.logisticsTimeliness >= 0 ? cleanNum(r[col.logisticsTimeliness]) : null,
           date: col.created >= 0 ? (parseAnyDate(r[col.created], { order: "DMY" }) || dateFromFilename(file.name)) : dateFromFilename(file.name),
           weightKg: col.weight >= 0 ? cleanNum(r[col.weight]) : null,
           creator: col.creator >= 0 ? cleanText(r[col.creator]) : "",
