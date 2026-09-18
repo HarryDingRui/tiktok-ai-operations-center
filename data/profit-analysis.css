@@ -60,6 +60,7 @@
 .profit-risk-chip.anomaly { color: #9a3412; background: #ffedd5; }
 .profit-risk-chip.pending { color: #475569; background: #e2e8f0; }
 .profit-risk-chip.healthy { color: #065f46; background: #d1fae5; }
+.profit-risk-chip.excluded { color: #334155; background: #f1f5f9; border: 1px solid #cbd5e1; }
 .profit-table-status { white-space: nowrap; }
 .profit-price-chain { min-width: 1320px; }
 .profit-price-chain th { position: sticky; top: 0; z-index: 1; background: #f8fafc; }

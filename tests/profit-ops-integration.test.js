@@ -21,9 +21,12 @@ assert.ok(
   source.includes('sourceType === "cost-map" ? ["SKU", "成本价"] : ["SKU", "成本价", "活动价"]'),
   'cost-only mapping workbooks must not require an activity-price column',
 );
-assert.ok(!source.includes('if (!(amounts.sellerRevenue > 0)) return;'), 'zero-revenue gift lines must not be discarded');
-assert.ok(source.includes('actualOrderWeightG'), 'order package weight must be tracked independently from per-SKU estimates');
-assert.ok(source.includes('profitTools.findShippingFee'), 'shipping lookup must use the tested range-safe helper');
+assert.ok(source.includes('profitTools.resolveOrderProfitPolicy'), 'order profit policy must exclude zero-revenue orders and apply fixed shipping');
+assert.ok(source.includes('profitTools.shouldExcludeRevenueLine'), 'zero-revenue SKU rows must be removed before order and SKU profit aggregation');
+assert.ok(source.includes('profitTools.allocateOrderShipping'), 'multi-SKU orders must share one fixed order-level shipping fee');
+assert.ok(!source.includes('const requiresWeight ='), 'profit calculation must not depend on product or package weight');
+assert.ok(!source.includes('shipFeeNet(weightG)'), 'profit calculation must not use weight-based shipping tiers');
+assert.ok(!source.includes('profit-patch-weight'), 'manual cost repair must not ask for unused weight data');
 assert.ok(source.includes('profitTools.normalizeSkuKey'), 'Seller SKU matching must ignore harmless whitespace and Unicode-width differences');
 assert.ok(source.indexOf('const sheets = await readWorkbook(file);') < source.indexOf('const hinted = unifiedFilenameHint(file.name);'), 'unified import must inspect headers before trusting an ambiguous filename');
 assert.ok(source.includes('bounds?.start && bounds?.end'), 'profit rendering must support the all-dates scope where bounds is null');

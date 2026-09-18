@@ -33,6 +33,30 @@
     return tier ? numberOrNull(tier.net) : null;
   }
 
+  function resolveOrderProfitPolicy(input) {
+    const sellerRevenue = numberOrNull(input?.sellerRevenue);
+    if (sellerRevenue == null) {
+      return { status: "pending-revenue", excludedFromProfit: false, shippingCost: null };
+    }
+    if (sellerRevenue <= 0) {
+      return { status: "excluded-zero-revenue", excludedFromProfit: true, shippingCost: 0 };
+    }
+    return { status: "included", excludedFromProfit: false, shippingCost: 5 };
+  }
+
+  function shouldExcludeRevenueLine(sellerRevenue) {
+    const revenue = numberOrNull(sellerRevenue);
+    return revenue != null && revenue <= 0;
+  }
+
+  function allocateOrderShipping(input) {
+    const shippingCost = numberOrNull(input?.shippingCost);
+    const itemRevenue = numberOrNull(input?.itemRevenue);
+    const orderRevenue = numberOrNull(input?.orderRevenue);
+    if (shippingCost == null || itemRevenue == null || orderRevenue == null || orderRevenue <= 0) return null;
+    return shippingCost * (itemRevenue / orderRevenue);
+  }
+
   function isIncludedOrderStatus(value) {
     const status = String(value ?? "").trim();
     return !/取消|cancel(?:led|ed)?/i.test(status);
@@ -151,7 +175,7 @@
 
     if (!exactRevenue) reasons.push("订单缺少原始折扣字段，请重新导入含 Before Discount 与 Seller Discount 的明细");
     if (!hasCost) reasons.push("SKU 成本待导入或待匹配");
-    if (!shippingKnown) reasons.push("重量或运费阶梯缺失，净利无法完整核算");
+    if (!shippingKnown) reasons.push("订单成交额待确认，固定运费无法归入有效订单");
     if (reasons.length) {
       return Object.assign({ level: "pending", label: "待补数据", reasons }, priceDetails);
     }
@@ -195,5 +219,8 @@
     assessPriceRisk,
     normalizeSkuKey,
     findShippingFee,
+    resolveOrderProfitPolicy,
+    allocateOrderShipping,
+    shouldExcludeRevenueLine,
   };
 }));

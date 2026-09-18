@@ -7,6 +7,9 @@ const {
   assessPriceRisk,
   normalizeSkuKey,
   findShippingFee,
+  resolveOrderProfitPolicy,
+  allocateOrderShipping,
+  shouldExcludeRevenueLine,
 } = require('../data/profit-analysis-core.js');
 
 assert.strictEqual(isIncludedOrderStatus(''), true);
@@ -162,6 +165,38 @@ assert.strictEqual(findShippingFee(850, shippingTiers), 2.5);
 assert.strictEqual(findShippingFee(3200, shippingTiers), 5);
 assert.strictEqual(findShippingFee(6000, shippingTiers), null, 'out-of-range shipping must stay unknown');
 assert.strictEqual(findShippingFee(null, shippingTiers), null);
+
+const zeroRevenueOrder = resolveOrderProfitPolicy({ sellerRevenue: 0, quantity: 12, weightGrams: 8000 });
+assert.deepStrictEqual(zeroRevenueOrder, {
+  status: 'excluded-zero-revenue',
+  excludedFromProfit: true,
+  shippingCost: 0,
+});
+
+const validOrder = resolveOrderProfitPolicy({ sellerRevenue: 260, quantity: 12, weightGrams: 8000 });
+assert.deepStrictEqual(validOrder, {
+  status: 'included',
+  excludedFromProfit: false,
+  shippingCost: 5,
+});
+
+const missingRevenueOrder = resolveOrderProfitPolicy({ sellerRevenue: null });
+assert.deepStrictEqual(missingRevenueOrder, {
+  status: 'pending-revenue',
+  excludedFromProfit: false,
+  shippingCost: null,
+});
+
+const firstSkuShipping = allocateOrderShipping({ shippingCost: 5, itemRevenue: 180, orderRevenue: 300 });
+const secondSkuShipping = allocateOrderShipping({ shippingCost: 5, itemRevenue: 120, orderRevenue: 300 });
+assert.strictEqual(firstSkuShipping, 3);
+assert.strictEqual(secondSkuShipping, 2);
+assert.strictEqual(firstSkuShipping + secondSkuShipping, 5, 'multi-SKU allocation must not duplicate the order fee');
+
+assert.strictEqual(shouldExcludeRevenueLine(0), true, 'zero-revenue SKU rows must not enter profit calculations');
+assert.strictEqual(shouldExcludeRevenueLine(-1), true, 'negative-revenue SKU rows must not enter profit calculations');
+assert.strictEqual(shouldExcludeRevenueLine(0.01), false);
+assert.strictEqual(shouldExcludeRevenueLine(null), false, 'missing revenue must stay pending instead of being treated as zero');
 
 console.log('profit-analysis-core tests passed');
 

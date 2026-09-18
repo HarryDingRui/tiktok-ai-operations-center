@@ -676,7 +676,7 @@ body {
 </style>
 <script src="./vendor/xlsx.mini.min.js"></script>
 <link rel="stylesheet" href="./data/feishu-integration.css?v=feishu-integration-2">
-<link rel="stylesheet" href="./data/profit-analysis.css?v=profit-analysis-1">
+<link rel="stylesheet" href="./data/profit-analysis.css?v=profit-analysis-2">
 <style id="real-data-empty-style">
 .real-data-empty .data-empty-shell{display:block!important;margin-top:16px;}
 .real-data-empty .data-empty-shell .card-title{color:#475569;}
@@ -1255,14 +1255,14 @@ body {
     <div class="profit-method-head">
       <div>
         <div class="profit-method-title" id="profit-method-title">利润核算路径</div>
-        <div class="profit-method-copy">每一笔订单都保留商家优惠、平台补贴和买家到手价，先算商家真实成交，再分层核算毛利与净利。缺成本、重量或原始折扣字段时停止下结论。</div>
+        <div class="profit-method-copy">每一笔订单都保留商家优惠、平台补贴和买家到手价，先算商家真实成交，再分层核算毛利与净利。零成交额订单不参与利润计算；缺成本或原始折扣字段时停止下结论。</div>
       </div>
       <div class="profit-formula">SKU Subtotal Before Discount − SKU Seller Discount = 商家成交额</div>
     </div>
     <div class="profit-flow">
       <div class="profit-flow-step"><span class="profit-flow-number">1</span><div class="profit-flow-label">还原成交链路</div><div class="profit-flow-detail">标价 − 商家优惠 = 商家成交；再减平台补贴得到买家商品实付。</div></div>
       <div class="profit-flow-step"><span class="profit-flow-number">2</span><div class="profit-flow-label">计算毛利</div><div class="profit-flow-detail">商家成交额 − SKU 成本；只回答商品本身赚不赚钱。</div></div>
-      <div class="profit-flow-step"><span class="profit-flow-number">3</span><div class="profit-flow-label">计算净利</div><div class="profit-flow-detail">毛利再扣平台费、联盟佣金、广告、净运费与人员综合成本。</div></div>
+      <div class="profit-flow-step"><span class="profit-flow-number">3</span><div class="profit-flow-label">计算净利</div><div class="profit-flow-detail">毛利再扣平台费、联盟佣金、广告、人员成本；每个有效订单固定运费 ฿5。</div></div>
       <div class="profit-flow-step"><span class="profit-flow-number">4</span><div class="profit-flow-label">识别价格风险</div><div class="profit-flow-detail">检测亏损、低利润、折扣等式异常、活动价偏差和缺失数据。</div></div>
     </div>
   </section>
@@ -2183,11 +2183,11 @@ body {
 
       <div class="upload-module">
         <div class="upload-module-head">💰 价格利润核算表（定价基准）</div>
-        <div class="upload-module-desc">同时选择「SKU 成本映射表」和「TikTok泰国产品价格&利润核算表」：成本映射优先，活动价 / 费率 / 运费阶梯由核算表提供。驱动：商家成交额、毛利、净利、保本价与风险预警。</div>
+        <div class="upload-module-desc">同时选择「SKU 成本映射表」和「TikTok泰国产品价格&利润核算表」：成本映射优先，活动价与费率由核算表提供；重量和运费阶梯不参与核算，运费统一按每个有效订单 ฿5。驱动：商家成交额、毛利、净利、保本价与风险预警。</div>
         <div class="upload-zone small" onclick="document.getElementById('pricing-file-input').click()">
           <div class="upload-zone-icon">📁</div>
           <div class="upload-zone-title">选择价格利润核算表</div>
-          <div class="upload-zone-desc">可多选：SKU 成本映射表 + 产品定价利润明细 / 费率参数表 / 运费阶梯表</div>
+          <div class="upload-zone-desc">可多选：SKU 成本映射表 + 产品定价利润明细 / 费率参数表</div>
         </div>
         <input id="pricing-file-input" type="file" accept=".xlsx,.xls,.csv" multiple style="display:none;">
         <div class="upload-module-foot">
@@ -2463,8 +2463,8 @@ body {
 <script src="./data/real-store-dashboard.js?v=ops-ext-14"></script>
 <script src="./data/video-range.js?v=video-range-5"></script>
 <script src="./data/cross-diagnosis.js?v=cross-diagnosis-3"></script>
-<script src="./data/profit-analysis-core.js?v=profit-analysis-2"></script>
-<script src="./data/ops-v33.js?v=gmvmax-native-26"></script>
+<script src="./data/profit-analysis-core.js?v=profit-analysis-3"></script>
+<script src="./data/ops-v33.js?v=gmvmax-native-27"></script>
 <script src="./data/weekly-report-core.js?v=weekly-report-1"></script>
 <script src="./data/weekly-report.js?v=weekly-report-3"></script>
 <script src="./data/ops-recommendations.js?v=ops-recommendations-1"></script>

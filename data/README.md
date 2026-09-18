@@ -2,7 +2,7 @@
 
 网站保留 `data/real-store-data.js` 中的真实店铺名称、商品名称和商品 ID 目录。经营指标、日期快照和趋势数据按公开快照发布；价格利润页另读取经过精简和脱敏的订单、成本与定价快照。浏览器本地重新导入的数据仍优先于公开快照。
 
-目录来源于 5 个 TikTok Shop 店铺：yaya112、yaya thailand tth、PETTOS、Miniyaya、INSPIRE PURIFY。`cloud-orders.json` 只保留价格利润核算所需字段，订单号会改写为 `PUB-xxxxxx`，不发布原订单号和达人账号；`cloud-pricing.json` 保留成本、活动价、建议零售价、费率和运费阶梯，供浏览器现场重算。
+目录来源于 5 个 TikTok Shop 店铺：yaya112、yaya thailand tth、PETTOS、Miniyaya、INSPIRE PURIFY。`cloud-orders.json` 只保留价格利润核算所需字段，订单号会改写为 `PUB-xxxxxx`，不发布原订单号和达人账号；`cloud-pricing.json` 保留成本、活动价、建议零售价和费率，历史运费阶梯仅作为源数据存档。当前利润口径不读取重量，按每个商家成交额大于 0 的有效订单固定扣除 5฿ 运费。
 
 运营填报请使用同目录的 `tiktok-ai-operations-center-wps-kdocs-template.xlsx`，不要直接让运营编辑 JSON。该模板适合上传到 WPS/Kdocs，黄色区域是填报区，蓝色区域是公式或网站使用字段；网站“数据接入”页也提供直接下载入口。
 
