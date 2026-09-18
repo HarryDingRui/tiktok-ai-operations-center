@@ -675,7 +675,7 @@ body {
 .gmvmax-view-section{margin-top:14px;padding:14px 16px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}.gmvmax-view-section:first-child{margin-top:0}.gmvmax-view-section-title{margin-bottom:10px;color:#0f172a;font-size:15px;font-weight:800}.gmvmax-view-section-title small{margin-left:8px;color:#64748b;font-size:11px;font-weight:400}.gmvmax-view-section .gmvmax-product-kpis{margin-bottom:0}.gmvmax-view-section .gmvmax-product-structure{margin-bottom:0}.gmvmax-view-section .gmvmax-product-findings{background:#fff}.gmvmax-view-section .gmvmax-product-empty{background:#fff}.gmvmax-product-table-title{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.gmvmax-product-table-note{color:#64748b;font-size:11px;font-weight:400}
 </style>
 <script src="./vendor/xlsx.mini.min.js"></script>
-<link rel="stylesheet" href="./data/feishu-integration.css?v=feishu-integration-1">
+<link rel="stylesheet" href="./data/feishu-integration.css?v=feishu-integration-2">
 <style id="real-data-empty-style">
 .real-data-empty .data-empty-shell{display:block!important;margin-top:16px;}
 .real-data-empty .data-empty-shell .card-title{color:#475569;}
@@ -709,6 +709,7 @@ body {
   <div class="nav-item" onclick="showPage('knowledge', this)"><span class="nav-icon">📚</span> <span>运营知识库</span></div>
   <div class="nav-item" onclick="showPage('agents', this)"><span class="nav-icon">🤖</span> <span>Agent 调度中心</span><span class="nav-badge" hidden>0</span></div>
   <div class="nav-item" onclick="showPage('data', this)"><span class="nav-icon">⚙️</span> <span>数据接入</span></div>
+  <div class="nav-item" onclick="showPage('feishu', this)"><span class="nav-icon">🧩</span> <span>飞书智能运营</span></div>
 </div>
 
 <!-- 移动端底部导航 -->
@@ -2292,7 +2293,14 @@ body {
     </div>
     <div style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;color:#475569;"><strong>当前阶段：</strong>人工数据接入 + AI Agent 执行 &nbsp;|&nbsp; T+1/T+3/T+7 是验证节点，不是预填结论。没有对应日期的真实数据时，状态必须保持"待验证"。</div>
   </div>
+</div>
 
+<!-- ========== 10. 飞书智能运营 ========== -->
+<div id="page-feishu" class="page">
+  <div class="page-header">
+    <div class="page-title">🧩 飞书智能运营</div>
+    <div class="page-subtitle">公司内部自建应用 · 豆包只读分析 · 飞书人工审批 · 操作全程留痕</div>
+  </div>
   <section class="card feishu-integration-card" id="feishu-ops-integration" aria-labelledby="feishu-integration-heading">
     <div class="feishu-integration-head">
       <div class="feishu-integration-title">
@@ -2438,7 +2446,7 @@ body {
 <script src="./data/weekly-report.js?v=weekly-report-3"></script>
 <script src="./data/ops-recommendations.js?v=ops-recommendations-1"></script>
 <script src="./data/file-categorization.js?v=auto-categorization-2"></script>
-<script src="./data/feishu-integration.js?v=feishu-integration-1"></script>
+<script src="./data/feishu-integration.js?v=feishu-integration-2"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'alert', 'bd', 'ads', 'videos', 'self-videos', 'profit', 'validation', 'knowledge', 'agents', 'data']);
 const DEMO_PAGE_NOTICES = {};
@@ -2509,7 +2517,7 @@ function showPage(pageId, el) {
   if (el && el.classList.contains('nav-item')) {
     el.classList.add('active');
   } else {
-    const navMap = { 'overview': 0, 'alert': 1, 'bd': 2, 'ads': 3, 'videos': 4, 'self-videos': 5, 'profit': 6, 'validation': 7, 'knowledge': 8, 'agents': 9, 'data': 10 };
+    const navMap = { 'overview': 0, 'alert': 1, 'bd': 2, 'ads': 3, 'videos': 4, 'self-videos': 5, 'profit': 6, 'validation': 7, 'knowledge': 8, 'agents': 9, 'data': 10, 'feishu': 11 };
     const sidebarItems = document.querySelectorAll('.sidebar .nav-item');
     if (sidebarItems[navMap[pageId]]) sidebarItems[navMap[pageId]].classList.add('active');
   }
