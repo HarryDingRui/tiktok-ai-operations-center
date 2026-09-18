@@ -31,6 +31,7 @@
   } = bridge;
   const periodTools = window.OPS_PERIOD_COMPARISON;
   const videoTools = window.OPS_VIDEO_RANGE;
+  const crossDiagnosisTools = window.OPS_CROSS_DIAGNOSIS;
 
   /* ================= 可配置阈值（看板上可改，存本机） ================= */
   const THRESHOLDS_KEY = "tiktok-v33-thresholds";
@@ -1523,69 +1524,42 @@
     return { medExposure, medCvr, quad, concentrated, hasOrders: scopedRows("affOrders").length > 0 };
   }
 
-  /* ================= 交叉诊断引擎（商品ID 主轴 · 全模块取证） ================= */
+  /* ================= 交叉诊断适配层（商品ID 主轴 · 全模块取证） ================= */
+  function productRowsForDiagnosis(productId) {
+    const data = bridge.getData?.();
+    const storeFilter = document.getElementById("store-filter")?.value || "all";
+    const bounds = selectedScopeBounds();
+    const rows = [];
+    (data?.stores || []).forEach((store) => {
+      if (storeFilter !== "all" && store.name !== storeFilter) return;
+      (store.snapshots || []).forEach((snapshot) => {
+        const date = snapshot.reportDate;
+        if (!isDateKey(date) || (bounds?.start && date < bounds.start) || (bounds?.end && date > bounds.end)) return;
+        (snapshot.products || []).forEach((product) => {
+          if (productId && String(product.id || "") !== String(productId)) return;
+          rows.push({ ...product, productId: product.id, date, store: store.name, name: product.name });
+        });
+      });
+    });
+    return rows;
+  }
+
   function crossDiagnose(productId) {
-    const latest = latestAdsDate();
-    const evidence = [];
-    // ① 商品侧（product_list 趋势）
-    const trend = collectProductTrendSafe(productId);
-    if (trend && trend.points.length >= 2) {
-      const a = trend.points[trend.points.length - 2], b = trend.points[trend.points.length - 1];
-      const pct = (x, y) => (x ? `${(((y - x) / x) * 100).toFixed(0)}%` : "—");
-      evidence.push({
-        module: "商品", ok: true,
-        text: `${b.date} vs ${a.date}：曝光 ${pct(a.exposure, b.exposure)}（${formatCompact(a.exposure)}→${formatCompact(b.exposure)}），GMV ${pct(a.gmv, b.gmv)}，CTR ${a.exposure ? (a.clicks / a.exposure * 100).toFixed(2) : "?"}%→${b.exposure ? (b.clicks / b.exposure * 100).toFixed(2) : "?"}%`,
-      });
-    } else {
-      evidence.push({ module: "商品", ok: false, text: "商品快照不足 2 天，无法计算趋势" });
-    }
-    // ② 广告侧
-    const scopedAdRows = scopedRows("adCreatives");
-    const adRows = scopedAdRows.filter((r) => r.productId === productId);
-    if (adRows.length) {
-      const latestRows = adRows.filter((r) => r.date === latest);
-      const spend = latestRows.reduce((s, r) => s + r.spend, 0);
-      const revenue = latestRows.reduce((s, r) => s + r.revenue, 0);
-      const burn = latestRows.filter((r) => r.spend > 0 && r.orders === 0);
-      const burnSpend = burn.reduce((s, r) => s + r.spend, 0);
-      const videoRows = latestRows.filter((r) => r.creativeType === "Video");
-      evidence.push({
-        module: "广告", ok: true,
-        text: `${latest}：${latestRows.length} 条素材在跑（Video ${videoRows.length}），消耗 ${fmtUsd(spend)}，ROI ${spend > 0 ? (revenue / spend).toFixed(1) : "—"}，0单烧钱 ${fmtUsd(burnSpend)}（${spend > 0 ? Math.round(burnSpend / spend * 100) : 0}%）`,
-      });
-    } else {
-      evidence.push({ module: "广告", ok: false, text: scopedAdRows.length ? "该商品近期无广告消耗（广告断供？）" : "广告模块未导入，无法验证" });
-    }
-    // ③ 视频侧
-    const scopedAffVideos = scopedRows("affVideos");
-    const vRows = scopedAffVideos.filter((r) => r.productId === productId);
-    if (vRows.length) {
-      const vLatest = latestVideoDate();
-      const dayRows = vRows.filter((r) => r.date === vLatest);
-      const selling = dayRows.filter((r) => (r.orders || 0) > 0);
-      evidence.push({
-        module: "视频", ok: true,
-        text: `${vLatest}：${dayRows.length} 条联盟视频在档，${selling.length} 条出单，视频GMV ${fmtThb(selling.reduce((s, r) => s + (r.gmv || 0), 0))}${selling.length ? "" : "（出单断供）"}`,
-      });
-    } else {
-      evidence.push({ module: "视频", ok: false, text: scopedAffVideos.length ? "该商品近期无联盟视频数据" : "视频模块未导入，无法验证" });
-    }
-    // ④ 达人侧（联盟订单推导该商品的动销达人）
-    const scopedAffOrders = scopedRows("affOrders");
-    const oRows = scopedAffOrders.filter((r) => r.productId === productId && (r.qty || 0) > 0);
-    if (oRows.length) {
-      const sellers = new Set(oRows.map((r) => r.creator).filter(Boolean));
-      const dates = [...new Set(oRows.map((r) => r.date).filter(isDateKey))].sort();
-      const lastD = dates.pop();
-      const todaySellers = new Set(oRows.filter((r) => r.date === lastD).map((r) => r.creator).filter(Boolean));
-      evidence.push({
-        module: "达人", ok: true,
-        text: `${lastD}：${todaySellers.size} 位达人在带（累计 ${sellers.size} 位）${todaySellers.size <= 2 ? "，⚠️ 集中度高" : ""}`,
-      });
-    } else {
-      evidence.push({ module: "达人", ok: false, text: scopedAffOrders.length ? "该商品近期无达人出单" : "联盟订单未导入，无法验证" });
-    }
-    return evidence;
+    if (!crossDiagnosisTools?.buildCrossDiagnosis) return null;
+    return crossDiagnosisTools.buildCrossDiagnosis({
+      productId,
+      store: document.getElementById("store-filter")?.value || "all",
+      bounds: selectedScopeBounds(),
+      productRows: productRowsForDiagnosis(productId),
+      adRows: scopedRows("adCreatives"),
+      creatorRows: scopedRows("affOrders"),
+      videoRows: scopedRows("affVideos"),
+      orderRows: scopedRows("orders"),
+    });
+  }
+
+  function crossDiagnosisCandidates() {
+    return [...new Set(productRowsForDiagnosis().map((row) => String(row.productId || "")).filter(Boolean))];
   }
   function collectProductTrendSafe(productId) {
     try {
@@ -2131,16 +2105,71 @@
   function renderCrossDiagnosis(productId) {
     const panel = document.getElementById("cross-diagnosis-panel");
     if (!panel) return;
-    const ev = crossDiagnose(productId);
+    const report = crossDiagnose(productId);
+    if (!report) {
+      panel.innerHTML = `<div class="card" style="border-left:4px solid #f59e0b;margin-top:12px;">交叉诊断模块未加载，请刷新页面后重试。</div>`;
+      panel.style.display = "";
+      return;
+    }
+    const moduleLabels = Object.fromEntries(report.modules.map((module) => [module.key, module.label]));
+    const statusMeta = {
+      problem: { label: "发现异常", cls: "tag-red" },
+      normal: { label: "已排除异常", cls: "tag-green" },
+      pending: { label: "待补充", cls: "tag-yellow" },
+    };
+    const displayValue = (value, formatter = formatCompact) => value == null ? "待补充" : formatter(value);
+    const formatRate = (value) => value == null ? "待补充" : `${(value * 100).toFixed(2)}%`;
+    const renderModule = (module) => {
+      const meta = statusMeta[module.status] || statusMeta.pending;
+      const coverage = module.coverage.start && module.coverage.end ? `${module.coverage.start} → ${module.coverage.end}` : "暂无完整日期";
+      const facts = module.facts || {};
+      let factsText = "";
+      if (module.key === "ads") factsText = `消耗 ${displayValue(facts.start?.spend, fmtUsd)} → ${displayValue(facts.end?.spend, fmtUsd)} · ROI ${displayValue(facts.start?.roi, (v) => v.toFixed(2))} → ${displayValue(facts.end?.roi, (v) => v.toFixed(2))}`;
+      if (module.key === "creators") factsText = `达人 ${displayValue(facts.startCount)} → ${displayValue(facts.endCount)}${facts.lostCreators?.length ? ` · 停带 ${escapeHtml(facts.lostCreators.slice(0, 3).join("、"))}` : ""}`;
+      if (module.key === "videos") factsText = `视频 ${displayValue(facts.start?.videoCount)} → ${displayValue(facts.end?.videoCount)} · 视频 GMV ${displayValue(facts.start?.gmv, fmtThb)} → ${displayValue(facts.end?.gmv, fmtThb)}`;
+      if (module.key === "product") factsText = `价格 ${displayValue(facts.start?.price)} → ${displayValue(facts.end?.price)} · 库存 ${displayValue(facts.start?.stock)} → ${displayValue(facts.end?.stock)}`;
+      if (module.key === "orders") factsText = `订单 ${displayValue(facts.start?.orderCount)} → ${displayValue(facts.end?.orderCount)} · 退款率 ${formatRate(facts.start?.refundRate)} → ${formatRate(facts.end?.refundRate)}`;
+      return `<div class="real-ranking-card" style="border-top-color:${module.status === "problem" ? "#ef4444" : module.status === "normal" ? "#10b981" : "#f59e0b"};">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;"><strong>${module.label}</strong><span class="tag ${meta.cls}">${meta.label}</span></div>
+        <div style="font-size:11px;color:#64748b;margin-top:6px;">覆盖 ${coverage} · ${module.coverage.count || 0} 条记录</div>
+        <div style="font-size:12px;color:#334155;margin-top:8px;">${factsText || "暂无可展示指标"}</div>
+        <div style="font-size:12px;color:#475569;margin-top:8px;">${module.evidence.map((item) => escapeHtml(item)).join("；")}</div>
+        ${module.issues.length ? `<div style="font-size:12px;color:#b91c1c;margin-top:8px;">${module.issues.map((issue) => escapeHtml(issue.label)).join("、")}</div>` : ""}
+      </div>`;
+    };
+    const primary = report.conclusion.primary
+      ? `${moduleLabels[report.conclusion.primary.module]}：${report.conclusion.primary.text}`
+      : "当前没有足够证据确认主要异常原因";
+    const secondary = report.conclusion.secondary.length
+      ? report.conclusion.secondary.map((item) => `${moduleLabels[item.module]}：${item.text}`).join("；")
+      : "无";
+    const excluded = report.conclusion.excluded.length
+      ? report.conclusion.excluded.map((item) => moduleLabels[item.module]).join("、")
+      : "无（数据不足的模块不能排除）";
+    const pending = report.conclusion.pending.length
+      ? report.conclusion.pending.map((item) => moduleLabels[item.module]).join("、")
+      : "无";
     panel.innerHTML = `<div class="card" style="border-left:4px solid #8b5cf6;margin-top:12px;">
-      <div class="card-title">🔗 交叉诊断 · 商品 ${escapeHtml(productId)} <span>全模块自动取证 · 相关性≠因果</span></div>
-      <div class="lb-list">${ev.map((e) => `<div class="lb-row">
-        <span class="tag ${e.ok ? "tag-green" : "tag-gray"}" style="min-width:44px;text-align:center;">${e.module}</span>
-        <span class="lb-sub" style="flex:1;">${escapeHtml(e.text)}</span>
-      </div>`).join("")}</div>
-      <div style="font-size:12px;color:#64748b;margin-top:8px;">以上是各模块证据陈列，帮你收敛排查范围；结论需人工确认，系统不把相关性当因果。</div>
+      <div class="card-title">🔗 交叉诊断 · 商品 ${escapeHtml(productId)} <span>商品 ID 主轴 · 所选区间取证 · 相关性≠因果</span></div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:10px;">${escapeHtml(report.productName || "商品名称待补充")} · ${escapeHtml(report.period.start || "未知")} 至 ${escapeHtml(report.period.end || "未知")}</div>
+      <div style="padding:10px 12px;background:#f8fafc;border-radius:8px;font-size:13px;line-height:1.8;">
+        <div><strong>主要原因：</strong>${escapeHtml(primary)}</div>
+        <div><strong>次要原因：</strong>${escapeHtml(secondary)}</div>
+        <div><strong>已排除：</strong>${escapeHtml(excluded)}</div>
+        <div><strong>待补充：</strong>${escapeHtml(pending)}</div>
+      </div>
+      <div class="real-ranking-grid" style="grid-template-columns:repeat(2,1fr);margin-top:12px;">${report.modules.map(renderModule).join("")}</div>
+      <div style="margin-top:10px;font-size:12px;color:#334155;"><strong>建议动作：</strong>${report.conclusion.actions.length ? report.conclusion.actions.map((action) => escapeHtml(action)).join("；") : "当前没有证据支持具体动作，先补齐缺失模块数据。"}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:8px;">规则：只使用当前店铺和页面所选日期；缺少字段显示“待补充”，不会用 0 或样例数据替代。</div>
     </div>`;
     panel.style.display = "";
+  }
+
+  function openCrossDiagnosis(productId) {
+    if (typeof window.showPage === "function") window.showPage("alert", null);
+    renderCrossDiagnosis(productId);
+    const panel = document.getElementById("cross-diagnosis-panel");
+    if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   /* ================= 商品趋势面板保留（复用旧逻辑轻量版） ================= */
@@ -2989,6 +3018,9 @@
     getData: () => v33,
     getRows: (datasetKey) => scopedRows(datasetKey),
     getRowsForBounds: rowsForBounds,
+    getCrossDiagnosis: crossDiagnose,
+    getCrossDiagnosisCandidates: crossDiagnosisCandidates,
+    openCrossDiagnosis,
     getScope: () => ({
       store: document.getElementById("store-filter")?.value || "all",
       bounds: selectedScopeBounds(),

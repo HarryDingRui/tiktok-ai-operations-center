@@ -344,13 +344,27 @@
     writeJson(KNOWLEDGE_KEY, records);
     return verified.length;
   }
+  function crossDiagnosisTaskOutput() {
+    const api = window.OPS_V33;
+    const candidates = api?.getCrossDiagnosisCandidates?.() || [];
+    if (!candidates.length || !api?.getCrossDiagnosis) {
+      return "当前筛选范围没有可用于交叉诊断的商品快照；请先导入带日期的商品经营数据。";
+    }
+    const reports = candidates.map((productId) => api.getCrossDiagnosis(productId)).filter(Boolean);
+    const problems = reports.flatMap((report) => report.modules.filter((module) => module.status === "problem"));
+    const pending = reports.flatMap((report) => report.modules.filter((module) => module.status === "pending"));
+    const counts = new Map();
+    problems.forEach((module) => counts.set(module.label, (counts.get(module.label) || 0) + 1));
+    const reasons = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([label, count]) => `${label}${count}个商品`).join("、") || "暂无模块异常";
+    return `已按商品ID扫描 ${reports.length} 个商品：发现 ${problems.length} 个模块异常，主要集中在 ${reasons}；${pending.length ? `另有 ${pending.length} 个模块待补充，不能排除。` : "五模块数据均有可用证据。"} 结果已按当前店铺和所选日期范围生成，可到「商品数据预警」查看具体商品的主要原因、次要原因和建议动作。`;
+  }
   function taskOutput(type) {
     const actions = getActions().map(evaluateAction);
     const knowledge = getKnowledge();
     const recommendations = currentRecommendations();
     if (type === "track-actions") return `扫描 ${actions.length} 条动作：有效 ${actions.filter((item) => item.verdict === "有效").length}，无效 ${actions.filter((item) => item.verdict === "无效").length}，待验证 ${actions.filter((item) => item.verdict === "待验证").length}。`;
     if (type === "knowledge-curation") { const created = curateVerifiedActions(); return `发现 ${actions.filter((item) => item.verdict === "有效").length} 条有效动作，新生成 ${created} 条知识待审核；当前知识记录 ${getKnowledge().length} 条。`; }
-    if (type === "diagnose") { const datasets = ["creatorDaily", "affOrders", "samples", "adCreatives", "affVideos", "selfVideos", "orders"].map((key) => `${key}:${getRows(key).length}`).join("，"); return `当前筛选范围数据：${datasets}。${recommendations.summary} 结论仅用于定位缺口，不替代人工决策。`; }
+    if (type === "diagnose") { return crossDiagnosisTaskOutput(); }
     const summaries = latestStoreSummary();
     if (!summaries.length) return `暂无有效日期快照，日报任务未生成经营结论。${recommendations.summary}`;
     return `已读取 ${summaries.length} 个店铺的最新快照：${summaries.map((item) => `${item.store} ${item.date} GMV ${item.gmv == null ? "待导入" : item.gmv}`).join("；")}。${recommendations.summary}`;
@@ -363,7 +377,7 @@
   function renderAgents() {
     const history = tasks();
     const running = history.filter((task) => task.status === "running").length;
-    const definitions = [{ type: "daily-report", label: "日报汇总 Agent", icon: "📊", desc: "读取当前店铺快照，生成可追溯的日报摘要。" }, { type: "diagnose", label: "经营诊断 Agent", icon: "🔍", desc: "检查各模块数据覆盖，明确缺口，不对缺失字段做推断。" }, { type: "track-actions", label: "效果追踪 Agent", icon: "📈", desc: "按动作记录和 T+1/T+3/T+7 快照验证效果。" }, { type: "knowledge-curation", label: "知识沉淀 Agent", icon: "📚", desc: "把已验证有效动作整理成待审核知识记录。" }];
+    const definitions = [{ type: "daily-report", label: "日报汇总 Agent", icon: "📊", desc: "读取当前店铺快照，生成可追溯的日报摘要。" }, { type: "diagnose", label: "经营诊断 Agent", icon: "🔍", desc: "按商品 ID 串联广告、达人、视频、商品、订单五模块取证。" }, { type: "track-actions", label: "效果追踪 Agent", icon: "📈", desc: "按动作记录和 T+1/T+3/T+7 快照验证效果。" }, { type: "knowledge-curation", label: "知识沉淀 Agent", icon: "📚", desc: "把已验证有效动作整理成待审核知识记录。" }];
     replacePage("agents", `${notice("当前 Agent 在 GitHub Pages 上运行本地规则引擎：会真实读取本机导入数据并保存任务历史，但不会冒充已连接外部 LLM、WPS/Kdocs 或 Seller Center。") }<div class="stats-row"><div class="stat-card"><div class="stat-label">运行中 Agent</div><div class="stat-value" style="color:#10b981;">${running}</div></div><div class="stat-card"><div class="stat-label">待执行队列</div><div class="stat-value">0</div></div><div class="stat-card"><div class="stat-label">已完成任务</div><div class="stat-value">${history.filter((task) => task.status === "completed").length}</div></div><div class="stat-card"><div class="stat-label">执行模式</div><div class="stat-value" style="font-size:18px;">本地规则</div></div></div><div class="agent-grid" style="margin-bottom:16px;">${definitions.map((definition) => `<div class="agent-card"><div class="agent-card-status ${running ? "running" : "idle"}"></div><div class="agent-card-icon">${definition.icon}</div><div class="agent-card-body"><div class="agent-card-title">${definition.label}</div><div class="agent-card-desc">${definition.desc}</div><button class="btn btn-primary cp-run-agent" data-agent-type="${definition.type}" data-agent-label="${definition.label}" style="margin-top:10px;">运行</button></div></div>`).join("")}</div>${renderRecommendations()}<div class="card"><div class="card-title">📈 Agent 执行历史 <span>最近 ${Math.min(history.length, 20)} 条</span></div>${history.length ? `<div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>时间</th><th>Agent</th><th>任务</th><th>状态</th><th>输出</th></tr></thead><tbody>${history.slice(0, 20).map((task) => `<tr><td>${esc(new Date(task.createdAt).toLocaleString())}</td><td>${esc(task.agent)}</td><td>${esc(task.type)}</td><td><span class="tag ${task.status === "completed" ? "tag-green" : "tag-yellow"}">${esc(task.status)}</span></td><td>${esc(task.output || "")}</td></tr>`).join("")}</tbody></table></div>` : `<div class="ops-empty">暂无任务。运行一个 Agent 后，这里会留下真实执行记录。</div>`}</div>`);
   }
 

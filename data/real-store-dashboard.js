@@ -1282,7 +1282,7 @@
         value = orderDelta == null ? "成交规模待补" : orderDelta < 0 ? `少 ${formatNumber(Math.abs(orderDelta), 0)} 单` : orderDelta > 0 ? `多 ${formatNumber(orderDelta, 0)} 单` : "订单持平";
       }
       const productId = product.id || "待导入";
-      return `<div class="real-ranking-item" title="${escapeHtml(product.store)} · 商品 ID ${escapeHtml(productId)} · ${escapeHtml(product.name)}">
+      return `<div class="real-ranking-item" title="点击查看五模块交叉诊断：${escapeHtml(product.store)} · 商品 ID ${escapeHtml(productId)} · ${escapeHtml(product.name)}" data-cross-product-id="${escapeHtml(productId)}" role="button" tabindex="0" style="cursor:pointer;">
         <span class="real-ranking-rank">${index + 1}</span>
         <span class="real-ranking-details">
           <span class="real-ranking-name">${escapeHtml(product.name)}</span>
@@ -1313,6 +1313,25 @@
        renderRankingCard({ mode: "down", className: "down", icon: "📉", title: "GMV 减少 Top5", subtitle: "所选区间末日对比首日" }),
        renderRankingCard({ mode: "cvrDown", className: "cvr", icon: "⚠️", title: "成交转化预警 Top5", subtitle: "按成交规模与点击规模判断" }),
     ].join("");
+    if (grid.dataset.crossDiagnosisBound !== "1") {
+      const openDiagnosis = (event) => {
+        const item = event.target.closest("[data-cross-product-id]");
+        if (!item || !grid.contains(item)) return;
+        const productId = item.getAttribute("data-cross-product-id");
+        if (!productId) return;
+        if (window.OPS_V33?.openCrossDiagnosis) {
+          window.OPS_V33.openCrossDiagnosis(productId);
+        }
+      };
+      grid.addEventListener("click", openDiagnosis);
+      grid.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openDiagnosis(event);
+        }
+      });
+      grid.dataset.crossDiagnosisBound = "1";
+    }
   }
 
   function renderDataSummary() {
