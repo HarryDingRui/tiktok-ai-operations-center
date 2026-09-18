@@ -2329,9 +2329,9 @@
     }));
     return { items, emptyHtml: "出单视频均已被广告利用。👍" };
   }
-  /* ================= 价格利润引擎（v3.5 · 成交价扫码 + 亏损预警） =================
+  /* ================= 价格利润引擎（v3.6 · 成交价扫码 + 亏损预警） =================
    * 数据流：价格利润核算表（定价/费率，整表覆盖）+ 每日订单明细（OrderSKUList，按 订单|SKU 去重合并）
-   * 判定链：实际成交价 → 平台费 + 每个有效订单固定运费 5฿ → 广告分摊 → 商品成本 → 人员成本 → 净利润
+   * 判定链：实际成交价 → 平台总费用 + 每个有效订单固定运费 5฿ → 广告分摊 → 商品成本 = 毛利 → 人员成本 = 净利润
    * 未匹配 SKU 不编造：列入清单按成交额排序，手动补一次成本永久记住（localStorage）
    * ================================================================== */
   const V33_PRICING_KEY = "ops-v33-pricing";
@@ -2826,7 +2826,6 @@
       if (item.matched) {
         const itemCost = item.rec.cost * item.qty;
         sku.productCost += itemCost;
-        if (item.exactRevenue) sku.grossProfit += item.sellerRevenue - itemCost;
         if (item.exactRevenue && order.shippingKnown && item.sellerRevenue != null) {
           const shippingShare = profitTools.allocateOrderShipping({
             shippingCost: order.ship,
@@ -2842,10 +2841,11 @@
             shippingCost: shippingShare,
             staffCost: item.sellerRevenue * R.staff,
           });
-          if (itemProfit.netProfit != null) {
-            sku.netProfit += itemProfit.netProfit;
+          if (itemProfit.grossProfit != null) {
+            sku.grossProfit += itemProfit.grossProfit;
             sku.shippingCost += shippingShare;
           }
+          if (itemProfit.netProfit != null) sku.netProfit += itemProfit.netProfit;
         }
       }
     }));
@@ -2859,7 +2859,7 @@
       const shippingUnit = sku.qty > 0 && sku.shippingKnown ? sku.shippingCost / sku.qty : null;
       const cost = sku.hasCost && sku.rec?.cost != null ? sku.rec.cost : null;
       const breakeven = profitTools.calculateBreakevenPrice({ unitCost: cost, shippingUnit, variableRate: R.total });
-      const grossProfit = sku.exactRevenue && sku.hasCost ? sku.grossProfit : null;
+      const grossProfit = sku.exactRevenue && sku.hasCost && sku.shippingKnown ? sku.grossProfit : null;
       const netProfit = sku.exactRevenue && sku.hasCost && sku.shippingKnown ? sku.netProfit : null;
       const grossMargin = grossProfit == null || sku.sellerRevenue <= 0 ? null : grossProfit / sku.sellerRevenue;
       const netMargin = netProfit == null || sku.sellerRevenue <= 0 ? null : netProfit / sku.sellerRevenue;
@@ -2956,8 +2956,8 @@
       if (kpiEl) {
         kpiEl.innerHTML =
           kpiCard("商家成交额", "待导入", "折扣前小计 − 商家优惠", "") +
-          kpiCard("毛利 / 毛利率", "待导入", "商家成交额 − SKU 成本", "") +
-          kpiCard("净利 / 净利率", "待导入", "毛利 − 全部经营费用", "") +
+          kpiCard("毛利 / 毛利率", "待导入", "实际收入 − SKU 成本", "") +
+          kpiCard("净利 / 净利率", "待导入", "毛利 − 人员综合成本", "") +
           kpiCard("亏损风险", "待判定", "缺字段不按 0 处理", "");
       }
       if (summaryEl) summaryEl.innerHTML = `<div class="profit-pending-note"><strong>${message}</strong><br>${detail}</div>`;
@@ -2992,10 +2992,13 @@
     const grossCost = grossOrders.reduce((sum, order) => sum + order.productCost, 0);
     const netRevenue = netOrders.reduce((sum, order) => sum + order.sellerRevenue, 0);
     const netProfit = netOrders.reduce((sum, order) => sum + order.netProfit, 0);
-    const fixedFees = netOrders.reduce((sum, order) => sum + order.fixedPlatformFee, 0);
-    const affiliateFees = netOrders.reduce((sum, order) => sum + order.affiliateFee, 0);
-    const adCosts = netOrders.reduce((sum, order) => sum + order.adsCost, 0);
-    const shippingCosts = netOrders.reduce((sum, order) => sum + (order.ship || 0), 0);
+    const fixedFees = grossOrders.reduce((sum, order) => sum + order.fixedPlatformFee, 0);
+    const affiliateFees = grossOrders.reduce((sum, order) => sum + order.affiliateFee, 0);
+    const platformTotalFees = fixedFees + affiliateFees;
+    const adCosts = grossOrders.reduce((sum, order) => sum + order.adsCost, 0);
+    const shippingCosts = grossOrders.reduce((sum, order) => sum + (order.ship || 0), 0);
+    const estimatedPlatformSettlement = grossOrders.reduce((sum, order) => sum + order.estimatedPlatformSettlement, 0);
+    const merchantActualIncome = grossOrders.reduce((sum, order) => sum + order.merchantActualIncome, 0);
     const staffCosts = netOrders.reduce((sum, order) => sum + order.staffCost, 0);
     const riskCounts = scan.skus.reduce((counts, sku) => {
       const level = sku.risk?.level || "pending";
@@ -3023,14 +3026,16 @@
         <section class="profit-statement">
           <div class="profit-statement-title"><span>毛利</span><span>${grossOrders.length}/${scan.orders.length} 单可判定</span></div>
           <div class="profit-statement-value ${grossProfit < 0 ? "negative" : "positive"}">${grossOrders.length ? fmtThb(grossProfit) : "待补数据"}</div>
-          <div class="profit-statement-meta">毛利率 ${profitPercent(grossMargin)} · 只判断商品成交价能否覆盖商品成本</div>
-          <div class="profit-equation"><strong>${fmtThb(grossRevenue)}</strong><span>商家成交额</span><span>−</span><strong>${fmtThb(grossCost)}</strong><span>SKU 成本</span><span>=</span><strong>${grossOrders.length ? fmtThb(grossProfit) : "待补数据"}</strong></div>
+          <div class="profit-statement-meta">毛利率 ${profitPercent(grossMargin)} · 已扣平台总费用、固定运费、广告分摊与商品成本</div>
+          <div class="profit-equation"><strong>${fmtThb(grossRevenue)}</strong><span>商家成交额</span><span>−</span><strong>${fmtThb(platformTotalFees)}</strong><span>平台总费用</span><span>−</span><strong>${fmtThb(shippingCosts)}</strong><span>固定运费</span><span>=</span><strong>${fmtThb(estimatedPlatformSettlement)}</strong><span>预估平台结算金额</span></div>
+          <div class="profit-equation"><strong>${fmtThb(estimatedPlatformSettlement)}</strong><span>预估平台结算金额</span><span>−</span><strong>${fmtThb(adCosts)}</strong><span>广告预估成本</span><span>=</span><strong>${fmtThb(merchantActualIncome)}</strong><span>商家实际收入</span></div>
+          <div class="profit-equation"><strong>${fmtThb(merchantActualIncome)}</strong><span>商家实际收入</span><span>−</span><strong>${fmtThb(grossCost)}</strong><span>商品成本</span><span>=</span><strong>${grossOrders.length ? fmtThb(grossProfit) : "待补数据"}</strong><span>毛利</span></div>
         </section>
         <section class="profit-statement">
           <div class="profit-statement-title"><span>净利</span><span>${coverageNote}</span></div>
           <div class="profit-statement-value ${netProfit < 0 ? "negative" : "positive"}">${netOrders.length ? fmtThb(netProfit) : "待补数据"}</div>
-          <div class="profit-statement-meta">净利率 ${profitPercent(netMargin)} · 完整扣除经营费用后才判断是否真正赚钱</div>
-          <div class="profit-equation"><span>平台 ${fmtThb(fixedFees)}</span><span>·</span><span>联盟 ${fmtThb(affiliateFees)}</span><span>·</span><span>广告 ${fmtThb(adCosts)}</span><span>·</span><span>固定运费 ${fmtThb(shippingCosts)}</span><span>·</span><span>人员 ${fmtThb(staffCosts)}</span></div>
+          <div class="profit-statement-meta">净利率 ${profitPercent(netMargin)} · 毛利仅再扣人员 &amp; 综合成本 6%</div>
+          <div class="profit-equation"><strong>${grossOrders.length ? fmtThb(grossProfit) : "待补数据"}</strong><span>毛利</span><span>−</span><strong>${fmtThb(staffCosts)}</strong><span>人员 &amp; 综合成本</span><span>=</span><strong>${netOrders.length ? fmtThb(netProfit) : "待补数据"}</strong><span>订单净利润</span></div>
         </section>
       </div>
       <div class="profit-risk-strip">
@@ -3054,11 +3059,11 @@
       if (lossOrders.length) {
         sections.push(`<div style="font-size:12px;color:#64748b;margin-bottom:8px;">${periodLabel} · 按净亏损额排序，仅展示完整可判定订单</div>
           <div class="desktop-table-wrap" style="max-height:320px;overflow:auto;"><table class="desktop-table">
-            <thead><tr><th>订单号</th><th>SKU</th><th>商家成交额</th><th>毛利</th><th>平台+联盟</th><th>广告</th><th>固定运费</th><th>人员</th><th>净利</th></tr></thead>
+            <thead><tr><th>订单号</th><th>SKU</th><th>商家成交额</th><th>平台总费用</th><th>固定运费</th><th>广告</th><th>商品成本</th><th>毛利</th><th>人员综合</th><th>净利</th></tr></thead>
             <tbody>${lossOrders.slice(0, 30).map((order) => `<tr>
               <td style="font-family:monospace;font-size:11px;" title="${escapeHtml(order.orderId)}">…${escapeHtml(order.orderId.slice(-10))}</td>
               <td style="max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(order.items.map((item) => item.sellerSku).join(" / "))}">${escapeHtml(order.items.map((item) => item.sellerSku).join(" / ").slice(0, 44))}</td>
-              <td>${fmtThb(order.sellerRevenue)}</td><td>${fmtThb(order.grossProfit)}</td><td>${fmtThb(order.fixedPlatformFee + order.affiliateFee)}</td><td>${fmtThb(order.adsCost)}</td><td>${fmtThb(order.ship)}</td><td>${fmtThb(order.staffCost)}</td><td style="color:#b91c1c;font-weight:800;">${fmtThb(order.netProfit)}</td>
+              <td>${fmtThb(order.sellerRevenue)}</td><td>${fmtThb(order.platformTotalFee)}</td><td>${fmtThb(order.ship)}</td><td>${fmtThb(order.adsCost)}</td><td>${fmtThb(order.productCost)}</td><td>${fmtThb(order.grossProfit)}</td><td>${fmtThb(order.staffCost)}</td><td style="color:#b91c1c;font-weight:800;">${fmtThb(order.netProfit)}</td>
             </tr>`).join("")}</tbody></table></div>`);
       }
       if (riskySkus.length) {
@@ -3119,7 +3124,8 @@
         <div style="font-size:12px;color:#475569;line-height:2;">
           <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">📐 当前判定口径 <span style="font-weight:400;color:#94a3b8;">${escapeHtml(src)}</span></div>
           <strong>商家成交额</strong> = SKU Subtotal Before Discount − SKU Seller Discount<br>
-          <strong>毛利</strong> = 商家成交额 − SKU 成本；<strong>净利</strong> = 毛利 − 平台费 − 联盟佣金 − 广告 − 固定运费 − 人员综合成本<br>
+          <strong>预估平台结算金额</strong> = 商家成交额 − 平台总费用 − 固定运费；<strong>商家实际收入</strong> = 预估平台结算金额 − 广告预估成本<br>
+          <strong>毛利</strong> = 商家实际收入 − 商品成本；<strong>订单净利润</strong> = 毛利 − 人员 &amp; 综合成本<br>
           固定费率 ${(R.fixed * 100).toFixed(2)}%（交易 ${(R.raw.transaction * 100).toFixed(2)}% + Shop佣金 ${(R.raw.shopCommission * 100).toFixed(2)}% + 增长服务 ${(R.raw.growth * 100).toFixed(2)}% + 基建 ${(R.raw.infra * 100).toFixed(2)}%${R.flags.miaosha ? " + 秒杀" : ""}${R.flags.live ? " + 直播" : ""}）<br>
           联盟佣金 ${(R.affRate * 100).toFixed(2)}% · 广告分摊 ${(R.adsShare * 100).toFixed(1)}% · 人员综合 ${(R.staff * 100).toFixed(1)}%<br>
           <strong>总变动费率 ${(R.total * 100).toFixed(2)}%</strong> + 每个有效订单固定运费 <strong>฿5</strong>；零成交额订单整单排除
@@ -3174,7 +3180,7 @@
       renderFreshnessBadges();
       bridge.renderPriorityPanel();
       const costSource = pricing.costMapFiles?.length ? `\n成本优先来源：${pricing.costMapFiles.join("、")}` : "\n未单独导入成本映射表，使用核算表成本";
-      window.alert(`✅ 价格与成本数据导入完成\n\n${notes.join("\n")}${costSource}\n\n判定口径：商家成交额 → 毛利 → 净利 → 风险分级。上传每日订单明细后自动核算。`);
+      window.alert(`✅ 价格与成本数据导入完成\n\n${notes.join("\n")}${costSource}\n\n判定口径：商家成交额 → 平台结算 → 商家实际收入 → 毛利 → 订单净利润 → 风险分级。上传每日订单明细后自动核算。`);
     } catch (error) {
       setStatus("导入失败", "tag-red");
       window.alert(`❌ 导入失败\n\n${error.message || "无法识别该文件"}`);

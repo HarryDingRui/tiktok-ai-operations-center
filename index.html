@@ -1248,7 +1248,7 @@ body {
 <div id="page-profit" class="page">
   <div class="page-header">
     <div class="page-title">💰 价格利润</div>
-    <div class="page-subtitle">商家成交额 → 毛利 → 净利 → 风险判定 · 成本核算表 + 每日订单明细双驱动</div>
+    <div class="page-subtitle">商家成交额 → 平台结算 → 商家实际收入 → 毛利 → 订单净利润 · 成本核算表 + 每日订单明细双驱动</div>
   </div>
 
   <section class="profit-method" aria-labelledby="profit-method-title">
@@ -1261,9 +1261,9 @@ body {
     </div>
     <div class="profit-flow">
       <div class="profit-flow-step"><span class="profit-flow-number">1</span><div class="profit-flow-label">还原成交链路</div><div class="profit-flow-detail">标价 − 商家优惠 = 商家成交；再减平台补贴得到买家商品实付。</div></div>
-      <div class="profit-flow-step"><span class="profit-flow-number">2</span><div class="profit-flow-label">计算毛利</div><div class="profit-flow-detail">商家成交额 − SKU 成本；只回答商品本身赚不赚钱。</div></div>
-      <div class="profit-flow-step"><span class="profit-flow-number">3</span><div class="profit-flow-label">计算净利</div><div class="profit-flow-detail">毛利再扣平台费、联盟佣金、广告、人员成本；每个有效订单固定运费 ฿5。</div></div>
-      <div class="profit-flow-step"><span class="profit-flow-number">4</span><div class="profit-flow-label">识别价格风险</div><div class="profit-flow-detail">检测亏损、低利润、折扣等式异常、活动价偏差和缺失数据。</div></div>
+      <div class="profit-flow-step"><span class="profit-flow-number">2</span><div class="profit-flow-label">预估平台结算金额</div><div class="profit-flow-detail">商家成交额 − 平台总费用 − 商家净运费；当前每个有效订单固定运费 ฿5。</div></div>
+      <div class="profit-flow-step"><span class="profit-flow-number">3</span><div class="profit-flow-label">计算毛利</div><div class="profit-flow-detail">平台结算金额 − 广告预估成本 = 商家实际收入；商家实际收入 − 商品成本 = 毛利。</div></div>
+      <div class="profit-flow-step"><span class="profit-flow-number">4</span><div class="profit-flow-label">计算订单净利润</div><div class="profit-flow-detail">毛利 − 人员 &amp; 综合成本 = 订单净利润；再识别亏损、低利润与价格异常。</div></div>
     </div>
   </section>
 
@@ -2463,8 +2463,8 @@ body {
 <script src="./data/real-store-dashboard.js?v=ops-ext-14"></script>
 <script src="./data/video-range.js?v=video-range-5"></script>
 <script src="./data/cross-diagnosis.js?v=cross-diagnosis-3"></script>
-<script src="./data/profit-analysis-core.js?v=profit-analysis-3"></script>
-<script src="./data/ops-v33.js?v=gmvmax-native-27"></script>
+<script src="./data/profit-analysis-core.js?v=profit-analysis-4"></script>
+<script src="./data/ops-v33.js?v=gmvmax-native-28"></script>
 <script src="./data/weekly-report-core.js?v=weekly-report-1"></script>
 <script src="./data/weekly-report.js?v=weekly-report-3"></script>
 <script src="./data/ops-recommendations.js?v=ops-recommendations-1"></script>

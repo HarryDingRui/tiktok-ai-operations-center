@@ -67,10 +67,25 @@ const profit = calculateProfit({
   shippingCost: 5,
   staffCost: 15.6,
 });
-assert.strictEqual(profit.grossProfit, 140);
-assert.strictEqual(profit.grossMargin, 140 / 260);
+assert.strictEqual(profit.platformTotalFee, 59.8);
+assert.ok(Math.abs(profit.estimatedPlatformSettlement - 195.2) < 1e-9);
+assert.ok(Math.abs(profit.merchantActualIncome - 169.2) < 1e-9);
+assert.ok(Math.abs(profit.grossProfit - 49.2) < 1e-9);
+assert.ok(Math.abs(profit.grossMargin - (49.2 / 260)) < 1e-9);
 assert.ok(Math.abs(profit.netProfit - 33.6) < 1e-9);
 assert.ok(Math.abs(profit.netMargin - (33.6 / 260)) < 1e-9);
+
+const missingStaffProfit = calculateProfit({
+  sellerRevenue: 260,
+  productCost: 120,
+  fixedPlatformFee: 52,
+  affiliateFee: 7.8,
+  adCost: 26,
+  shippingCost: 5,
+  staffCost: null,
+});
+assert.ok(Math.abs(missingStaffProfit.grossProfit - 49.2) < 1e-9);
+assert.strictEqual(missingStaffProfit.netProfit, null);
 
 const missingProfit = calculateProfit({ sellerRevenue: 260, productCost: null });
 assert.strictEqual(missingProfit.grossProfit, null);

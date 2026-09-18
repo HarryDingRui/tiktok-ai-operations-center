@@ -118,15 +118,43 @@
     const source = input || {};
     const sellerRevenue = numberOrNull(source.sellerRevenue);
     const productCost = numberOrNull(source.productCost);
-    const grossProfit = sellerRevenue == null || productCost == null ? null : sellerRevenue - productCost;
+    const fixedPlatformFee = numberOrNull(source.fixedPlatformFee);
+    const affiliateFee = numberOrNull(source.affiliateFee);
+    const adCost = numberOrNull(source.adCost);
+    const shippingCost = numberOrNull(source.shippingCost);
+    const staffCost = numberOrNull(source.staffCost);
+    const platformTotalFee = fixedPlatformFee == null || affiliateFee == null
+      ? null
+      : fixedPlatformFee + affiliateFee;
+    const estimatedPlatformSettlement = sellerRevenue == null || platformTotalFee == null || shippingCost == null
+      ? null
+      : sellerRevenue - platformTotalFee - shippingCost;
+    const merchantActualIncome = estimatedPlatformSettlement == null || adCost == null
+      ? null
+      : estimatedPlatformSettlement - adCost;
+    const grossProfit = merchantActualIncome == null || productCost == null
+      ? null
+      : merchantActualIncome - productCost;
     const grossMargin = grossProfit == null || sellerRevenue <= 0 ? null : grossProfit / sellerRevenue;
-    const deductionNames = ["fixedPlatformFee", "affiliateFee", "adCost", "shippingCost", "staffCost"];
-    const deductions = deductionNames.map((name) => numberOrNull(source[name]));
-    const hasNetInputs = grossProfit != null && deductions.every((value) => value != null);
-    const totalOperatingDeductions = hasNetInputs ? deductions.reduce((sum, value) => sum + value, 0) : null;
-    const netProfit = totalOperatingDeductions == null ? null : grossProfit - totalOperatingDeductions;
+    const grossOperatingDeductions = platformTotalFee == null || adCost == null || shippingCost == null
+      ? null
+      : platformTotalFee + adCost + shippingCost;
+    const totalOperatingDeductions = grossOperatingDeductions == null || staffCost == null
+      ? null
+      : grossOperatingDeductions + staffCost;
+    const netProfit = grossProfit == null || staffCost == null ? null : grossProfit - staffCost;
     const netMargin = netProfit == null || sellerRevenue <= 0 ? null : netProfit / sellerRevenue;
-    return { grossProfit, grossMargin, totalOperatingDeductions, netProfit, netMargin };
+    return {
+      platformTotalFee,
+      estimatedPlatformSettlement,
+      merchantActualIncome,
+      grossOperatingDeductions,
+      grossProfit,
+      grossMargin,
+      totalOperatingDeductions,
+      netProfit,
+      netMargin,
+    };
   }
 
   function calculateBreakevenPrice(input) {

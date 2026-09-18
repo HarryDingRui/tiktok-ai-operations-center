@@ -16,7 +16,7 @@ assert.ok(snapshot.pricingUrl, 'published snapshot must provide cloud pricing da
 assert.ok(opsSource.includes('loadCloudPricing'), 'v3.3 engine must load the published pricing fallback');
 assert.ok(opsSource.includes('if (!pricing && cloudPricing)'), 'local pricing must win over the published fallback');
 assert.ok(indexSource.includes('2026-09-profit-cloud-1'), 'page must bust the cloud manifest cache');
-assert.ok(indexSource.includes('gmvmax-native-27'), 'page must bust the profit engine cache');
+assert.ok(indexSource.includes('gmvmax-native-28'), 'page must bust the profit engine cache');
 
 const orders = JSON.parse(fs.readFileSync(path.join(root, 'data', 'cloud-orders.json'), 'utf8'));
 assert.ok(Array.isArray(orders) && orders.length >= 2000, 'cloud order snapshot must contain the imported order rows');
