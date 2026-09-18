@@ -675,6 +675,7 @@ body {
 .gmvmax-view-section{margin-top:14px;padding:14px 16px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}.gmvmax-view-section:first-child{margin-top:0}.gmvmax-view-section-title{margin-bottom:10px;color:#0f172a;font-size:15px;font-weight:800}.gmvmax-view-section-title small{margin-left:8px;color:#64748b;font-size:11px;font-weight:400}.gmvmax-view-section .gmvmax-product-kpis{margin-bottom:0}.gmvmax-view-section .gmvmax-product-structure{margin-bottom:0}.gmvmax-view-section .gmvmax-product-findings{background:#fff}.gmvmax-view-section .gmvmax-product-empty{background:#fff}.gmvmax-product-table-title{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.gmvmax-product-table-note{color:#64748b;font-size:11px;font-weight:400}
 </style>
 <script src="./vendor/xlsx.mini.min.js"></script>
+<link rel="stylesheet" href="./data/feishu-integration.css?v=feishu-integration-1">
 <style id="real-data-empty-style">
 .real-data-empty .data-empty-shell{display:block!important;margin-top:16px;}
 .real-data-empty .data-empty-shell .card-title{color:#475569;}
@@ -2291,6 +2292,72 @@ body {
     </div>
     <div style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;color:#475569;"><strong>当前阶段：</strong>人工数据接入 + AI Agent 执行 &nbsp;|&nbsp; T+1/T+3/T+7 是验证节点，不是预填结论。没有对应日期的真实数据时，状态必须保持"待验证"。</div>
   </div>
+
+  <section class="card feishu-integration-card" id="feishu-ops-integration" aria-labelledby="feishu-integration-heading">
+    <div class="feishu-integration-head">
+      <div class="feishu-integration-title">
+        <div class="feishu-integration-logo" aria-hidden="true">🤖</div>
+        <div>
+          <h2 id="feishu-integration-heading">飞书智能运营接入</h2>
+          <p>公司内部自建应用 · 真实数据交给豆包分析 · 飞书人工审批 · 结果回写审计</p>
+        </div>
+      </div>
+      <div class="feishu-status-pill" id="feishu-overall-status" data-level="unconfigured">待配置后端</div>
+    </div>
+
+    <div class="feishu-integration-grid" aria-label="集成服务状态">
+      <div class="feishu-status-card">
+        <div class="feishu-status-card-head"><span>飞书应用</span><i class="feishu-mini-state" id="feishu-app-dot"></i></div>
+        <div class="feishu-status-card-value" id="feishu-app-value">待配置</div>
+        <div class="feishu-status-card-detail" id="feishu-app-detail">App ID 与密钥仅保存在后端</div>
+      </div>
+      <div class="feishu-status-card">
+        <div class="feishu-status-card-head"><span>豆包模型</span><i class="feishu-mini-state" id="doubao-service-dot"></i></div>
+        <div class="feishu-status-card-value" id="doubao-service-value">待配置</div>
+        <div class="feishu-status-card-detail" id="doubao-service-detail">ARK API Key 仅保存在后端</div>
+      </div>
+      <div class="feishu-status-card">
+        <div class="feishu-status-card-head"><span>运行模式</span><i class="feishu-mini-state" id="feishu-mode-dot" data-tone="safe"></i></div>
+        <div class="feishu-status-card-value" id="feishu-mode-value">只读 + 人工审批</div>
+        <div class="feishu-status-card-detail" id="feishu-mode-detail">不会自动操作 TikTok 店铺</div>
+      </div>
+      <div class="feishu-status-card">
+        <div class="feishu-status-card-head"><span>审计记录</span><i class="feishu-mini-state" id="feishu-audit-dot"></i></div>
+        <div class="feishu-status-card-value" id="feishu-audit-value">待连接</div>
+        <div class="feishu-status-card-detail" id="feishu-audit-detail">连接网关后读取审计状态</div>
+      </div>
+    </div>
+
+    <div class="feishu-flow" aria-label="智能运营工作流">
+      <div class="feishu-flow-step"><span class="feishu-flow-icon">📊</span><div class="feishu-flow-label">真实经营数据</div><div class="feishu-flow-note">店铺与日期范围</div></div>
+      <div class="feishu-flow-step"><span class="feishu-flow-icon">🧠</span><div class="feishu-flow-label">豆包分析</div><div class="feishu-flow-note">证据、风险与建议</div></div>
+      <div class="feishu-flow-step"><span class="feishu-flow-icon">✅</span><div class="feishu-flow-label">飞书审批</div><div class="feishu-flow-note">采纳、驳回、留痕</div></div>
+      <div class="feishu-flow-step"><span class="feishu-flow-icon">👤</span><div class="feishu-flow-label">人工执行</div><div class="feishu-flow-note">负责人确认操作</div></div>
+      <div class="feishu-flow-step"><span class="feishu-flow-icon">🔄</span><div class="feishu-flow-label">效果回写</div><div class="feishu-flow-note">T+1 / T+3 / T+7</div></div>
+    </div>
+
+    <div class="feishu-safety" aria-label="安全边界">
+      <span>🔒 密钥仅在后端</span><span>👁️ 只读分析</span><span>✋ 人工审批</span><span>🚫 不自动调预算</span><span>🧾 全程审计</span>
+    </div>
+
+    <details class="feishu-config" id="feishu-config-panel">
+      <summary>内部网关配置</summary>
+      <div class="feishu-config-body">
+        <div class="feishu-config-fields">
+          <label>网关地址<input id="feishu-gateway-url" type="url" inputmode="url" placeholder="https://ops-gateway.company.com" autocomplete="url"></label>
+          <label>本次会话访问令牌<input id="feishu-gateway-token" type="password" placeholder="关闭浏览器后清除" autocomplete="off"></label>
+        </div>
+        <div class="feishu-config-note">这里只填写内部网关地址和临时访问令牌；不要填写飞书 App Secret 或豆包 API Key。网关地址保存在本机，访问令牌只保存在当前浏览器会话。</div>
+        <div class="feishu-actions">
+          <button class="btn btn-primary" id="feishu-save-config" type="button">保存本机配置</button>
+          <button class="btn" id="feishu-check-status" type="button">检查连接</button>
+          <button class="btn" id="feishu-test-message" type="button">发送飞书测试卡片</button>
+          <button class="btn" id="doubao-test-connection" type="button">测试豆包分析</button>
+        </div>
+        <div class="feishu-result" id="feishu-integration-result" role="status" aria-live="polite">尚未连接内部网关。完成后端部署和凭据配置后再进行真实测试。</div>
+      </div>
+    </details>
+  </section>
 </div>
 
 </div>
@@ -2371,6 +2438,7 @@ body {
 <script src="./data/weekly-report.js?v=weekly-report-3"></script>
 <script src="./data/ops-recommendations.js?v=ops-recommendations-1"></script>
 <script src="./data/file-categorization.js?v=auto-categorization-2"></script>
+<script src="./data/feishu-integration.js?v=feishu-integration-1"></script>
 <script>
 const FILTERED_DATA_PAGES = new Set(['overview', 'alert', 'bd', 'ads', 'videos', 'self-videos', 'profit', 'validation', 'knowledge', 'agents', 'data']);
 const DEMO_PAGE_NOTICES = {};

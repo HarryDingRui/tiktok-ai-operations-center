@@ -1,0 +1,11 @@
+{
+  "name": "feishu-ops-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Internal read-only Feishu and Doubao gateway for the TikTok AI operations center",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  }
+}
