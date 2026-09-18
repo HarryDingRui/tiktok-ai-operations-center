@@ -32,6 +32,7 @@
   const periodTools = window.OPS_PERIOD_COMPARISON;
   const videoTools = window.OPS_VIDEO_RANGE;
   const crossDiagnosisTools = window.OPS_CROSS_DIAGNOSIS;
+  const profitTools = window.OPS_PROFIT_ANALYSIS;
 
   /* ================= 可配置阈值（看板上可改，存本机） ================= */
   const THRESHOLDS_KEY = "tiktok-v33-thresholds";
@@ -912,7 +913,7 @@
     { key: "creatorDaily", keywords: ["达人用户名", "联盟 GMV", "商品曝光次数"] },
     { key: "affOrders", keywords: ["订单 ID", "商品 ID", "达人用户名"] },
     { key: "samples", keywords: ["Order ID", "SKU ID", "Seller SKU"] },
-    { key: "orders", keywords: ["Order ID", "Seller SKU", "SKU Subtotal After Discount"] },
+    { key: "orders", keywords: ["Order ID", "Seller SKU", "SKU Subtotal Before Discount", "SKU Seller Discount", "SKU Platform Discount"] },
     { key: "affVideos", keywords: ["视频 ID", "视频标题", "联盟视频归因 GMV"] },
     { key: "selfVideos", keywords: ["账号", "视频", "播放"] },
   ];
@@ -2307,7 +2308,7 @@
   let pricing = null;          // { importedAt, fileName, flags, rates, tiers, skus }
   let pricingIndex = null;     // 懒构建 { exact:Map, base:Map }
 
-  const DEFAULT_PROFIT_SETTINGS = { adsShare: 0.10, affMode: "auto", includeStaff: true };
+  const DEFAULT_PROFIT_SETTINGS = { adsShare: 0.10, affMode: "auto", includeStaff: true, targetMargin: 0.05 };
   function getProfitSettings() {
     try {
       return Object.assign({}, DEFAULT_PROFIT_SETTINGS, JSON.parse(window.localStorage.getItem(PROFIT_SETTINGS_KEY) || "{}"));
@@ -2332,6 +2333,7 @@
   // —— 价格利润核算表解析（产品定价利润明细 / 费率参数表 / 运费阶梯表）——
   async function parsePricing(file) {
     const sheets = await readWorkbook(file);
+    const sourceType = /成本.*映射|cost.*map/i.test(file.name) ? "cost-map" : "pricing-workbook";
     const findSheet = (kws) => sheets.find((s) => kws.some((k) => s.sheetName.includes(k)));
     const skuSheet = findSheet(["定价利润", "产品定价"]) || sheets[0];
     // 全局设置：前几行里 秒杀活动/直播活动/联盟广告 右侧的 是/否
@@ -2349,14 +2351,19 @@
       });
     });
     // SKU 明细
-    const hi = locateHeaderRow(skuSheet.rows, ["SKU", "成本价", "活动价"]);
-    if (hi < 0) throw new Error(`${file.name}：未找到 SKU / 成本价 / 活动价 表头`);
+    const requiredPricingHeaders = sourceType === "cost-map" ? ["SKU", "成本价"] : ["SKU", "成本价", "活动价"];
+    const hi = locateHeaderRow(skuSheet.rows, requiredPricingHeaders);
+    if (hi < 0) {
+      const expected = sourceType === "cost-map" ? "SKU / 成本价" : "SKU / 成本价 / 活动价";
+      throw new Error(`${file.name}：未找到 ${expected} 表头`);
+    }
     const headers = (skuSheet.rows[hi] || []).map((c) => String(c ?? "").trim());
     const col = {
       sku: HEAD(headers, ["SKU"]),
       weight: HEAD(headers, ["重量(kg)", "重量"]),
       cost: HEAD(headers, ["成本价(฿)", "成本价", "成本"]),
       price: HEAD(headers, ["活动价(฿)", "活动价", "售价"]),
+      suggestedRetail: HEAD(headers, ["建议零售价(฿)", "建议零售价", "建议售价", "零售价"]),
     };
     if (col.sku < 0 || col.cost < 0) throw new Error(`${file.name}：SKU 或 成本价 列未识别`);
     const skus = [];
@@ -2370,6 +2377,7 @@
         weightKg: col.weight >= 0 ? cleanNum(r[col.weight]) : null,
         cost: cleanNum(r[col.cost]),
         activityPrice: col.price >= 0 ? cleanNum(r[col.price]) : null,
+        suggestedRetailPrice: col.suggestedRetail >= 0 ? cleanNum(r[col.suggestedRetail]) : null,
       });
     }
     if (!skus.length) throw new Error(`${file.name}：定价明细为空`);
@@ -2416,12 +2424,49 @@
         }
       }
     }
+    const hasShippingTiers = tiers.length > 0;
     if (!tiers.length) tiers.push({ lo: 0, hi: Infinity, net: 0 });
     const withCost = skus.filter((s) => s.cost != null).length;
+    const hasActivityPrices = skus.some((sku) => sku.activityPrice != null);
     return {
-      pricing: { importedAt: new Date().toISOString(), fileName: file.name, flags, rates, tiers, skus },
-      note: `${skus.length} 个 SKU（${withCost} 个有成本）· ${tiers.length} 档运费 · 联盟广告${flags.affAd ? "开" : "关"}`,
+      pricing: {
+        importedAt: new Date().toISOString(), fileName: file.name, sourceType, flags, rates, tiers,
+        hasShippingTiers, hasRateSheet: Boolean(rateSheet), hasActivityPrices, skus,
+      },
+      note: `${sourceType === "cost-map" ? "成本映射" : "定价核算"} · ${skus.length} 个 SKU（${withCost} 个有成本）· ${hasShippingTiers ? `${tiers.length} 档运费` : "无运费阶梯"}`,
     };
+  }
+
+  function mergePricingImports(results) {
+    const parsed = (results || []).map((result) => result.pricing).filter(Boolean);
+    if (!parsed.length) throw new Error("没有可合并的成本或定价数据");
+    const detailed = parsed.filter((entry) => entry.sourceType !== "cost-map");
+    const primary = detailed.sort((left, right) => {
+      const score = (entry) => Number(entry.hasRateSheet) * 4 + Number(entry.hasShippingTiers) * 2 + Number(entry.hasActivityPrices);
+      return score(right) - score(left);
+    })[0] || parsed[0];
+    const costMaps = parsed.filter((entry) => entry.sourceType === "cost-map");
+    const costByBase = new Map();
+    costMaps.forEach((entry) => entry.skus.forEach((sku) => {
+      if (sku.base && sku.cost != null) costByBase.set(sku.base.toLowerCase(), { cost: sku.cost, source: entry.fileName, record: sku });
+    }));
+    const primaryBases = new Set();
+    const skus = primary.skus.map((sku) => {
+      const base = (sku.base || "").toLowerCase();
+      if (base) primaryBases.add(base);
+      const override = costByBase.get(base);
+      return override ? Object.assign({}, sku, { cost: override.cost, costSource: override.source }) : Object.assign({}, sku);
+    });
+    costByBase.forEach((override, base) => {
+      if (!primaryBases.has(base)) skus.push(Object.assign({}, override.record, { costSource: override.source }));
+    });
+    return Object.assign({}, primary, {
+      importedAt: new Date().toISOString(),
+      fileName: parsed.map((entry) => entry.fileName).join(" + "),
+      sourceFiles: parsed.map((entry) => entry.fileName),
+      costMapFiles: costMaps.map((entry) => entry.fileName),
+      skus,
+    });
   }
 
   // —— 订单明细解析（OrderSKUList：第 1 行英文表头，第 2 行说明自动跳过）——
@@ -2429,7 +2474,7 @@
     const sheets = await readWorkbook(file);
     const out = [];
     for (const { rows } of sheets) {
-      const hi = locateHeaderRow(rows, ["Order ID", "Seller SKU", "SKU Subtotal After Discount"]);
+      const hi = locateHeaderRow(rows, ["Order ID", "Seller SKU", "SKU Subtotal Before Discount", "SKU Seller Discount"]);
       if (hi < 0) continue;
       const headers = (rows[hi] || []).map((c) => String(c ?? "").trim());
       const col = {
@@ -2442,7 +2487,10 @@
         qty: HEAD(headers, ["Quantity", "数量"]),
         returnQty: HEAD(headers, ["Sku Quantity of return", "退货数量", "退款数量"]),
         unitPrice: HEAD(headers, ["SKU Unit Original Price", "单价"]),
-        dealPrice: HEAD(headers, ["SKU Subtotal After Discount", "折后小计", "成交价"]),
+        subtotalBeforeDiscount: HEAD(headers, ["SKU Subtotal Before Discount", "折扣前小计", "SKU折扣前小计"]),
+        platformDiscount: HEAD(headers, ["SKU Platform Discount", "SKU平台优惠", "平台补贴"]),
+        sellerDiscount: HEAD(headers, ["SKU Seller Discount", "SKU商家优惠", "商家优惠"]),
+        subtotalAfterDiscount: HEAD(headers, ["SKU Subtotal After Discount", "折后小计", "买家商品实付"]),
         orderAmount: HEAD(headers, ["Order Amount", "订单金额"]),
         refund: HEAD(headers, ["Order Refund Amount", "退款金额"]),
         addToCartRate: HEAD(headers, ["加购率", "Add to cart rate", "ATC rate"]),
@@ -2454,7 +2502,8 @@
         weight: HEAD(headers, ["Weight(kg)", "Weight", "重量"]),
         creator: HEAD(headers, ["Creator Handle", "达人账号", "达人"]),
       };
-      if (col.orderId < 0 || col.dealPrice < 0) continue;
+      const hasExactPriceColumns = col.subtotalBeforeDiscount >= 0 && col.sellerDiscount >= 0;
+      if (col.orderId < 0 || (!hasExactPriceColumns && col.subtotalAfterDiscount < 0)) continue;
       for (let i = hi + 1; i < rows.length; i++) {
         const r = rows[i] || [];
         const orderId = cleanText(r[col.orderId]);
@@ -2469,7 +2518,20 @@
           qty: col.qty >= 0 ? (cleanNum(r[col.qty]) || 0) : 1,
           returnQty: col.returnQty >= 0 ? (cleanNum(r[col.returnQty]) || 0) : 0,
           unitPrice: col.unitPrice >= 0 ? cleanNum(r[col.unitPrice]) : null,
-          dealPrice: cleanNum(r[col.dealPrice]),
+          subtotalBeforeDiscount: col.subtotalBeforeDiscount >= 0 ? cleanNum(r[col.subtotalBeforeDiscount]) : null,
+          platformDiscount: col.platformDiscount >= 0 ? cleanNum(r[col.platformDiscount]) : null,
+          sellerDiscount: col.sellerDiscount >= 0 ? cleanNum(r[col.sellerDiscount]) : null,
+          subtotalAfterDiscount: col.subtotalAfterDiscount >= 0 ? cleanNum(r[col.subtotalAfterDiscount]) : null,
+          dealPrice: (() => {
+            const amounts = profitTools.deriveTransactionAmounts({
+              subtotalBeforeDiscount: col.subtotalBeforeDiscount >= 0 ? cleanNum(r[col.subtotalBeforeDiscount]) : null,
+              platformDiscount: col.platformDiscount >= 0 ? cleanNum(r[col.platformDiscount]) : null,
+              sellerDiscount: col.sellerDiscount >= 0 ? cleanNum(r[col.sellerDiscount]) : null,
+              subtotalAfterDiscount: col.subtotalAfterDiscount >= 0 ? cleanNum(r[col.subtotalAfterDiscount]) : null,
+              quantity: col.qty >= 0 ? cleanNum(r[col.qty]) : 1,
+            });
+            return amounts.sellerRevenue;
+          })(),
           orderAmount: col.orderAmount >= 0 ? cleanNum(r[col.orderAmount]) : null,
           refund: col.refund >= 0 ? cleanNum(r[col.refund]) : null,
           addToCartRate: col.addToCartRate >= 0 ? cleanNum(r[col.addToCartRate]) : null,
@@ -2483,7 +2545,7 @@
         });
       }
     }
-    if (!out.length) throw new Error(`${file.name}：未识别到订单明细行（需要 Order ID / Seller SKU / SKU Subtotal After Discount 列）`);
+    if (!out.length) throw new Error(`${file.name}：未识别到订单明细行（需要 Order ID / Seller SKU / SKU Subtotal Before Discount / SKU Seller Discount 列）`);
     return { records: out, note: `${out.length} 行明细 · ${new Set(out.map((r) => r.orderId)).size} 个订单` };
   }
 
@@ -2529,203 +2591,468 @@
     return { fixed, affRate, affMode, staff, adsShare: s.adsShare, total: fixed + affRate + staff + s.adsShare, raw: r, flags };
   }
   function shipFeeNet(weightGrams) {
-    if (!pricing || !pricing.tiers.length) return 0;
-    const w = Math.max(0, weightGrams || 0);
+    if (!pricing || !pricing.tiers.length || pricing.hasShippingTiers === false || weightGrams == null) return null;
+    const w = Math.max(0, weightGrams);
     const tier = pricing.tiers.find((t) => w >= t.lo && w <= t.hi) || pricing.tiers[pricing.tiers.length - 1];
-    return tier ? tier.net : 0;
+    return tier && tier.net != null ? tier.net : null;
   }
 
   // —— 成交价扫码：订单级聚合（运费按订单总重只计一次；取消单 / 全退行剔除）——
   function profitScan() {
     const R = profitRates();
-    const lines = scopedRows("orders").filter((l) => l.status && !/取消|cancel/i.test(l.status) && (l.dealPrice || 0) > 0);
+    const targetMargin = getProfitSettings().targetMargin;
+    const requiresWeight = Boolean(pricing?.hasShippingTiers !== false && pricing?.tiers?.some((tier) => Number(tier.net) !== 0));
+    const lines = scopedRows("orders").filter((line) => profitTools.isIncludedOrderStatus(line.status));
     const orderMap = new Map();
     const unmatched = new Map();
-    let matchedLines = 0, totalLines = 0;
-    lines.forEach((l) => {
-      const effQty = Math.max(0, (l.qty || 0) - (l.returnQty || 0));
-      if (effQty <= 0) return;
-      totalLines++;
-      const m = findPricing(l.sellerSku);
-      const ratio = l.qty > 0 ? effQty / l.qty : 1;
-      const revenue = (l.dealPrice || 0) * ratio;
-      if (!orderMap.has(l.orderId)) orderMap.set(l.orderId, { orderId: l.orderId, date: l.date, creator: l.creator, revenue: 0, cost: 0, weightG: 0, items: [], hasUnmatched: false });
-      const o = orderMap.get(l.orderId);
-      o.revenue += revenue;
-      o.weightG += (l.weightKg || 0) * 1000 * effQty;
-      const matched = Boolean(m.rec && m.rec.cost != null);
-      o.items.push({ sellerSku: l.sellerSku, productName: l.productName, qty: effQty, revenue, matched, rec: m.rec, via: m.via });
-      if (matched) { o.cost += m.rec.cost * effQty; matchedLines++; }
-      else {
-        o.hasUnmatched = true;
-        const key = l.sellerSku || "（空 SKU）";
-        if (!unmatched.has(key)) unmatched.set(key, { sellerSku: key, productName: l.productName, lines: 0, qty: 0, revenue: 0 });
-        const u = unmatched.get(key);
-        u.lines++; u.qty += effQty; u.revenue += revenue;
+    let matchedLines = 0;
+    let totalLines = 0;
+    let exactRevenueLines = 0;
+
+    lines.forEach((line) => {
+      const effectiveQty = Math.max(0, (line.qty || 0) - (line.returnQty || 0));
+      if (effectiveQty <= 0) return;
+      const amounts = profitTools.deriveTransactionAmounts({
+        subtotalBeforeDiscount: line.subtotalBeforeDiscount,
+        sellerDiscount: line.sellerDiscount,
+        platformDiscount: line.platformDiscount,
+        subtotalAfterDiscount: line.subtotalAfterDiscount ?? (line.subtotalBeforeDiscount == null ? line.dealPrice : null),
+        quantity: line.qty,
+      });
+      if (!(amounts.sellerRevenue > 0)) return;
+      totalLines += 1;
+      if (amounts.exact) exactRevenueLines += 1;
+      const match = findPricing(line.sellerSku);
+      const ratio = line.qty > 0 ? effectiveQty / line.qty : 1;
+      const sellerRevenue = amounts.sellerRevenue * ratio;
+      const listAmount = amounts.listAmount == null ? null : amounts.listAmount * ratio;
+      const sellerDiscount = amounts.sellerDiscount == null ? null : amounts.sellerDiscount * ratio;
+      const platformSubsidy = amounts.platformSubsidy == null ? null : amounts.platformSubsidy * ratio;
+      const buyerPaidAmount = amounts.buyerPaidAmount == null ? null : amounts.buyerPaidAmount * ratio;
+      const equationGap = amounts.equationGap == null ? null : amounts.equationGap * ratio;
+      const matched = Boolean(match.rec && match.rec.cost != null);
+      const weightKg = line.weightKg != null && line.weightKg > 0
+        ? line.weightKg
+        : match.rec?.weightKg != null && match.rec.weightKg > 0 ? match.rec.weightKg : null;
+      const weightKnown = !requiresWeight || weightKg != null;
+
+      if (!orderMap.has(line.orderId)) {
+        orderMap.set(line.orderId, {
+          orderId: line.orderId,
+          date: line.date,
+          creator: line.creator,
+          sellerRevenue: 0,
+          listAmount: 0,
+          sellerDiscount: 0,
+          platformSubsidy: 0,
+          buyerPaidAmount: 0,
+          productCost: 0,
+          weightG: 0,
+          items: [],
+          hasUnmatched: false,
+          hasFallbackRevenue: false,
+          hasUnknownShipping: false,
+        });
+      }
+      const order = orderMap.get(line.orderId);
+      order.sellerRevenue += sellerRevenue;
+      if (listAmount != null) order.listAmount += listAmount;
+      if (sellerDiscount != null) order.sellerDiscount += sellerDiscount;
+      if (platformSubsidy != null) order.platformSubsidy += platformSubsidy;
+      if (buyerPaidAmount != null) order.buyerPaidAmount += buyerPaidAmount;
+      if (weightKg != null) order.weightG += weightKg * 1000 * effectiveQty;
+      if (!weightKnown) order.hasUnknownShipping = true;
+      if (!amounts.exact) order.hasFallbackRevenue = true;
+      const item = {
+        sellerSku: line.sellerSku,
+        skuId: line.skuId,
+        productId: line.productId,
+        productName: line.productName,
+        qty: effectiveQty,
+        sellerRevenue,
+        listAmount,
+        sellerDiscount,
+        platformSubsidy,
+        buyerPaidAmount,
+        equationGap,
+        exactRevenue: amounts.exact,
+        matched,
+        rec: match.rec,
+        via: match.via,
+      };
+      order.items.push(item);
+      if (matched) {
+        order.productCost += match.rec.cost * effectiveQty;
+        matchedLines += 1;
+      } else {
+        order.hasUnmatched = true;
+        const key = line.sellerSku || "（空 SKU）";
+        if (!unmatched.has(key)) unmatched.set(key, { sellerSku: key, productName: line.productName, lines: 0, qty: 0, revenue: 0 });
+        const missing = unmatched.get(key);
+        missing.lines += 1;
+        missing.qty += effectiveQty;
+        missing.revenue += sellerRevenue;
       }
     });
-    const orders = [...orderMap.values()].map((o) => {
-      const ship = shipFeeNet(o.weightG);
-      const platformFee = o.revenue * (R.fixed + R.affRate) + ship;
-      const adsCost = o.revenue * R.adsShare;
-      const staffCost = o.revenue * R.staff;
-      const profit = o.revenue - platformFee - adsCost - o.cost - staffCost;
-      return Object.assign(o, { ship, platformFee, adsCost, staffCost, profit, margin: o.revenue > 0 ? profit / o.revenue : null, complete: !o.hasUnmatched });
+
+    const orders = [...orderMap.values()].map((order) => {
+      const exactRevenue = !order.hasFallbackRevenue;
+      const shippingKnown = !order.hasUnknownShipping && (pricing?.hasShippingTiers !== false);
+      const shippingCost = shippingKnown ? (requiresWeight ? shipFeeNet(order.weightG) : 0) : null;
+      const fixedPlatformFee = order.sellerRevenue * R.fixed;
+      const affiliateFee = order.sellerRevenue * R.affRate;
+      const adCost = order.sellerRevenue * R.adsShare;
+      const staffCost = order.sellerRevenue * R.staff;
+      const result = profitTools.calculateProfit({
+        sellerRevenue: exactRevenue ? order.sellerRevenue : null,
+        productCost: !order.hasUnmatched ? order.productCost : null,
+        fixedPlatformFee,
+        affiliateFee,
+        adCost,
+        shippingCost,
+        staffCost,
+      });
+      const completeGross = exactRevenue && !order.hasUnmatched && result.grossProfit != null;
+      const completeNet = completeGross && shippingKnown && result.netProfit != null;
+      return Object.assign(order, result, {
+        revenue: order.sellerRevenue,
+        cost: order.productCost,
+        exactRevenue,
+        shippingKnown,
+        ship: shippingCost,
+        fixedPlatformFee,
+        affiliateFee,
+        platformFee: shippingCost == null ? null : fixedPlatformFee + affiliateFee + shippingCost,
+        adsCost: adCost,
+        staffCost,
+        completeGross,
+        completeNet,
+        complete: completeNet,
+        profit: result.netProfit,
+        margin: result.netMargin,
+      });
     });
-    // SKU 价格体检聚合（全周期）
+
     const skuMap = new Map();
-    orders.forEach((o) => o.items.forEach((it) => {
-      const key = it.sellerSku || "（空 SKU）";
-      if (!skuMap.has(key)) skuMap.set(key, { sellerSku: key, productName: it.productName, rec: it.rec, via: it.via, qty: 0, revenue: 0, costSum: 0, orderIds: new Set() });
-      const s = skuMap.get(key);
-      s.qty += it.qty; s.revenue += it.revenue; s.orderIds.add(o.orderId);
-      if (it.matched) s.costSum += (it.rec.cost || 0) * it.qty;
+    orders.forEach((order) => order.items.forEach((item) => {
+      const key = item.sellerSku || "（空 SKU）";
+      if (!skuMap.has(key)) {
+        skuMap.set(key, {
+          sellerSku: key,
+          skuId: item.skuId,
+          productId: item.productId,
+          productName: item.productName,
+          rec: item.rec,
+          via: item.via,
+          qty: 0,
+          sellerRevenue: 0,
+          listAmount: 0,
+          sellerDiscount: 0,
+          platformSubsidy: 0,
+          buyerPaidAmount: 0,
+          productCost: 0,
+          grossProfit: 0,
+          netProfit: 0,
+          exactRevenue: true,
+          hasCost: true,
+          shippingKnown: true,
+          equationGap: 0,
+          hasListAmount: true,
+          hasSellerDiscount: true,
+          hasPlatformSubsidy: true,
+          hasBuyerPaidAmount: true,
+          orderIds: new Set(),
+        });
+      }
+      const sku = skuMap.get(key);
+      sku.qty += item.qty;
+      sku.sellerRevenue += item.sellerRevenue;
+      if (item.listAmount != null) sku.listAmount += item.listAmount;
+      else sku.hasListAmount = false;
+      if (item.sellerDiscount != null) sku.sellerDiscount += item.sellerDiscount;
+      else sku.hasSellerDiscount = false;
+      if (item.platformSubsidy != null) sku.platformSubsidy += item.platformSubsidy;
+      else sku.hasPlatformSubsidy = false;
+      if (item.buyerPaidAmount != null) sku.buyerPaidAmount += item.buyerPaidAmount;
+      else sku.hasBuyerPaidAmount = false;
+      if (item.equationGap != null) sku.equationGap = Math.max(sku.equationGap, Math.abs(item.equationGap));
+      sku.orderIds.add(order.orderId);
+      sku.exactRevenue = sku.exactRevenue && item.exactRevenue;
+      sku.hasCost = sku.hasCost && item.matched;
+      sku.shippingKnown = sku.shippingKnown && order.shippingKnown;
+      if (item.matched) {
+        const itemCost = item.rec.cost * item.qty;
+        sku.productCost += itemCost;
+        if (item.exactRevenue) sku.grossProfit += item.sellerRevenue - itemCost;
+        if (item.exactRevenue && order.shippingKnown) {
+          const shippingShare = order.sellerRevenue > 0 ? (order.ship || 0) * (item.sellerRevenue / order.sellerRevenue) : 0;
+          const itemProfit = profitTools.calculateProfit({
+            sellerRevenue: item.sellerRevenue,
+            productCost: itemCost,
+            fixedPlatformFee: item.sellerRevenue * R.fixed,
+            affiliateFee: item.sellerRevenue * R.affRate,
+            adCost: item.sellerRevenue * R.adsShare,
+            shippingCost: shippingShare,
+            staffCost: item.sellerRevenue * R.staff,
+          });
+          if (itemProfit.netProfit != null) sku.netProfit += itemProfit.netProfit;
+        }
+      }
     }));
-    const skus = [...skuMap.values()].map((s) => {
-      const avgDeal = s.qty > 0 ? s.revenue / s.qty : null;
-      const weightG = s.rec && s.rec.weightKg != null ? s.rec.weightKg * 1000 : null;
-      const shipUnit = weightG != null ? shipFeeNet(weightG) : 0;
-      const cost = s.rec && s.rec.cost != null ? s.rec.cost : null;
-      const breakeven = cost != null && R.total < 1 ? (cost + shipUnit) / (1 - R.total) : null;
-      const variableProfit = s.revenue * (1 - R.total) - s.costSum; // 未含订单级运费分摊（多数档位净运费 0–5฿）
+
+    const skus = [...skuMap.values()].map((sku) => {
+      const sellerUnitPrice = sku.qty > 0 ? sku.sellerRevenue / sku.qty : null;
+      const buyerUnitPrice = sku.qty > 0 && sku.hasBuyerPaidAmount ? sku.buyerPaidAmount / sku.qty : null;
+      const listUnitPrice = sku.qty > 0 && sku.hasListAmount ? sku.listAmount / sku.qty : null;
+      const sellerDiscountPerUnit = sku.qty > 0 && sku.hasSellerDiscount ? sku.sellerDiscount / sku.qty : null;
+      const platformSubsidyPerUnit = sku.qty > 0 && sku.hasPlatformSubsidy ? sku.platformSubsidy / sku.qty : null;
+      const weightG = sku.rec?.weightKg != null ? sku.rec.weightKg * 1000 : null;
+      const shippingUnit = !requiresWeight ? 0 : weightG == null ? null : shipFeeNet(weightG);
+      const cost = sku.hasCost && sku.rec?.cost != null ? sku.rec.cost : null;
+      const breakeven = profitTools.calculateBreakevenPrice({ unitCost: cost, shippingUnit, variableRate: R.total });
+      const grossProfit = sku.exactRevenue && sku.hasCost ? sku.grossProfit : null;
+      const netProfit = sku.exactRevenue && sku.hasCost && sku.shippingKnown ? sku.netProfit : null;
+      const grossMargin = grossProfit == null || sku.sellerRevenue <= 0 ? null : grossProfit / sku.sellerRevenue;
+      const netMargin = netProfit == null || sku.sellerRevenue <= 0 ? null : netProfit / sku.sellerRevenue;
+      const activityPrice = sku.rec?.activityPrice ?? null;
+      const suggestedRetailPrice = sku.rec?.suggestedRetailPrice ?? null;
+      const risk = profitTools.assessPriceRisk({
+        exactRevenue: sku.exactRevenue,
+        hasCost: sku.hasCost,
+        shippingKnown: sku.shippingKnown && (!requiresWeight || shippingUnit != null),
+        sellerUnitPrice,
+        buyerUnitPrice,
+        platformSubsidyPerUnit,
+        activityPrice,
+        suggestedRetailPrice,
+        breakevenPrice: breakeven,
+        netMargin,
+        equationGap: sku.equationGap,
+        targetMargin,
+      });
       return {
-        sellerSku: s.sellerSku, productName: s.productName, via: s.via, matched: cost != null,
-        qty: s.qty, orderCount: s.orderIds.size, revenue: s.revenue, avgDeal,
-        cost, activityPrice: s.rec ? s.rec.activityPrice : null, breakeven,
-        priceRatio: avgDeal != null && s.rec && s.rec.activityPrice ? avgDeal / s.rec.activityPrice : null,
-        dealVsBreakeven: avgDeal != null && breakeven != null ? avgDeal - breakeven : null,
-        variableProfit, margin: s.revenue > 0 ? variableProfit / s.revenue : null,
+        sellerSku: sku.sellerSku,
+        skuId: sku.skuId,
+        productId: sku.productId,
+        productName: sku.productName,
+        via: sku.via,
+        matched: sku.hasCost,
+        exactRevenue: sku.exactRevenue,
+        shippingKnown: sku.shippingKnown,
+        qty: sku.qty,
+        orderCount: sku.orderIds.size,
+        revenue: sku.sellerRevenue,
+        sellerRevenue: sku.sellerRevenue,
+        avgDeal: sellerUnitPrice,
+        sellerUnitPrice,
+        buyerUnitPrice,
+        listUnitPrice,
+        sellerDiscountPerUnit,
+        platformSubsidyPerUnit,
+        cost,
+        activityPrice,
+        suggestedRetailPrice,
+        breakeven,
+        grossProfit,
+        grossMargin,
+        netProfit,
+        netMargin,
+        variableProfit: netProfit,
+        margin: netMargin,
+        priceRatio: sellerUnitPrice != null && activityPrice ? sellerUnitPrice / activityPrice : null,
+        dealVsBreakeven: sellerUnitPrice != null && breakeven != null ? sellerUnitPrice - breakeven : null,
+        risk,
       };
-    }).sort((a, b) => b.revenue - a.revenue);
-    return { orders, skus, unmatched: [...unmatched.values()].sort((a, b) => b.revenue - a.revenue), matchedLines, totalLines, rates: R };
+    }).sort((left, right) => right.revenue - left.revenue);
+
+    return {
+      orders,
+      skus,
+      unmatched: [...unmatched.values()].sort((left, right) => right.revenue - left.revenue),
+      matchedLines,
+      exactRevenueLines,
+      totalLines,
+      rates: R,
+      targetMargin,
+    };
   }
 
   /* ================= 渲染：价格利润页 ================= */
+  function profitPercent(value) {
+    return value == null || !Number.isFinite(Number(value)) ? "待导入" : `${(Number(value) * 100).toFixed(1)}%`;
+  }
+
+  function profitRiskTag(risk) {
+    const safeRisk = risk || { level: "pending", label: "待补数据", reasons: [] };
+    const reason = escapeHtml((safeRisk.reasons || []).join("；"));
+    return `<span class="profit-risk-chip ${escapeHtml(safeRisk.level)}" title="${reason}">${escapeHtml(safeRisk.label)}</span>`;
+  }
+
   function renderProfitPage() {
     const kpiEl = document.getElementById("profit-kpi-row");
+    const summaryEl = document.getElementById("profit-summary-panel");
     const lossEl = document.getElementById("profit-loss-panel");
     const skuEl = document.getElementById("profit-sku-panel");
     const unmatchEl = document.getElementById("profit-unmatched-panel");
     const rateEl = document.getElementById("profit-rate-panel");
-    if (!kpiEl && !lossEl && !skuEl) return;
+    if (!kpiEl && !summaryEl && !lossEl && !skuEl) return;
     const settings = getProfitSettings();
     const ordersInScope = scopedRows("orders");
     if (rateEl) renderProfitRatePanel(rateEl, settings);
-    if (!pricing && !ordersInScope.length) {
-      if (kpiEl) kpiEl.innerHTML = "";
-      if (lossEl) lossEl.innerHTML = emptyBlock(`<b>利润扫码待启用。</b>到「数据接入」页上传 ① 价格利润核算表（定价 / 费率 / 运费阶梯）② 每日订单明细（OrderSKUList）。上传后自动扫描每笔实际成交价，亏损订单立刻预警。`);
-      if (skuEl) skuEl.innerHTML = "";
+
+    const renderPending = (message, detail) => {
+      if (kpiEl) {
+        kpiEl.innerHTML =
+          kpiCard("商家成交额", "待导入", "折扣前小计 − 商家优惠", "") +
+          kpiCard("毛利 / 毛利率", "待导入", "商家成交额 − SKU 成本", "") +
+          kpiCard("净利 / 净利率", "待导入", "毛利 − 全部经营费用", "") +
+          kpiCard("亏损风险", "待判定", "缺字段不按 0 处理", "");
+      }
+      if (summaryEl) summaryEl.innerHTML = `<div class="profit-pending-note"><strong>${message}</strong><br>${detail}</div>`;
+      if (lossEl) lossEl.innerHTML = emptyBlock(`${message}<br>${detail}`);
+      if (skuEl) skuEl.innerHTML = emptyBlock("订单和成本数据齐全后，这里会逐 SKU 展示标价、商家优惠、商家成交价、平台补贴、买家实付、活动价、保本价、毛利率与净利率。缺字段显示“待补数据”。");
       if (unmatchEl) unmatchEl.innerHTML = "";
+    };
+
+    if (!pricing && !ordersInScope.length) {
+      renderPending("利润核算待启用。", "到「数据接入」上传价格利润核算表与每日订单明细（OrderSKUList）。订单明细必须包含 SKU Subtotal Before Discount 和 SKU Seller Discount。");
       return;
     }
     if (!pricing) {
-      if (kpiEl) kpiEl.innerHTML = "";
-      if (lossEl) lossEl.innerHTML = emptyBlock(`<b>还差一步：上传价格利润核算表。</b>订单明细已在档（${ordersInScope.length} 行），但没有成本与费率就无法判定亏损。到「数据接入」页上传「价格利润核算表」。`);
-      if (skuEl) skuEl.innerHTML = "";
-      if (unmatchEl) unmatchEl.innerHTML = "";
+      renderPending("订单明细已导入，但缺少价格利润核算表。", `当前范围已有 ${ordersInScope.length} 行订单；没有 SKU 成本、费率和运费阶梯时，只能还原成交价，不能计算毛利和净利。`);
       return;
     }
     if (!ordersInScope.length) {
-      if (kpiEl) kpiEl.innerHTML = "";
-      if (lossEl) lossEl.innerHTML = emptyBlock(`<b>定价表已在档（${pricing.skus.length} 个 SKU）。</b>现在上传每日订单明细（OrderSKUList），系统立即扫描成交价并预警亏损。`);
-      if (skuEl) skuEl.innerHTML = "";
-      if (unmatchEl) unmatchEl.innerHTML = "";
+      renderPending("价格利润核算表已导入，但缺少订单明细。", `已加载 ${pricing.skus.length} 个 SKU。上传 OrderSKUList 后，系统会按商家成交额口径逐单核算。`);
       return;
     }
+
     const scan = profitScan();
-    const dates = datasetDates("orders");
-    const latest = dates[dates.length - 1] || "";
-    const dayOrders = scan.orders.filter((o) => o.date === latest);
-    const dayComplete = dayOrders.filter((o) => o.complete);
-    const dayLoss = dayComplete.filter((o) => o.profit < 0).sort((a, b) => a.profit - b.profit);
-    const dayRevenue = dayOrders.reduce((s, o) => s + o.revenue, 0);
-    const dayProfit = dayComplete.reduce((s, o) => s + o.profit, 0);
-    const lossSkus = scan.skus.filter((s) => s.matched && s.dealVsBreakeven != null && s.dealVsBreakeven < 0);
-    const matchRate = scan.totalLines ? scan.matchedLines / scan.totalLines : 0;
+    const bounds = selectedScopeBounds();
+    const periodLabel = bounds.start && bounds.end ? `${bounds.start} 至 ${bounds.end}` : "所选日期范围";
+    const exactOrders = scan.orders.filter((order) => order.exactRevenue);
+    const grossOrders = scan.orders.filter((order) => order.completeGross);
+    const netOrders = scan.orders.filter((order) => order.completeNet);
+    const lossOrders = netOrders.filter((order) => order.netProfit < 0).sort((left, right) => left.netProfit - right.netProfit);
+    const sellerRevenue = exactOrders.reduce((sum, order) => sum + order.sellerRevenue, 0);
+    const grossRevenue = grossOrders.reduce((sum, order) => sum + order.sellerRevenue, 0);
+    const grossProfit = grossOrders.reduce((sum, order) => sum + order.grossProfit, 0);
+    const grossCost = grossOrders.reduce((sum, order) => sum + order.productCost, 0);
+    const netRevenue = netOrders.reduce((sum, order) => sum + order.sellerRevenue, 0);
+    const netProfit = netOrders.reduce((sum, order) => sum + order.netProfit, 0);
+    const fixedFees = netOrders.reduce((sum, order) => sum + order.fixedPlatformFee, 0);
+    const affiliateFees = netOrders.reduce((sum, order) => sum + order.affiliateFee, 0);
+    const adCosts = netOrders.reduce((sum, order) => sum + order.adsCost, 0);
+    const shippingCosts = netOrders.reduce((sum, order) => sum + (order.ship || 0), 0);
+    const staffCosts = netOrders.reduce((sum, order) => sum + order.staffCost, 0);
+    const riskCounts = scan.skus.reduce((counts, sku) => {
+      const level = sku.risk?.level || "pending";
+      counts[level] = (counts[level] || 0) + 1;
+      return counts;
+    }, {});
+    const grossMargin = grossRevenue > 0 ? grossProfit / grossRevenue : null;
+    const netMargin = netRevenue > 0 ? netProfit / netRevenue : null;
+    const netCoverage = scan.orders.length ? netOrders.length / scan.orders.length : 0;
 
     if (kpiEl) {
       kpiEl.innerHTML =
-        kpiCard("扫码订单", `${dayOrders.length} 个`, `${latest} · 完成单口径`, "") +
-        kpiCard("亏损订单", `${dayLoss.length} 个`, dayComplete.length ? `占可判定 ${(dayLoss.length / dayComplete.length * 100).toFixed(1)}%` : "—", dayLoss.length ? "#dc2626" : "#059669") +
-        kpiCard("当日净利润", fmtThb(dayProfit), `成交 ${fmtThb(dayRevenue)} · 净利率 ${dayRevenue > 0 ? (dayProfit / dayRevenue * 100).toFixed(1) + "%" : "—"}`, dayProfit < 0 ? "#dc2626" : "#059669") +
-        kpiCard("亏损价 SKU", `${lossSkus.length} 个`, "平均成交价 < 保本价", lossSkus.length ? "#d97706" : "#059669") +
-        kpiCard("成本匹配率", `${(matchRate * 100).toFixed(1)}%`, `未匹配 ${scan.unmatched.length} 个 SKU`, matchRate < 0.8 ? "#d97706" : "#059669");
+        kpiCard("商家成交额", fmtThb(sellerRevenue), `${periodLabel} · 精确口径 ${exactOrders.length}/${scan.orders.length} 单`, "#1d4ed8") +
+        kpiCard("毛利 / 毛利率", grossOrders.length ? `${fmtThb(grossProfit)} · ${profitPercent(grossMargin)}` : "待补数据", `成本可判定 ${grossOrders.length}/${scan.orders.length} 单`, grossProfit < 0 ? "#b91c1c" : "#047857") +
+        kpiCard("净利 / 净利率", netOrders.length ? `${fmtThb(netProfit)} · ${profitPercent(netMargin)}` : "待补数据", `完整核算 ${netOrders.length}/${scan.orders.length} 单`, netProfit < 0 ? "#b91c1c" : "#047857") +
+        kpiCard("亏损订单", `${lossOrders.length} 单`, netOrders.length ? `占可判定 ${(lossOrders.length / netOrders.length * 100).toFixed(1)}%` : "待补数据", lossOrders.length ? "#b91c1c" : "#047857") +
+        kpiCard("价格异常 SKU", `${riskCounts.anomaly || 0} 个`, `低利润 ${riskCounts["low-margin"] || 0} · 待补 ${riskCounts.pending || 0}`, riskCounts.anomaly ? "#c2410c" : "#475569");
     }
-    // 亏损预警
+
+    if (summaryEl) {
+      const coverageNote = `净利完整度 ${(netCoverage * 100).toFixed(1)}%（${netOrders.length}/${scan.orders.length} 单）`;
+      summaryEl.innerHTML = `<div class="profit-summary-grid">
+        <section class="profit-statement">
+          <div class="profit-statement-title"><span>毛利</span><span>${grossOrders.length}/${scan.orders.length} 单可判定</span></div>
+          <div class="profit-statement-value ${grossProfit < 0 ? "negative" : "positive"}">${grossOrders.length ? fmtThb(grossProfit) : "待补数据"}</div>
+          <div class="profit-statement-meta">毛利率 ${profitPercent(grossMargin)} · 只判断商品成交价能否覆盖商品成本</div>
+          <div class="profit-equation"><strong>${fmtThb(grossRevenue)}</strong><span>商家成交额</span><span>−</span><strong>${fmtThb(grossCost)}</strong><span>SKU 成本</span><span>=</span><strong>${grossOrders.length ? fmtThb(grossProfit) : "待补数据"}</strong></div>
+        </section>
+        <section class="profit-statement">
+          <div class="profit-statement-title"><span>净利</span><span>${coverageNote}</span></div>
+          <div class="profit-statement-value ${netProfit < 0 ? "negative" : "positive"}">${netOrders.length ? fmtThb(netProfit) : "待补数据"}</div>
+          <div class="profit-statement-meta">净利率 ${profitPercent(netMargin)} · 完整扣除经营费用后才判断是否真正赚钱</div>
+          <div class="profit-equation"><span>平台 ${fmtThb(fixedFees)}</span><span>·</span><span>联盟 ${fmtThb(affiliateFees)}</span><span>·</span><span>广告 ${fmtThb(adCosts)}</span><span>·</span><span>净运费 ${fmtThb(shippingCosts)}</span><span>·</span><span>人员 ${fmtThb(staffCosts)}</span></div>
+        </section>
+      </div>
+      <div class="profit-risk-strip">
+        <span class="profit-risk-chip loss">亏损 ${riskCounts.loss || 0}</span>
+        <span class="profit-risk-chip low-margin">低利润 ${riskCounts["low-margin"] || 0}</span>
+        <span class="profit-risk-chip anomaly">价格异常 ${riskCounts.anomaly || 0}</span>
+        <span class="profit-risk-chip pending">待补数据 ${riskCounts.pending || 0}</span>
+        <span class="profit-risk-chip healthy">健康 ${riskCounts.healthy || 0}</span>
+      </div>`;
+    }
+
     if (lossEl) {
-      const parts = [];
-      if (dayLoss.length) {
-        parts.push(`<div style="font-size:12px;color:#64748b;margin-bottom:8px;">${latest} · ${dayLoss.length} 个亏损订单（按亏损额排序，仅列成本已匹配的可判定订单）</div>
-        <div class="desktop-table-wrap" style="max-height:320px;overflow:auto;"><table class="desktop-table">
-          <thead><tr><th>订单号</th><th>SKU</th><th>成交价</th><th>平台费+运费</th><th>广告分摊</th><th>成本</th><th>净利润</th></tr></thead>
-          <tbody>${dayLoss.slice(0, 30).map((o) => `<tr>
-            <td style="font-family:monospace;font-size:11px;" title="${escapeHtml(o.orderId)}">…${escapeHtml(o.orderId.slice(-10))}</td>
-            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;" title="${escapeHtml(o.items.map((i) => i.sellerSku).join(" / "))}">${escapeHtml(o.items.map((i) => i.sellerSku).join(" / ").slice(0, 40))}</td>
-            <td>${fmtThb(o.revenue)}</td>
-            <td>${fmtThb(o.platformFee)}</td>
-            <td>${fmtThb(o.adsCost)}</td>
-            <td>${fmtThb(o.cost)}</td>
-            <td style="color:#dc2626;font-weight:700;">${fmtThb(o.profit)}</td>
-          </tr>`).join("")}</tbody></table></div>
-        ${dayLoss.length > 30 ? `<div style="font-size:12px;color:#94a3b8;margin-top:6px;">仅展示前 30 个，共 ${dayLoss.length} 个。</div>` : ""}`);
-      } else if (dayComplete.length) {
-        parts.push(`<div class="ops-empty">${latest} 可判定订单 ${dayComplete.length} 个，<b>无亏损订单</b>。👍</div>`);
-      } else {
-        parts.push(`<div class="ops-empty">${latest} 暂无可判定订单（SKU 成本均未匹配）。先在下方「未匹配 SKU」补成本。</div>`);
+      const riskySkus = scan.skus
+        .filter((sku) => sku.risk?.level !== "healthy")
+        .sort((left, right) => {
+          const rank = { loss: 0, "low-margin": 1, anomaly: 2, pending: 3 };
+          return (rank[left.risk?.level] ?? 9) - (rank[right.risk?.level] ?? 9) || right.revenue - left.revenue;
+        });
+      const sections = [];
+      if (lossOrders.length) {
+        sections.push(`<div style="font-size:12px;color:#64748b;margin-bottom:8px;">${periodLabel} · 按净亏损额排序，仅展示完整可判定订单</div>
+          <div class="desktop-table-wrap" style="max-height:320px;overflow:auto;"><table class="desktop-table">
+            <thead><tr><th>订单号</th><th>SKU</th><th>商家成交额</th><th>毛利</th><th>平台+联盟</th><th>广告</th><th>净运费</th><th>人员</th><th>净利</th></tr></thead>
+            <tbody>${lossOrders.slice(0, 30).map((order) => `<tr>
+              <td style="font-family:monospace;font-size:11px;" title="${escapeHtml(order.orderId)}">…${escapeHtml(order.orderId.slice(-10))}</td>
+              <td style="max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(order.items.map((item) => item.sellerSku).join(" / "))}">${escapeHtml(order.items.map((item) => item.sellerSku).join(" / ").slice(0, 44))}</td>
+              <td>${fmtThb(order.sellerRevenue)}</td><td>${fmtThb(order.grossProfit)}</td><td>${fmtThb(order.fixedPlatformFee + order.affiliateFee)}</td><td>${fmtThb(order.adsCost)}</td><td>${fmtThb(order.ship)}</td><td>${fmtThb(order.staffCost)}</td><td style="color:#b91c1c;font-weight:800;">${fmtThb(order.netProfit)}</td>
+            </tr>`).join("")}</tbody></table></div>`);
       }
-      if (lossSkus.length) {
-        parts.push(`<div style="margin-top:14px;padding-top:12px;border-top:1px solid #f1f5f9;">
-          <div style="font-size:13px;font-weight:700;color:#b45309;margin-bottom:8px;">⚠️ 全周期亏损价 SKU（平均成交价低于保本价，按缺口排序）</div>
-          ${lossSkus.slice(0, 8).map((s) => `<div style="font-size:12px;color:#475569;line-height:1.9;">🔴 <strong>${escapeHtml(s.sellerSku)}</strong>：均价 ${fmtThb(s.avgDeal)} vs 保本 ${fmtThb(s.breakeven)}（每件约亏 ${fmtThb(-(s.dealVsBreakeven))}）· ${s.orderCount} 单 ${s.qty} 件 → 建议提价至 ${fmtThb(s.breakeven)} 以上或停投</div>`).join("")}
-        </div>`);
+      if (riskySkus.length) {
+        sections.push(`<div style="margin-top:${sections.length ? 16 : 0}px;"><div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:8px;">SKU 风险优先级</div>
+          <div style="display:grid;gap:8px;">${riskySkus.slice(0, 12).map((sku) => `<div style="display:grid;grid-template-columns:minmax(180px,1.2fr) auto minmax(240px,2fr);gap:12px;align-items:center;padding:10px 12px;border:1px solid #e2e8f0;border-radius:9px;background:#fff;">
+            <div><strong>${escapeHtml(sku.sellerSku)}</strong><span class="sku-id">商品 ID ${escapeHtml(sku.productId || "待导入")}</span></div>
+            <div class="profit-table-status">${profitRiskTag(sku.risk)}</div>
+            <div style="color:#475569;font-size:12px;line-height:1.55;">${escapeHtml((sku.risk.reasons || []).join("；"))}</div>
+          </div>`).join("")}</div></div>`);
       }
-      lossEl.innerHTML = parts.join("");
+      if (!sections.length) sections.push(`<div class="ops-empty">${periodLabel} 的可判定订单与 SKU 暂未发现亏损、低利润或价格异常。</div>`);
+      lossEl.innerHTML = sections.join("");
     }
-    // SKU 价格体检
+
     if (skuEl) {
-      const rows = scan.skus.slice(0, 60);
-      skuEl.innerHTML = `<div style="font-size:12px;color:#64748b;margin-bottom:8px;">全部导入周期 · 按成交额降序 · 净利润未含订单级运费分摊（多数档位净运费 0–5฿）</div>
-      <div class="desktop-table-wrap" style="max-height:420px;overflow:auto;"><table class="desktop-table">
-        <thead><tr><th>Seller SKU</th><th>成本</th><th>活动价</th><th>保本价</th><th>平均成交价</th><th>成交价/活动价</th><th>单量</th><th>成交额</th><th>净利润</th><th>状态</th></tr></thead>
-        <tbody>${rows.map((s) => {
-          const status = !s.matched ? `<span class="tag tag-gray">未匹配</span>`
-            : s.dealVsBreakeven != null && s.dealVsBreakeven < 0 ? `<span class="tag tag-red">亏损价</span>`
-            : s.margin != null && s.margin < 0.05 ? `<span class="tag tag-yellow">贴线</span>`
-            : `<span class="tag tag-green">健康</span>`;
-          return `<tr>
-            <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(s.productName || s.sellerSku)}"><strong>${escapeHtml(s.sellerSku)}</strong>${s.via === "patch" ? ' <span class="tag tag-blue" style="font-size:10px;">手动补</span>' : s.via === "base" ? ' <span class="tag tag-gray" style="font-size:10px;">基础款</span>' : ""}</td>
-            <td>${s.cost != null ? fmtThb(s.cost) : "—"}</td>
-            <td>${s.activityPrice != null ? fmtThb(s.activityPrice) : "—"}</td>
-            <td>${s.breakeven != null ? fmtThb(s.breakeven) : "—"}</td>
-            <td style="font-weight:600;${s.dealVsBreakeven != null && s.dealVsBreakeven < 0 ? "color:#dc2626;" : ""}">${s.avgDeal != null ? fmtThb(s.avgDeal) : "—"}</td>
-            <td>${s.priceRatio != null ? (s.priceRatio * 100).toFixed(0) + "%" : "—"}</td>
-            <td>${s.orderCount} 单 / ${s.qty} 件</td>
-            <td>${fmtThb(s.revenue)}</td>
-            <td style="font-weight:600;${s.variableProfit < 0 ? "color:#dc2626;" : "color:#059669;"}">${s.matched ? fmtThb(s.variableProfit) : "—"}</td>
-            <td>${status}</td>
-          </tr>`;
-        }).join("")}</tbody></table></div>
-      ${scan.skus.length > 60 ? `<div style="font-size:12px;color:#94a3b8;margin-top:6px;">仅展示前 60 个，共 ${scan.skus.length} 个 SKU。</div>` : ""}`;
+      const rows = scan.skus.slice(0, 100);
+      skuEl.innerHTML = `<div style="font-size:12px;color:#64748b;margin-bottom:8px;">${periodLabel} · 按商家成交额降序。平台补贴不扣减商家成交额；折扣原字段缺失时不下利润结论。</div>
+        <div class="desktop-table-wrap" style="max-height:520px;overflow:auto;"><table class="desktop-table profit-price-chain">
+          <thead><tr><th>商品 / Seller SKU</th><th>标价</th><th>商家优惠</th><th>商家成交单价</th><th>平台补贴</th><th>买家商品实付</th><th>活动价</th><th>建议零售价（目标价）</th><th>保本价</th><th>毛利率</th><th>净利率</th><th>订单</th><th>风险</th></tr></thead>
+          <tbody>${rows.map((sku) => `<tr>
+            <td style="max-width:260px;"><strong title="${escapeHtml(sku.productName || sku.sellerSku)}">${escapeHtml(sku.sellerSku)}</strong><span class="sku-id">商品 ID ${escapeHtml(sku.productId || "待导入")}${sku.skuId ? ` · SKU ID ${escapeHtml(sku.skuId)}` : ""}</span></td>
+            <td>${sku.listUnitPrice != null && sku.exactRevenue ? fmtThb(sku.listUnitPrice) : "待重新导入"}</td>
+            <td>${sku.sellerDiscountPerUnit != null && sku.exactRevenue ? fmtThb(sku.sellerDiscountPerUnit) : "待重新导入"}</td>
+            <td class="${sku.risk?.level === "loss" ? "money-negative" : "money-positive"}">${sku.sellerUnitPrice != null && sku.exactRevenue ? fmtThb(sku.sellerUnitPrice) : "待重新导入"}</td>
+            <td>${sku.platformSubsidyPerUnit != null && sku.exactRevenue ? fmtThb(sku.platformSubsidyPerUnit) : "待导入"}</td>
+            <td>${sku.buyerUnitPrice != null && sku.exactRevenue ? fmtThb(sku.buyerUnitPrice) : "待导入"}</td>
+            <td>${sku.activityPrice != null ? fmtThb(sku.activityPrice) : "待导入"}</td>
+            <td>${sku.suggestedRetailPrice != null ? fmtThb(sku.suggestedRetailPrice) : "待导入"}</td>
+            <td>${sku.breakeven != null ? fmtThb(sku.breakeven) : "待补数据"}</td>
+            <td>${profitPercent(sku.grossMargin)}</td><td class="${sku.netProfit != null && sku.netProfit < 0 ? "money-negative" : ""}">${profitPercent(sku.netMargin)}</td>
+            <td>${sku.orderCount} 单 / ${sku.qty} 件</td><td class="profit-table-status">${profitRiskTag(sku.risk)}</td>
+          </tr>`).join("")}</tbody></table></div>
+        ${scan.skus.length > 100 ? `<div style="font-size:12px;color:#64748b;margin-top:6px;">仅展示成交额前 100 个，共 ${scan.skus.length} 个 SKU。</div>` : ""}`;
     }
-    // 未匹配 SKU + 手动补成本
+
     if (unmatchEl) {
       if (!scan.unmatched.length) {
-        unmatchEl.innerHTML = `<div class="ops-empty">全部订单行均已匹配成本。👍</div>`;
+        unmatchEl.innerHTML = `<div class="ops-empty">全部订单行均已匹配成本。成本映射完成不代表净利完整，仍需检查重量、运费阶梯与原始折扣字段。</div>`;
       } else {
-        unmatchEl.innerHTML = `<div style="font-size:12px;color:#64748b;margin-bottom:8px;">这些 Seller SKU 在定价表里找不到（按成交额排序）。补上成本后立即参与利润判定，<b>补一次永久记住</b>（存本机浏览器）。</div>
-        <div class="desktop-table-wrap" style="max-height:360px;overflow:auto;"><table class="desktop-table">
-          <thead><tr><th>Seller SKU</th><th>品名</th><th>行数</th><th>件数</th><th>成交额</th><th>补成本(฿/件)</th><th>重量(kg,选填)</th><th></th></tr></thead>
-          <tbody>${scan.unmatched.slice(0, 30).map((u) => `<tr>
-            <td style="font-size:12px;"><strong>${escapeHtml(u.sellerSku)}</strong></td>
-            <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;" title="${escapeHtml(u.productName || "")}">${escapeHtml((u.productName || "—").slice(0, 30))}</td>
-            <td>${u.lines}</td>
-            <td>${u.qty}</td>
-            <td>${fmtThb(u.revenue)}</td>
-            <td><input type="number" min="0" step="0.01" class="profit-patch-cost" data-sku="${escapeHtml(u.sellerSku)}" placeholder="如 25.5" style="width:90px;padding:4px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;"></td>
-            <td><input type="number" min="0" step="0.01" class="profit-patch-weight" data-sku="${escapeHtml(u.sellerSku)}" placeholder="选填" style="width:70px;padding:4px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;"></td>
-            <td><button class="btn btn-primary profit-patch-save" data-sku="${escapeHtml(u.sellerSku)}" style="padding:4px 10px;font-size:12px;">保存</button></td>
-          </tr>`).join("")}</tbody></table></div>
-        ${scan.unmatched.length > 30 ? `<div style="font-size:12px;color:#94a3b8;margin-top:6px;">仅展示前 30 个，共 ${scan.unmatched.length} 个未匹配 SKU。</div>` : ""}`;
+        unmatchEl.innerHTML = `<div style="font-size:12px;color:#64748b;margin-bottom:8px;">这些 Seller SKU 在定价表里找不到。补成本后会立即参与毛利判定；补重量后才能参与含运费的净利判定。</div>
+          <div class="desktop-table-wrap" style="max-height:360px;overflow:auto;"><table class="desktop-table">
+            <thead><tr><th>Seller SKU</th><th>品名</th><th>行数</th><th>件数</th><th>商家成交额</th><th>补成本(฿/件)</th><th>重量(kg)</th><th></th></tr></thead>
+            <tbody>${scan.unmatched.slice(0, 30).map((missing) => `<tr>
+              <td><strong>${escapeHtml(missing.sellerSku)}</strong></td><td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(missing.productName || "")}">${escapeHtml((missing.productName || "—").slice(0, 34))}</td>
+              <td>${missing.lines}</td><td>${missing.qty}</td><td>${fmtThb(missing.revenue)}</td>
+              <td><input type="number" min="0" step="0.01" class="profit-patch-cost" data-sku="${escapeHtml(missing.sellerSku)}" placeholder="如 25.5" style="width:90px;padding:4px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;"></td>
+              <td><input type="number" min="0" step="0.01" class="profit-patch-weight" data-sku="${escapeHtml(missing.sellerSku)}" placeholder="选填" style="width:70px;padding:4px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;"></td>
+              <td><button class="btn btn-primary profit-patch-save" data-sku="${escapeHtml(missing.sellerSku)}" style="padding:4px 10px;font-size:12px;">保存</button></td>
+            </tr>`).join("")}</tbody></table></div>`;
       }
     }
   }
@@ -2737,6 +3064,8 @@
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;">
         <div style="font-size:12px;color:#475569;line-height:2;">
           <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">📐 当前判定口径 <span style="font-weight:400;color:#94a3b8;">${escapeHtml(src)}</span></div>
+          <strong>商家成交额</strong> = SKU Subtotal Before Discount − SKU Seller Discount<br>
+          <strong>毛利</strong> = 商家成交额 − SKU 成本；<strong>净利</strong> = 毛利 − 平台费 − 联盟佣金 − 广告 − 商家净运费 − 人员综合成本<br>
           固定费率 ${(R.fixed * 100).toFixed(2)}%（交易 ${(R.raw.transaction * 100).toFixed(2)}% + Shop佣金 ${(R.raw.shopCommission * 100).toFixed(2)}% + 增长服务 ${(R.raw.growth * 100).toFixed(2)}% + 基建 ${(R.raw.infra * 100).toFixed(2)}%${R.flags.miaosha ? " + 秒杀" : ""}${R.flags.live ? " + 直播" : ""}）<br>
           联盟佣金 ${(R.affRate * 100).toFixed(2)}% · 广告分摊 ${(R.adsShare * 100).toFixed(1)}% · 人员综合 ${(R.staff * 100).toFixed(1)}%<br>
           <strong>总变动费率 ${(R.total * 100).toFixed(2)}%</strong> + 商家净运费（按订单总重走阶梯，多数档位 0–5฿）
@@ -2755,6 +3084,9 @@
                 <option value="none" ${settings.affMode === "none" ? "selected" : ""}>不计联盟佣金</option>
               </select>
             </label>
+            <label style="display:flex;align-items:center;gap:8px;">目标净利率
+              <input type="number" min="0" max="50" step="0.5" id="profit-set-target-margin" value="${(settings.targetMargin * 100).toFixed(1)}" style="width:70px;padding:4px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;"> %
+            </label>
             <label style="display:flex;align-items:center;gap:8px;">
               <input type="checkbox" id="profit-set-staff" ${settings.includeStaff ? "checked" : ""}> 计入人员&amp;综合成本（成交价 × ${(R.raw.staff * 100).toFixed(1)}%）
             </label>
@@ -2772,12 +3104,14 @@
     setStatus("正在解析…", "tag-yellow");
     try {
       const notes = [];
+      const results = [];
       for (const file of files) {
         const result = await parsePricing(file);
-        pricing = result.pricing;
-        pricingIndex = null;
+        results.push(result);
         notes.push(`${file.name}：${result.note}`);
       }
+      pricing = mergePricingImports(results);
+      pricingIndex = null;
       await saveV33();
       window.localStorage.setItem("tiktok-real-data-state-v4", "imported");
       window.dispatchEvent(new CustomEvent("real-data-imported"));
@@ -2785,7 +3119,8 @@
       renderAllV33();
       renderFreshnessBadges();
       bridge.renderPriorityPanel();
-      window.alert(`✅ 价格利润核算表导入完成\n\n${notes.join("\n")}\n\n判定口径：固定费率 + 联盟佣金 + 广告分摊 + 人员成本 + 运费阶梯。上传每日订单明细后自动扫描成交价。`);
+      const costSource = pricing.costMapFiles?.length ? `\n成本优先来源：${pricing.costMapFiles.join("、")}` : "\n未单独导入成本映射表，使用核算表成本";
+      window.alert(`✅ 价格与成本数据导入完成\n\n${notes.join("\n")}${costSource}\n\n判定口径：商家成交额 → 毛利 → 净利 → 风险分级。上传每日订单明细后自动核算。`);
     } catch (error) {
       setStatus("导入失败", "tag-red");
       window.alert(`❌ 导入失败\n\n${error.message || "无法识别该文件"}`);
@@ -3099,6 +3434,9 @@
         saveProfitSettings({ affMode: t.value });
         renderAllV33();
         bridge.renderPriorityPanel();
+      } else if (t.id === "profit-set-target-margin") {
+        const value = cleanNum(t.value);
+        if (value != null && value >= 0 && value <= 50) { saveProfitSettings({ targetMargin: value / 100 }); renderAllV33(); bridge.renderPriorityPanel(); }
       } else if (t.id === "profit-set-staff") {
         saveProfitSettings({ includeStaff: t.checked });
         renderAllV33();

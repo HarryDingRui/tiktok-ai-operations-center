@@ -1,0 +1,153 @@
+const assert = require('assert');
+const {
+  isIncludedOrderStatus,
+  deriveTransactionAmounts,
+  calculateProfit,
+  calculateBreakevenPrice,
+  assessPriceRisk,
+} = require('../data/profit-analysis-core.js');
+
+assert.strictEqual(isIncludedOrderStatus(''), true);
+assert.strictEqual(isIncludedOrderStatus('Completed'), true);
+assert.strictEqual(isIncludedOrderStatus('Cancelled'), false);
+assert.strictEqual(isIncludedOrderStatus('已取消'), false);
+
+const exactAmounts = deriveTransactionAmounts({
+  subtotalBeforeDiscount: 300,
+  sellerDiscount: 40,
+  platformDiscount: 20,
+  subtotalAfterDiscount: 240,
+  quantity: 2,
+});
+assert.deepStrictEqual(exactAmounts, {
+  listAmount: 300,
+  sellerDiscount: 40,
+  platformSubsidy: 20,
+  sellerRevenue: 260,
+  buyerPaidAmount: 240,
+  subtotalAfterDiscount: 240,
+  sellerUnitPrice: 130,
+  buyerUnitPrice: 120,
+  platformSubsidyPerUnit: 10,
+  equationGap: 0,
+  basis: 'before-minus-seller',
+  exact: true,
+});
+
+const fallbackAmounts = deriveTransactionAmounts({
+  subtotalAfterDiscount: 240,
+  quantity: 2,
+});
+assert.strictEqual(fallbackAmounts.sellerRevenue, 240);
+assert.strictEqual(fallbackAmounts.sellerUnitPrice, 120);
+assert.strictEqual(fallbackAmounts.basis, 'after-discount-fallback');
+assert.strictEqual(fallbackAmounts.exact, false);
+
+const inferredBuyerAmounts = deriveTransactionAmounts({
+  subtotalBeforeDiscount: 300,
+  sellerDiscount: 40,
+  platformDiscount: 20,
+  quantity: 2,
+});
+assert.strictEqual(inferredBuyerAmounts.sellerRevenue, 260);
+assert.strictEqual(inferredBuyerAmounts.buyerPaidAmount, 240);
+assert.strictEqual(inferredBuyerAmounts.equationGap, null);
+
+const profit = calculateProfit({
+  sellerRevenue: 260,
+  productCost: 120,
+  fixedPlatformFee: 52,
+  affiliateFee: 7.8,
+  adCost: 26,
+  shippingCost: 5,
+  staffCost: 15.6,
+});
+assert.strictEqual(profit.grossProfit, 140);
+assert.strictEqual(profit.grossMargin, 140 / 260);
+assert.ok(Math.abs(profit.netProfit - 33.6) < 1e-9);
+assert.ok(Math.abs(profit.netMargin - (33.6 / 260)) < 1e-9);
+
+const missingProfit = calculateProfit({ sellerRevenue: 260, productCost: null });
+assert.strictEqual(missingProfit.grossProfit, null);
+assert.strictEqual(missingProfit.netProfit, null);
+
+assert.strictEqual(calculateBreakevenPrice({ unitCost: 67.2, shippingUnit: 3, variableRate: 0.4109 }).toFixed(2), '119.16');
+
+const lossRisk = assessPriceRisk({
+  exactRevenue: true,
+  hasCost: true,
+  shippingKnown: true,
+  sellerUnitPrice: 100,
+  buyerUnitPrice: 90,
+  platformSubsidyPerUnit: 10,
+  activityPrice: 120,
+  suggestedRetailPrice: 130,
+  breakevenPrice: 110,
+  netMargin: -0.05,
+  equationGap: 0,
+  targetMargin: 0.05,
+});
+assert.strictEqual(lossRisk.level, 'loss');
+assert.ok(lossRisk.reasons.some((reason) => reason.includes('保本价')));
+
+const anomalyRisk = assessPriceRisk({
+  exactRevenue: true,
+  hasCost: true,
+  shippingKnown: true,
+  sellerUnitPrice: 130,
+  buyerUnitPrice: 120,
+  platformSubsidyPerUnit: 10,
+  activityPrice: 130,
+  suggestedRetailPrice: 130,
+  breakevenPrice: 100,
+  netMargin: 0.12,
+  equationGap: 5,
+  targetMargin: 0.05,
+});
+assert.strictEqual(anomalyRisk.level, 'anomaly');
+assert.ok(anomalyRisk.reasons.some((reason) => reason.includes('折扣等式')));
+assert.strictEqual(anomalyRisk.activityGap, 0);
+assert.strictEqual(anomalyRisk.buyerActivityGap, 0);
+
+const healthyWorkbookLikeRisk = assessPriceRisk({
+  exactRevenue: true,
+  hasCost: true,
+  shippingKnown: true,
+  sellerUnitPrice: 155,
+  buyerUnitPrice: 145,
+  platformSubsidyPerUnit: 10,
+  activityPrice: 155,
+  suggestedRetailPrice: 124.65,
+  breakevenPrice: 115,
+  netMargin: 0.1555,
+  equationGap: 0,
+  targetMargin: 0.05,
+});
+assert.strictEqual(healthyWorkbookLikeRisk.level, 'healthy');
+assert.strictEqual(healthyWorkbookLikeRisk.activityGap, 0);
+assert.strictEqual(healthyWorkbookLikeRisk.buyerActivityGap, 0);
+assert.ok(healthyWorkbookLikeRisk.targetPriceGap > 30);
+
+const lowMarginRisk = assessPriceRisk({
+  exactRevenue: true,
+  hasCost: true,
+  shippingKnown: true,
+  sellerUnitPrice: 120,
+  buyerUnitPrice: 110,
+  platformSubsidyPerUnit: 10,
+  activityPrice: 120,
+  suggestedRetailPrice: 130,
+  breakevenPrice: 115,
+  netMargin: 0.03,
+  equationGap: 0,
+  targetMargin: 0.05,
+});
+assert.strictEqual(lowMarginRisk.level, 'low-margin');
+assert.ok(lowMarginRisk.reasons.some((reason) => reason.includes('目标价')));
+
+const pendingRisk = assessPriceRisk({ exactRevenue: false, hasCost: false, shippingKnown: false });
+assert.strictEqual(pendingRisk.level, 'pending');
+assert.ok(pendingRisk.reasons.some((reason) => reason.includes('重新导入')));
+
+console.log('profit-analysis-core tests passed');
+
