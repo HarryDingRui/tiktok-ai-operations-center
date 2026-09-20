@@ -54,3 +54,10 @@ chmod 700 .secrets
 - `GET /api/auth/verify`：供 Nginx `auth_request` 使用。
 
 服务默认监听 `8789`，由 Nginx 内部代理访问，不直接暴露宿主机端口。
+
+## 内网闭环行为
+
+- 连续登录失败达到 `LOGIN_RATE_LIMIT_MAX_ATTEMPTS`（默认 5 次）后，在 `LOGIN_RATE_LIMIT_WINDOW_SECONDS`（默认 60 秒）内暂时拒绝继续尝试。
+- 登录成功、失败、限流和注销会写入认证网关标准输出，日志中不包含密码；可用 `docker compose logs -f auth-gateway` 查看。
+- 运营看板左侧会显示当前登录账号和“退出当前账号”按钮；会话失效后前端自动回到登录页，并保留当前站内路径。
+- `COOKIE_SECURE=false` 仅适用于当前 HTTP 内网地址。接入 HTTPS 后必须设置 `COOKIE_SECURE=true`。

@@ -9,6 +9,8 @@ const {
 } = require('./auth');
 
 const MAX_LOGIN_BODY_BYTES = 16 * 1024;
+const DEFAULT_RATE_LIMIT_MAX_ATTEMPTS = 5;
+const DEFAULT_RATE_LIMIT_WINDOW_SECONDS = 60;
 
 function jsonResponse(status, body, headers = {}) {
   return new Response(JSON.stringify(body), {
@@ -51,16 +53,69 @@ function readSession(request, config, authConfig, nowSeconds) {
   return session;
 }
 
-function createAuthApp({ config, authConfig, clock = () => Math.floor(Date.now() / 1000) }) {
+function createAuthApp({ config, authConfig, clock = () => Math.floor(Date.now() / 1000), audit = () => {} }) {
+  const failedLoginAttempts = new Map();
+
+  function getClientKey(request) {
+    return (request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown').split(',')[0].trim() || 'unknown';
+  }
+
+  function getRateLimitSettings() {
+    return {
+      maxAttempts: config.loginRateLimitMaxAttempts || DEFAULT_RATE_LIMIT_MAX_ATTEMPTS,
+      windowSeconds: config.loginRateLimitWindowSeconds || DEFAULT_RATE_LIMIT_WINDOW_SECONDS,
+    };
+  }
+
+  function checkLoginRateLimit(clientKey, nowSeconds) {
+    const settings = getRateLimitSettings();
+    const current = failedLoginAttempts.get(clientKey);
+    if (!current || nowSeconds - current.startedAt >= settings.windowSeconds) {
+      failedLoginAttempts.delete(clientKey);
+      return null;
+    }
+    if (current.count < settings.maxAttempts) return null;
+    return Math.max(1, settings.windowSeconds - (nowSeconds - current.startedAt));
+  }
+
+  function recordLoginFailure(clientKey, nowSeconds) {
+    const settings = getRateLimitSettings();
+    const current = failedLoginAttempts.get(clientKey);
+    if (!current || nowSeconds - current.startedAt >= settings.windowSeconds) {
+      failedLoginAttempts.set(clientKey, { startedAt: nowSeconds, count: 1 });
+      return;
+    }
+    current.count += 1;
+  }
+
+  function recordAudit(event, details = {}) {
+    try { audit({ event, ...details }); } catch { /* auditing must not break authentication */ }
+  }
+
   async function handleLogin(request) {
     const body = await parseLoginBody(request);
     if (!body || typeof body.username !== 'string' || typeof body.password !== 'string') {
       return jsonResponse(400, { ok: false, error: '请输入账号和密码' });
     }
 
+    const nowSeconds = clock();
+    const clientKey = getClientKey(request);
+    const retryAfter = checkLoginRateLimit(clientKey, nowSeconds);
+    if (retryAfter) {
+      recordAudit('login_rate_limited', { username: body.username.slice(0, 128), clientKey });
+      return jsonResponse(429, { ok: false, error: '尝试次数过多，请稍后再试' }, { 'Retry-After': String(retryAfter) });
+    }
+
     const userRecord = authConfig.users[body.username];
     const valid = userRecord ? await verifyPassword(body.password, userRecord) : false;
-    if (!valid) return jsonResponse(401, { ok: false, error: '账号或密码错误' });
+    if (!valid) {
+      recordLoginFailure(clientKey, nowSeconds);
+      recordAudit('login_failure', { username: body.username.slice(0, 128), clientKey });
+      return jsonResponse(401, { ok: false, error: '账号或密码错误' });
+    }
+
+    failedLoginAttempts.delete(clientKey);
+    recordAudit('login_success', { username: body.username.slice(0, 128), clientKey });
 
     const token = createSessionToken(
       body.username,
@@ -86,6 +141,8 @@ function createAuthApp({ config, authConfig, clock = () => Math.floor(Date.now()
       }
       if (request.method === 'POST' && url.pathname === '/api/auth/login') return handleLogin(request);
       if (request.method === 'POST' && url.pathname === '/api/auth/logout') {
+        const session = readSession(request, config, authConfig, nowSeconds);
+        recordAudit('logout', { username: session?.username || 'unknown', clientKey: getClientKey(request) });
         return jsonResponse(200, { ok: true }, {
           'Set-Cookie': serializeClearedCookie({ secure: config.cookieSecure }),
         });

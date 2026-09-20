@@ -685,6 +685,18 @@ body {
 .real-empty-card-body{padding:14px;background:#f8fafc;border-radius:8px;color:#64748b;font-size:13px;line-height:1.7;}
 .data-delete-btn{color:#b91c1c;border-color:#fecaca;background:#fff7f7;font-size:12px;padding:7px 10px;white-space:nowrap;} .data-delete-btn:hover{background:#fee2e2;border-color:#fca5a5;}
 </style>
+<style id="auth-session-style">
+.auth-session-panel { margin: 14px 14px 0; padding: 12px 12px 10px; border: 1px solid #1e3a5f; border-radius: 10px; background: linear-gradient(145deg, rgba(15,35,62,.92), rgba(15,23,42,.95)); color: #cbd5e1; }
+.auth-session-panel[hidden] { display: none !important; }
+.auth-session-kicker { color: #38bdf8; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.auth-session-user-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; }
+.auth-session-user { min-width: 0; overflow: hidden; color: #f8fafc; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.auth-session-state { display: inline-flex; align-items: center; gap: 4px; color: #6ee7b7; font-size: 10px; white-space: nowrap; }
+.auth-session-state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px rgba(52,211,153,.75); }
+.auth-logout-button { width: 100%; margin-top: 10px; padding: 7px 9px; border: 1px solid #334155; border-radius: 7px; color: #cbd5e1; background: rgba(30,41,59,.82); font: inherit; font-size: 11px; cursor: pointer; transition: border-color .2s, color .2s, background .2s; }
+.auth-logout-button:hover { border-color: #38bdf8; color: #f8fafc; background: #1e3a5f; }
+.auth-logout-button:disabled { cursor: wait; opacity: .65; }
+</style>
 </head>
 <body>
 
@@ -712,6 +724,11 @@ body {
   <div class="nav-item" onclick="showPage('agents', this)"><span class="nav-icon">🤖</span> <span>Agent 调度中心</span><span class="nav-badge" hidden>0</span></div>
   <div class="nav-item" onclick="showPage('data', this)"><span class="nav-icon">⚙️</span> <span>数据接入</span></div>
   <div class="nav-item" onclick="showPage('feishu', this)"><span class="nav-icon">🧩</span> <span>飞书智能运营</span></div>
+  <div class="auth-session-panel" id="auth-session-panel" hidden>
+    <div class="auth-session-kicker">Secure Session</div>
+    <div class="auth-session-user-row"><strong class="auth-session-user" id="auth-session-user">已登录用户</strong><span class="auth-session-state">在线</span></div>
+    <button class="auth-logout-button" id="auth-logout-button" type="button">退出当前账号</button>
+  </div>
 </div>
 
 <!-- 移动端底部导航 -->
@@ -2713,5 +2730,6 @@ updateDataContextVisibility('overview');
 </script>
 <script src="./data/action-validation-view.js?v=action-validation-view-1"></script>
 <script src="./data/ops-control-plane.js?v=control-plane-7"></script>
+<script src="./auth-ui.js?v=auth-ui-1"></script>
 </body>
 </html>

@@ -9,6 +9,8 @@ services:
       AUTH_CONFIG_FILE: /run/secrets/auth-config.json
       COOKIE_SECURE: "${COOKIE_SECURE:-false}"
       SESSION_TTL_SECONDS: "${SESSION_TTL_SECONDS:-28800}"
+      LOGIN_RATE_LIMIT_MAX_ATTEMPTS: "${LOGIN_RATE_LIMIT_MAX_ATTEMPTS:-5}"
+      LOGIN_RATE_LIMIT_WINDOW_SECONDS: "${LOGIN_RATE_LIMIT_WINDOW_SECONDS:-60}"
     volumes:
       # Provision this server-only file with the interactive auth-config script; never commit it.
       - ./.secrets/auth-config.json:/run/secrets/auth-config.json:ro

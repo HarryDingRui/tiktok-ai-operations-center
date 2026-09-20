@@ -5,7 +5,11 @@ const { createAuthApp } = require('./app');
 
 const config = loadConfig();
 const authConfig = loadAuthConfig(config.authConfigFile);
-const app = createAuthApp({ config, authConfig });
+const app = createAuthApp({
+  config,
+  authConfig,
+  audit: (event) => console.info(JSON.stringify({ service: 'auth-gateway', at: new Date().toISOString(), ...event })),
+});
 
 const server = http.createServer(async (request, response) => {
   try {

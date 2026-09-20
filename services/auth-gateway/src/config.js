@@ -7,6 +7,8 @@ function loadConfig(env = process.env) {
     cookieName: 'tiktok_ops_session',
     sessionTtlSeconds: Number(env.SESSION_TTL_SECONDS) || 28_800,
     cookieSecure: env.COOKIE_SECURE === 'true',
+    loginRateLimitMaxAttempts: Number(env.LOGIN_RATE_LIMIT_MAX_ATTEMPTS) || 5,
+    loginRateLimitWindowSeconds: Number(env.LOGIN_RATE_LIMIT_WINDOW_SECONDS) || 60,
   };
 }
 
