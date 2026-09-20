@@ -1,0 +1,18 @@
+.git
+.github
+.gitignore
+
+# The GitHub Pages artifact is static; these directories are not needed by
+# the Nginx runtime image.
+docs
+scripts
+services
+tests
+__pycache__
+
+# Keep runtime data, the WPS template, and browser-side parsing assets.
+*.py
+*.pyc
+*.ps1
+*.log
+
