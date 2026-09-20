@@ -1,0 +1,11 @@
+{
+  "name": "tiktok-ops-auth-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Internal session authentication gateway for the TikTok AI operations center",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "node src/server.js"
+  }
+}
