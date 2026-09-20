@@ -13,7 +13,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy only the browser-delivered artifact. The repository also contains the
 # optional Node gateway, tests, and maintenance scripts, none of which belong
 # in the static Nginx runtime image.
-COPY index.html .nojekyll /usr/share/nginx/html/
+COPY index.html login.html login.css login.js .nojekyll /usr/share/nginx/html/
 COPY data /usr/share/nginx/html/data
 COPY vendor /usr/share/nginx/html/vendor
 
