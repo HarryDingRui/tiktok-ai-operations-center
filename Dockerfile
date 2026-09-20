@@ -14,6 +14,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # optional Node gateway, tests, and maintenance scripts, none of which belong
 # in the static Nginx runtime image.
 COPY index.html .nojekyll /usr/share/nginx/html/
+COPY assets /usr/share/nginx/html/assets
 COPY data /usr/share/nginx/html/data
 COPY vendor /usr/share/nginx/html/vendor
 
