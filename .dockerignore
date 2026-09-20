@@ -1,6 +1,7 @@
 .git
 .github
 .gitignore
+.secrets
 
 # The GitHub Pages artifact is static; these directories are not needed by
 # the Nginx runtime image.
