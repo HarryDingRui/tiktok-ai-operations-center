@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#06121f">
+  <meta name="robots" content="noindex, nofollow">
+  <title>运营中枢登录 · TikTok AI 运营中心</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <div class="login-scene" aria-hidden="true">
+    <div class="atmosphere atmosphere-one"></div>
+    <div class="atmosphere atmosphere-two"></div>
+    <div class="signal-orbit orbit-one"></div>
+    <div class="signal-orbit orbit-two"></div>
+    <div class="signal-nodes">
+      <span style="--x: 14%; --y: 18%; --delay: -1.4s"></span>
+      <span style="--x: 28%; --y: 66%; --delay: -3.2s"></span>
+      <span style="--x: 42%; --y: 30%; --delay: -5.1s"></span>
+      <span style="--x: 57%; --y: 75%; --delay: -2.6s"></span>
+      <span style="--x: 70%; --y: 22%; --delay: -4.4s"></span>
+      <span style="--x: 84%; --y: 58%; --delay: -0.8s"></span>
+    </div>
+    <div class="scan-ring scan-ring-one"></div>
+    <div class="scan-ring scan-ring-two"></div>
+  </div>
+
+  <main class="login-layout">
+    <section class="brand-panel" aria-labelledby="brand-title">
+      <div class="brand-kicker"><span class="brand-mark">✦</span> INTERNAL OPERATIONS</div>
+      <h1 id="brand-title">TikTok <strong>AI</strong><br>运营中心</h1>
+      <p class="brand-subtitle">数据驱动创意 · AI 连接全球</p>
+      <div class="brand-rule"></div>
+      <div class="brand-readouts" aria-label="系统状态">
+        <div><span>数据洞察</span><strong>READY</strong></div>
+        <div><span>智能分析</span><strong>ONLINE</strong></div>
+        <div><span>系统状态</span><strong>STABLE</strong></div>
+      </div>
+    </section>
+
+    <section class="auth-panel" aria-labelledby="login-title">
+      <header class="auth-header">
+        <div>
+          <p class="auth-eyebrow">SECURE CHANNEL</p>
+          <h2 id="login-title">运营中枢登录</h2>
+          <p class="auth-caption">仅限公司内网授权人员访问</p>
+        </div>
+        <span class="live-status"><i></i>系统在线</span>
+      </header>
+
+      <form id="login-form" class="login-form" novalidate>
+        <label class="field-label" for="username">账号</label>
+        <div class="field-wrap">
+          <span class="field-icon" aria-hidden="true">⌁</span>
+          <input id="username" name="username" type="text" autocomplete="username" placeholder="请输入账号" required maxlength="64">
+        </div>
+
+        <label class="field-label" for="password">密码</label>
+        <div class="field-wrap">
+          <span class="field-icon" aria-hidden="true">⌑</span>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required maxlength="128">
+          <button id="toggle-password" class="visibility-button" type="button" aria-label="显示密码" aria-pressed="false">◉</button>
+        </div>
+
+        <button id="login-submit" class="submit-button" type="submit">
+          <span class="submit-text">进入运营中枢</span>
+          <span class="submit-arrow" aria-hidden="true">→</span>
+        </button>
+      </form>
+
+      <p id="auth-status" class="auth-status" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span><span class="status-message">内网安全认证通道 · 等待验证</span>
+      </p>
+      <p class="auth-footer"><span aria-hidden="true">⌁</span> 会话将由服务器安全管理，不保存密码</p>
+      <noscript class="noscript-message">需要启用 JavaScript 才能完成安全登录。</noscript>
+    </section>
+  </main>
+
+  <script src="login.js" defer></script>
+</body>
+</html>
