@@ -25,6 +25,7 @@ body {
   border-bottom: 1px solid #1e293b; margin-bottom: 10px; 
   display: flex; align-items: center; gap: 8px;
 }
+.tiktok-logo { width: 22px; height: 22px; display: inline-block; flex: 0 0 auto; }
 .nav-item { 
   padding: 10px 18px; cursor: pointer; display: flex; align-items: center; 
   gap: 10px; font-size: 13px; transition: all 0.2s; 
@@ -689,7 +690,7 @@ body {
 
 <!-- 移动端顶部栏 -->
 <div class="mobile-header">
-  <div class="mobile-header-title">🎵 TikTok 运营中心</div>
+  <div class="mobile-header-title"><img class="tiktok-logo" src="assets/tiktok-icon-official.png" alt="TikTok" /><span>TikTok 运营中心</span></div>
   <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
 </div>
 
@@ -698,7 +699,7 @@ body {
 
 <!-- 左侧导航 -->
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-brand">🎵 <span>TikTok AI 运营中心</span></div>
+  <div class="sidebar-brand"><img class="tiktok-logo" src="assets/tiktok-icon-official.png" alt="TikTok" /><span>TikTok AI 运营中心</span></div>
   <div class="nav-item active" onclick="showPage('overview', this)"><span class="nav-icon">📊</span> <span>经营总览</span></div>
   <div class="nav-item" onclick="showPage('alert', this)"><span class="nav-icon">🚨</span> <span>商品数据预警</span><span class="nav-badge" hidden>0</span></div>
   <div class="nav-item" onclick="showPage('bd', this)"><span class="nav-icon">🤝</span> <span>BD / 达人</span></div>
