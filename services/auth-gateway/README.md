@@ -10,6 +10,24 @@
 node services/auth-gateway/scripts/create-auth-config.mjs .secrets/auth-config.json
 ```
 
+如果服务器没有安装 Node.js，可使用临时 Node 容器生成。`--user` 让生成文件归当前部署用户所有，避免认证容器因文件权限无法读取：
+
+```bash
+docker run --rm -it \
+  --user "$(id -u):$(id -g)" \
+  -v "$PWD/services/auth-gateway:/app:ro" \
+  -v "$PWD/.secrets:/secrets" \
+  node:20-alpine \
+  node /app/scripts/create-auth-config.mjs /secrets/auth-config.json
+```
+
+首次生成前请确认 `.secrets` 已存在且属于当前部署用户：
+
+```bash
+mkdir -p .secrets
+chmod 700 .secrets
+```
+
 生成文件结构如下，示例值不是可用凭据：
 
 ```json
