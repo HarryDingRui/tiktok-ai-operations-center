@@ -698,15 +698,18 @@
   }
 
   function comparisonSnapshotsForStore(store, bounds = selectedDateBounds()) {
-    const snapshots = snapshotsInBounds(store, bounds);
-    if (snapshots.length < 2 || snapshots[0].reportDate === snapshots[snapshots.length - 1].reportDate) return null;
-    const first = snapshots[0];
-    const last = snapshots[snapshots.length - 1];
+    const comparison = periodTools?.selectComparisonSnapshots
+      ? periodTools.selectComparisonSnapshots(store.snapshots, bounds)
+      : null;
+    if (!comparison) return null;
+    const first = comparison.previous;
+    const last = comparison.current;
     return {
       startDate: first.reportDate,
       endDate: last.reportDate,
       start: productMapForSnapshot(first),
       end: productMapForSnapshot(last),
+      intervalText: comparison.intervalText,
     };
   }
 
@@ -978,7 +981,7 @@
       const comparison = comparisonSnapshotsForStore(store);
       if (!comparison) return;
       comparableStores += 1;
-      const intervalText = `所选区间 ${comparison.startDate} → ${comparison.endDate}`;
+      const intervalText = comparison.intervalText || `所选区间 ${comparison.startDate} → ${comparison.endDate}`;
       comparison.end.forEach((product, productId) => {
         const prev = comparison.start.get(productId);
         if (!prev) return;
@@ -1031,7 +1034,7 @@
             title: `曝光大幅下降 ${formatCompact(Math.abs(exposureDelta))}`,
             preview: `${product.id} · 曝光大幅下降 ${formatCompact(Math.abs(exposureDelta))}`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${diagnosis}<br>【建议动作】1) 检查商品是否仍在推荐池 / 是否掉出搜索排名；2) 核对是否有违规、下架、类目调整记录；3) 用广告或短视频补量验证承接是否正常。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
-            tags: ["高优先级", `区间首日 → 末日`],
+            tags: ["高优先级", intervalText],
             decision: decision(diagnosis, "先核查推荐池、搜索排名和商品状态", [
               "检查商品是否仍在推荐池，是否掉出搜索排名",
               "核对违规、下架及类目调整记录",
@@ -1062,7 +1065,7 @@
             title: `GMV 减少 ${formatMoney(Math.abs(gmvDelta))}`,
             preview: `${product.id} · GMV 减少 ${formatMoney(Math.abs(gmvDelta))}`,
             body: `${header}<br>【数据变化】${metricLines}。<br>【原因分析】${driver}<br>【建议动作】1) 按上述方向定位主因；2) 恢复动作执行后记录到"运营调整记录"，T+1/T+3 自动验证效果。${impactText ? `<br>【预估影响】${impactText}` : ""}`,
-            tags: ["高优先级", `区间首日 → 末日`],
+            tags: ["高优先级", intervalText],
             decision: decision(driver, exposureChg != null && exposureChg <= -15 ? "先恢复流量，再验证商品承接" : "先检查价格、评价和详情页承接", [
               "按原因判断定位主要下滑环节",
               "执行恢复动作并记录到运营调整记录",
@@ -1262,7 +1265,12 @@
     const bounds = comparisonDateBounds();
     const rangeLabel = bounds.start && bounds.end ? `${bounds.start} 至 ${bounds.end}` : "当前所选区间";
     if (!status.currentProductCount) return `${rangeLabel}暂无商品快照，无法生成真实对比。`;
-    if (!status.endProductCount) return `${rangeLabel}只有一个可用日期或缺少末日快照；${config.title}需要比较区间首日与末日，暂不计算。`;
+    if (!status.endProductCount) {
+      const selectedBounds = selectedDateBounds();
+      return selectedBounds.start === selectedBounds.end
+        ? `${rangeLabel}没有找到此前可用的真实快照；${config.title}暂不计算。`
+        : `${rangeLabel}只有一个可用日期或缺少末日快照；${config.title}需要比较区间首日与末日，暂不计算。`;
+    }
     if (!status.startProductCount) {
       return `${rangeLabel}已有 ${formatNumber(status.endProductCount, 0)} 个商品数据，但区间首日没有商品快照；${config.title}暂不计算，不会把当前数据误判为增长或下降。`;
     }
@@ -1321,9 +1329,9 @@
     grid.innerHTML = [
       renderRankingCard({ mode: "sales", className: "", icon: "📊", title: "销量 Top5", subtitle: "按区间内最新快照成交件数" }),
       renderRankingCard({ mode: "gmv", className: "gmv", icon: "💰", title: "全店 GMV Top5", subtitle: "按区间内最新快照 GMV" }),
-       renderRankingCard({ mode: "up", className: "up", icon: "📈", title: "GMV 增长 Top5", subtitle: "所选区间末日对比首日" }),
-       renderRankingCard({ mode: "down", className: "down", icon: "📉", title: "GMV 减少 Top5", subtitle: "所选区间末日对比首日" }),
-       renderRankingCard({ mode: "cvrDown", className: "cvr", icon: "⚠️", title: "成交转化预警 Top5", subtitle: "按成交规模与点击规模判断" }),
+       renderRankingCard({ mode: "up", className: "up", icon: "📈", title: "GMV 增长 Top5", subtitle: "区间首尾对比；单日自动对比上一可用日" }),
+       renderRankingCard({ mode: "down", className: "down", icon: "📉", title: "GMV 减少 Top5", subtitle: "区间首尾对比；单日自动对比上一可用日" }),
+       renderRankingCard({ mode: "cvrDown", className: "cvr", icon: "⚠️", title: "成交转化预警 Top5", subtitle: "按成交规模与点击规模判断；单日自动对比上一可用日" }),
     ].join("");
     if (grid.dataset.crossDiagnosisBound !== "1") {
       const openDiagnosis = (event) => {
@@ -1378,7 +1386,7 @@
     container.innerHTML = `<div class="card real-data-card">
       <div class="card-title">✅ 已导入真实店铺数据 <span>${escapeHtml(scopeLabel())} · ${escapeHtml(dateRangeLabel())}</span></div>
       <div class="desktop-table-wrap"><table class="desktop-table"><thead><tr><th>店铺</th><th>最新快照</th><th>商品数</th><th>GMV</th><th>订单数</th><th>曝光</th><th>成交转化率</th><th>状态</th></tr></thead><tbody>${storeRows}</tbody></table></div>
-      <div class="real-data-note">当前页面按每个店铺在所选日期范围内的最新可用快照汇总，避免把快照重复相加；趋势榜单按所选区间首日与末日、同一店铺同一商品 ID 匹配计算。区间不足两个可用日期时不生成趋势结论。</div>
+      <div class="real-data-note">当前页面按每个店铺在所选日期范围内的最新可用快照汇总，避免把快照重复相加；趋势榜单按所选区间首日与末日、同一店铺同一商品 ID 匹配计算，单日筛选自动使用此前最近的真实快照作为基线。缺少基线时不生成趋势结论。</div>
     </div>
     <div class="card real-data-card">
       <div class="card-title">📌 product_list 全字段经营视图 <span>${escapeHtml(scopeLabel())} · ${sourceFieldCount || "待导入"} 个来源字段 · 当前范围最新可用快照</span></div>

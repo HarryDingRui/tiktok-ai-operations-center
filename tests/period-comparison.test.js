@@ -37,4 +37,36 @@ assert.deepStrictEqual(period.metricTrend(null, 100, (value) => `${value}次`), 
   action: '区间首日暂无数据',
   value: '',
 });
+
+function snapshot(reportDate) {
+  return { reportDate, products: [] };
+}
+
+const singleDay = period.selectComparisonSnapshots(
+  [snapshot('2026-09-18'), snapshot('2026-09-19'), snapshot('2026-09-20')],
+  { start: '2026-09-20', end: '2026-09-20' },
+);
+assert.strictEqual(singleDay.previous.reportDate, '2026-09-19');
+assert.strictEqual(singleDay.current.reportDate, '2026-09-20');
+assert.strictEqual(singleDay.intervalDays, 1);
+assert.strictEqual(singleDay.intervalText, '环比昨日');
+
+const skippedYesterday = period.selectComparisonSnapshots(
+  [snapshot('2026-09-18'), snapshot('2026-09-20')],
+  { start: '2026-09-20', end: '2026-09-20' },
+);
+assert.strictEqual(skippedYesterday.previous.reportDate, '2026-09-18');
+assert.strictEqual(skippedYesterday.intervalDays, 2);
+assert.strictEqual(skippedYesterday.intervalText, '对比 2026-09-18（相隔 2 天）');
+
+const selectedRange = period.selectComparisonSnapshots(
+  [snapshot('2026-09-18'), snapshot('2026-09-19'), snapshot('2026-09-20')],
+  { start: '2026-09-19', end: '2026-09-20' },
+);
+assert.strictEqual(selectedRange.previous.reportDate, '2026-09-19');
+assert.strictEqual(selectedRange.current.reportDate, '2026-09-20');
+assert.strictEqual(
+  period.selectComparisonSnapshots([snapshot('2026-09-20')], { start: '2026-09-20', end: '2026-09-20' }),
+  null,
+);
 console.log('period-comparison tests passed');

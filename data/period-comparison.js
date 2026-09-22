@@ -12,6 +12,43 @@
       .sort();
     return { start: dates[0] || bounds.start, end: dates[dates.length - 1] || bounds.end };
   }
+  function daysBetween(fromDate, toDate) {
+    const from = new Date(`${fromDate}T00:00:00Z`);
+    const to = new Date(`${toDate}T00:00:00Z`);
+    const days = Math.round((to - from) / 86400000);
+    return days > 0 ? days : 1;
+  }
+  function selectComparisonSnapshots(snapshots, bounds) {
+    const ordered = [...(Array.isArray(snapshots) ? snapshots : [])]
+      .filter((snapshot) => snapshot && isDateKey(snapshot.reportDate))
+      .sort((left, right) => left.reportDate.localeCompare(right.reportDate));
+    if (!ordered.length) return null;
+
+    const start = isDateKey(bounds?.start) ? bounds.start : "";
+    const end = isDateKey(bounds?.end) ? bounds.end : "";
+    const selected = ordered.filter((snapshot) => {
+      if (!start || !end) return true;
+      return snapshot.reportDate >= start && snapshot.reportDate <= end;
+    });
+    if (!selected.length) return null;
+
+    const current = selected[selected.length - 1];
+    let previous = null;
+    if (start && end && start === end) {
+      previous = [...ordered].reverse().find((snapshot) => snapshot.reportDate < current.reportDate) || null;
+    } else if (selected.length >= 2) {
+      previous = selected[0];
+    }
+    if (!previous || previous.reportDate === current.reportDate) return null;
+
+    const intervalDays = daysBetween(previous.reportDate, current.reportDate);
+    return {
+      previous,
+      current,
+      intervalDays,
+      intervalText: intervalDays === 1 ? "环比昨日" : `对比 ${previous.reportDate}（相隔 ${intervalDays} 天）`,
+    };
+  }
   function absoluteDeltaText(current, previous, formatter) {
     if (current == null || previous == null) return "区间首日暂无数据";
     const delta = Number(current) - Number(previous);
@@ -34,5 +71,5 @@
       value: formatter(Math.abs(delta)),
     };
   }
-  return { isDateKey, selectedPeriodEndpoints, absoluteDeltaText, metricTrend };
+  return { isDateKey, selectedPeriodEndpoints, selectComparisonSnapshots, absoluteDeltaText, metricTrend };
 }));
