@@ -33,6 +33,7 @@
   const videoTools = window.OPS_VIDEO_RANGE;
   const crossDiagnosisTools = window.OPS_CROSS_DIAGNOSIS;
   const profitTools = window.OPS_PROFIT_ANALYSIS;
+  const dataLoadingTools = window.OPS_DATA_LOADING;
 
   /* ================= 可配置阈值（看板上可改，存本机） ================= */
   const THRESHOLDS_KEY = "tiktok-v33-thresholds";
@@ -100,6 +101,10 @@
   window.OPS_V33_READY = false;
   let meta = { lastImport: {}, removedAssets: [] };
   let latestDataDateCache;
+  let localDataReady = false;
+  let localDataPromise;
+  const loadedCloudDatasets = new Set();
+  const cloudDatasetPromises = new Map();
 
   function invalidateLatestDataDate() {
     latestDataDateCache = undefined;
@@ -163,22 +168,46 @@
       tx.onerror = () => reject(tx.error);
     });
   }
-  async function loadCloudV33() {
+  const ALL_CLOUD_DATASETS = ["adCreatives", "creatorDaily", "affOrders", "samples", "affVideos", "orders"];
+  function requestedCloudDatasets(datasets) {
+    if (datasets == null) return ALL_CLOUD_DATASETS;
+    return dataLoadingTools?.mergeDatasetKeys ? dataLoadingTools.mergeDatasetKeys(datasets) : [...new Set(datasets || [])];
+  }
+  async function loadCloudV33(datasets = []) {
     const snapshot = window.TIKTOK_CLOUD_SNAPSHOT;
-    if (snapshot?.v33 && typeof snapshot.v33 === "object") return snapshot.v33;
-    if (snapshot?.v33Urls && typeof snapshot.v33Urls === "object") {
-      const entries = await Promise.all(Object.entries(snapshot.v33Urls).map(async ([dataset, url]) => {
-        const response = await fetch(url, { cache: "force-cache" });
-        if (!response.ok) throw new Error(`云端 ${dataset} 数据读取失败（HTTP ${response.status}）`);
-        return [dataset, await response.json()];
-      }));
-      return Object.fromEntries(entries);
+    const requested = requestedCloudDatasets(datasets);
+    if (snapshot?.v33 && typeof snapshot.v33 === "object") {
+      requested.forEach((dataset) => loadedCloudDatasets.add(dataset));
+      return requested.reduce((result, dataset) => {
+        if (Array.isArray(snapshot.v33[dataset])) result[dataset] = snapshot.v33[dataset];
+        return result;
+      }, {});
     }
-    if (!snapshot?.v33Url) return null;
-    const response = await fetch(snapshot.v33Url, { cache: "force-cache" });
-    if (!response.ok) throw new Error(`云端分析数据读取失败（HTTP ${response.status}）`);
-    const parsed = await response.json();
-    return parsed && typeof parsed === "object" ? parsed : null;
+    const urls = snapshot?.v33Urls && typeof snapshot.v33Urls === "object" ? snapshot.v33Urls : {};
+    const entries = await Promise.all(requested.filter((dataset) => urls[dataset] && !loadedCloudDatasets.has(dataset)).map((dataset) => {
+      if (!cloudDatasetPromises.has(dataset)) {
+        cloudDatasetPromises.set(dataset, (async () => {
+          const response = await fetch(urls[dataset], { cache: "force-cache" });
+          if (!response.ok) throw new Error(`云端 ${dataset} 数据读取失败（HTTP ${response.status}）`);
+          const parsed = await response.json();
+          loadedCloudDatasets.add(dataset);
+          return [dataset, Array.isArray(parsed) ? parsed : []];
+        })());
+      }
+      return cloudDatasetPromises.get(dataset);
+    }));
+    if (entries.length) return Object.fromEntries(entries);
+    if (!requested.length || !snapshot?.v33Url) return {};
+    if (!cloudDatasetPromises.has("_legacy")) {
+      cloudDatasetPromises.set("_legacy", (async () => {
+        const response = await fetch(snapshot.v33Url, { cache: "force-cache" });
+        if (!response.ok) throw new Error(`云端分析数据读取失败（HTTP ${response.status}）`);
+        const parsed = await response.json();
+        ALL_CLOUD_DATASETS.forEach((dataset) => loadedCloudDatasets.add(dataset));
+        return parsed && typeof parsed === "object" ? parsed : {};
+      })());
+    }
+    return cloudDatasetPromises.get("_legacy");
   }
   async function loadCloudPricing() {
     const url = window.TIKTOK_CLOUD_SNAPSHOT?.pricingUrl;
@@ -188,57 +217,87 @@
     const parsed = await response.json();
     return parsed && typeof parsed === "object" && Array.isArray(parsed.skus) ? parsed : null;
   }
-  async function loadV33() {
-    const cloudSnapshot = window.TIKTOK_CLOUD_SNAPSHOT;
-    if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared" && !cloudSnapshot?.published) return;
-    let cloud = null;
-    let cloudPricing = null;
-    try {
-      cloud = await loadCloudV33();
-    } catch (error) {
-      console.warn("云端分析数据读取失败，继续使用本地数据", error);
+  const localDataDatasets = new Set();
+  async function ensureLocalDataLoaded() {
+    if (localDataReady) return;
+    if (!localDataPromise) {
+      localDataPromise = (async () => {
+        try {
+          const row = await idbGet(V33_DATA_KEY);
+          if (row && typeof row === "object") {
+            Object.keys(v33).forEach((dataset) => {
+              if (!Array.isArray(row[dataset]) || row[dataset].length === 0) return;
+              v33[dataset] = row[dataset];
+              localDataDatasets.add(dataset);
+            });
+          }
+        } catch (error) { console.warn("v3.3 本地数据读取失败，继续使用云端快照", error); }
+        localDataReady = true;
+        invalidateLatestDataDate();
+      })();
     }
-    try {
-      cloudPricing = await loadCloudPricing();
-    } catch (error) {
-      console.warn("云端价格利润数据读取失败，继续使用本地数据", error);
-    }
-    const base = EMPTY_DATA();
-    if (cloud && typeof cloud === "object") {
-      Object.keys(base).forEach((k) => { if (Array.isArray(cloud[k])) base[k] = cloud[k]; });
-    }
-    try {
-      const row = await idbGet(V33_DATA_KEY);
-      if (row && typeof row === "object") {
-        // 本地导入优先；视频数据按唯一键合并，避免本地残留的全零记录覆盖云端有效记录。
-        Object.keys(base).forEach((k) => {
-          if (!Array.isArray(row[k]) || row[k].length === 0) return;
-          base[k] = k === "affVideos" && videoTools?.mergeVideoRecords
-            ? videoTools.mergeVideoRecords(base[k], row[k])
-            : row[k];
-        });
+    await localDataPromise;
+  }
+  function mergeCloudData(cloud) {
+    if (!cloud || typeof cloud !== "object") return;
+    Object.keys(v33).forEach((dataset) => {
+      if (!Array.isArray(cloud[dataset])) return;
+      if (localDataDatasets.has(dataset)) {
+        if (dataset === "affVideos" && videoTools?.mergeVideoRecords) v33[dataset] = videoTools.mergeVideoRecords(cloud[dataset], v33[dataset]);
+        return;
       }
-    } catch (e) { console.warn("v3.3 本地数据读取失败，继续使用云端快照", e); }
-    v33 = base;
+      v33[dataset] = cloud[dataset];
+    });
     invalidateLatestDataDate();
+  }
+  async function loadStoredMetadata() {
     try {
       const m = await idbGet(V33_META_KEY);
       if (m && typeof m === "object") {
         meta.lastImport = m.lastImport || {};
         meta.removedAssets = Array.isArray(m.removedAssets) ? m.removedAssets : [];
       }
-    } catch (e) { console.warn("v3.3 元数据读取失败，继续使用云端日期", e); }
-    if (!Object.keys(meta.lastImport).length && cloud && typeof cloud === "object") {
-      Object.entries(cloud).forEach(([dataset, rows]) => {
+    } catch (error) { console.warn("v3.3 元数据读取失败，继续使用云端日期", error); }
+  }
+  async function loadStoredPricing() {
+    if (pricing) return;
+    try {
+      const p = await idbGet("ops-v33-pricing");
+      if (p && typeof p === "object" && Array.isArray(p.skus)) { pricing = p; pricingIndex = null; }
+    } catch (error) { console.warn("价格数据读取失败，继续使用其他云端数据", error); }
+  }
+  async function ensureDatasets(datasets = []) {
+    const requested = requestedCloudDatasets(datasets);
+    const [cloud] = await Promise.all([loadCloudV33(requested), ensureLocalDataLoaded()]);
+    mergeCloudData(cloud);
+    if (requested.includes("orders")) {
+      await loadStoredPricing();
+      if (!pricing) {
+        try {
+          const cloudPricing = await loadCloudPricing();
+          if (!pricing && cloudPricing) { pricing = cloudPricing; pricingIndex = null; }
+        } catch (error) { console.warn("云端价格利润数据读取失败，继续使用本地数据", error); }
+      }
+    }
+    if (!Object.keys(meta.lastImport).length) {
+      Object.entries(cloud || {}).forEach(([dataset, rows]) => {
         const latest = (Array.isArray(rows) ? rows : []).map((row) => row.date).filter(isDateKey).sort().pop();
         if (latest) meta.lastImport[dataset] = `${latest}T00:00:00.000Z`;
       });
     }
-    try {
-      const p = await idbGet("ops-v33-pricing");
-      if (p && typeof p === "object" && Array.isArray(p.skus)) { pricing = p; pricingIndex = null; }
-    } catch (e) { console.warn("价格数据读取失败，继续使用其他云端数据", e); }
-    if (!pricing && cloudPricing) { pricing = cloudPricing; pricingIndex = null; }
+    return requested;
+  }
+  async function loadV33() {
+    const cloudSnapshot = window.TIKTOK_CLOUD_SNAPSHOT;
+    if (window.localStorage.getItem("tiktok-real-data-state-v4") === "cleared" && !cloudSnapshot?.published) return;
+    // 首屏只准备本地元数据和空数据容器；大 JSON 在进入对应版块后按需加载。
+    await loadStoredMetadata();
+    ensureLocalDataLoaded().then(() => {
+      if (window.OPS_V33_READY) {
+        renderAllV33({ overviewOnly: true });
+        bridge.renderPriorityPanel();
+      }
+    });
   }
   async function saveV33() {
     try { await idbPut(V33_DATA_KEY, v33); await idbPut(V33_META_KEY, meta); await idbPut("ops-v33-pricing", pricing); }
@@ -3249,6 +3308,7 @@
     if (!el) return;
     const scope = window.OPS_V33?.getScope?.() || { bounds: selectedScopeBounds() };
     const currentBounds = scope.bounds;
+    // 总览使用已随云快照下发的日/店铺聚合数据，避免为了首屏拆分图提前下载 28MB 明细。
     const creatorRows = rowsForBounds("creatorDaily", currentBounds);
     if (!creatorRows.length) {
       const loading = window.TIKTOK_CLOUD_SNAPSHOT?.published && !window.OPS_V33_READY;
@@ -3357,18 +3417,26 @@
     }
   }
   let fullRenderTimer = null;
+  function activePageId() {
+    return document.querySelector(".page.active")?.id?.replace(/^page-/, "") || "overview";
+  }
+  function renderActivePage(pageId = activePageId()) {
+    switch (pageId) {
+      case "bd": renderBdPageV33(); break;
+      case "ads": renderAdsPageV33(); break;
+      case "videos": renderAssetLibraryV33(); renderVideosPageV33(); break;
+      case "profit": renderProfitPage(); break;
+      case "alert": renderAlertExtrasV33(); break;
+      default: break;
+    }
+  }
   function renderAllV33(options = {}) {
     renderOverviewOperationalCards();
     renderSourceSplit();
     if (options.overviewOnly) return;
-    renderBdPageV33();
-    renderAdsPageV33();
-    renderAssetLibraryV33();
-    renderVideosPageV33();
-    renderAlertExtrasV33();
-    renderProfitPage();
+    renderActivePage();
     const searchInput = document.getElementById("alert-search-input");
-    if (searchInput && searchInput.value.trim()) renderTrendSearchV33(searchInput.value);
+    if (activePageId() === "alert" && searchInput && searchInput.value.trim()) renderTrendSearchV33(searchInput.value);
   }
   function scheduleFullRender() {
     if (fullRenderTimer != null) return;
@@ -3388,6 +3456,22 @@
     if (key === "videos") return v33.affVideos.length > 0 || v33.selfVideos.length > 0;
     if (key === "assets") return buildAssetLibrary().length > 0;
     return false;
+  }
+  async function ensurePageData(pageId) {
+    const datasets = dataLoadingTools?.datasetsForPage ? dataLoadingTools.datasetsForPage(pageId) : [];
+    if (!datasets.length) {
+      renderAllV33({ overviewOnly: true });
+      bridge.renderPriorityPanel();
+      return;
+    }
+    try {
+      await ensureDatasets(datasets);
+    } catch (error) {
+      console.warn(`页面 ${pageId} 数据按需加载失败`, error);
+    }
+    renderAllV33();
+    renderFreshnessBadges();
+    bridge.renderPriorityPanel();
   }
   window.OPS_EXT = {
     render: renderAllV33,
@@ -3450,7 +3534,13 @@
       bounds: selectedScopeBounds(),
     }),
     getPricing: () => pricing,
+    ensurePageData,
   };
+
+  window.addEventListener("ops-page-change", (event) => {
+    const pageId = event.detail?.pageId || activePageId();
+    ensurePageData(pageId);
+  });
 
   /* ================= 绑定与初始化 ================= */
   function bindV33() {

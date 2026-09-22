@@ -2482,7 +2482,8 @@ body {
 <script src="./data/video-range.js?v=video-range-5"></script>
 <script src="./data/cross-diagnosis.js?v=cross-diagnosis-3"></script>
 <script src="./data/profit-analysis-core.js?v=profit-analysis-4"></script>
-<script src="./data/ops-v33.js?v=gmvmax-native-28"></script>
+<script src="./data/data-loading.js?v=data-loading-1"></script>
+<script src="./data/ops-v33.js?v=gmvmax-native-33"></script>
 <script src="./data/weekly-report-core.js?v=weekly-report-1"></script>
 <script src="./data/weekly-report.js?v=weekly-report-3"></script>
 <script src="./data/ops-recommendations.js?v=ops-recommendations-1"></script>
@@ -2570,6 +2571,7 @@ function showPage(pageId, el) {
   document.getElementById('mobileOverlay').classList.remove('open');
   updateDataContextVisibility(pageId);
   window.scrollTo(0, 0);
+  window.dispatchEvent(new CustomEvent('ops-page-change', { detail: { pageId } }));
 }
 
 // 移动端菜单切换
